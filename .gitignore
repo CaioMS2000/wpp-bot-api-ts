@@ -46,3 +46,7 @@ temp/
 
 # TypeScript cache
 *.tsbuildinfo
+
+# files
+notes.txt
+tree.txt
