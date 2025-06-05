@@ -4,21 +4,21 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "prepare": "husky",
+    "dev": "tsx watch src/http/server.ts",
     "lint": "biome check .",
-    "format": "biome format --write ."
+    "format": "biome format --write .",
+    "prepare": "husky"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "devDependencies": {
     "@caioms/pre-git-auto-format": "latest",
     "@caioms/ts-utils": "latest",
     "@types/node": "^22.15.29",
     "prisma": "^6.9.0",
-    "tsx": "^4.19.4"
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "@fastify/cors": "^11.0.1",

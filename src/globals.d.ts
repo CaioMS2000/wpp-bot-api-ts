@@ -1,13 +1,13 @@
-// Importa todos os tipos da biblioteca
-import * as TsUtils from '@caioms/ts-utils';
-import * as NextjsUtils from '@caioms/ts-utils/nextjs';
+import type * as TsUtils from '@caioms/ts-utils';
+import type * as NextjsUtils from '@caioms/ts-utils/nextjs';
 
 declare global {
-  // Adiciona todos os tipos ao namespace global
-  namespace NodeJS {
-    interface Global extends TsUtils, NextjsUtils {}
-  }
+  type Optional<T, K> = TsUtils.Optional<T, K>;
+  type NotDefined<T> = TsUtils.NotDefined<T>;
+  type Nullable<T> = TsUtils.Nullable<T>;
+  type Params = NextjsUtils.Params;
+  type SearchParams = NextjsUtils.SearchParams;
+  interface PageProps extends NextjsUtils.PageProps {}
 }
 
-// Necessário para que o arquivo seja tratado como um módulo
 export {};
