@@ -48,6 +48,8 @@ temp/
 *.tsbuildinfo
 
 # files
+write_files.py
 notes.txt
 tree.txt
 command.txt
+arquivos.txt
