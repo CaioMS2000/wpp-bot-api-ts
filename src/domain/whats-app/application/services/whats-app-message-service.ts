@@ -1,25 +1,25 @@
+import { Client } from '@/domain/entities/client'
 import { Conversation } from '@/domain/entities/conversation'
-import { StateTransition } from '../states/state-transition'
+import { Department } from '@/domain/entities/department'
+import { Message } from '@/domain/entities/message'
+import { ClientRepository } from '@/domain/repositories/client-repository'
+import { ConversationRepository } from '@/domain/repositories/conversation-repository'
+import { DepartmentRepository } from '@/domain/repositories/department-repository'
+import { FAQRepository } from '@/domain/repositories/faq-repository'
+import { MessageRepository } from '@/domain/repositories/message-repository'
 import {
     DepartmentValidation,
     MenuOption,
     MessageProcessingResult,
     WhatsAppResponse,
 } from '../../@types'
-import { Department } from '@/domain/entities/department'
+import { AIChatState } from '../states/ai-chat-state'
+import { DepartmentChatState } from '../states/department-chat-state'
+import { DepartmentSelectionState } from '../states/department-selection-state'
+import { FAQCategoriesState } from '../states/faq-categories-state'
 import { FAQItemsState } from '../states/faq-items-state'
 import { InitialMenuState } from '../states/initial-menu-state'
-import { FAQCategoriesState } from '../states/faq-categories-state'
-import { DepartmentSelectionState } from '../states/department-selection-state'
-import { ConversationRepository } from '@/domain/repositories/conversation-repositorie'
-import { DepartmentRepository } from '@/domain/repositories/department-repositorie'
-import { FAQRepository } from '@/domain/repositories/faq-repositorie'
-import { MessageRepository } from '@/domain/repositories/message-repository'
-import { Message } from '@/domain/entities/message'
-import { Client } from '@/domain/entities/client'
-import { DepartmentChatState } from '../states/department-chat-state'
-import { AIChatState } from '../states/ai-chat-state'
-import { ClientRepository } from '@/domain/repositories/client-repository'
+import { StateTransition } from '../states/state-transition'
 
 export class WhatsAppMessageService {
     constructor(

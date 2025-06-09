@@ -9,7 +9,7 @@ dayjs.extend(timezone)
 dayjs.extend(localizedFormat)
 dayjs.locale('pt-br')
 import { Conversation } from '@/domain/entities/conversation'
-import { ConversationRepository } from '@/domain/repositories/conversation-repositorie'
+import { ConversationRepository } from '@/domain/repositories/conversation-repository'
 
 export class InMemoryConversationRepository extends ConversationRepository {
     private data: Record<string, Conversation> = {}

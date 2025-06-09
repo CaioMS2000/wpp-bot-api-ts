@@ -1,5 +1,5 @@
 import { FAQ, FAQCategory, FAQItem } from '@/domain/entities/faq'
-import { FAQRepository } from '@/domain/repositories/faq-repositorie'
+import { FAQRepository } from '@/domain/repositories/faq-repository'
 import { createSlug } from '@/utils/text'
 
 export class InMemoryFAQRepository extends FAQRepository {

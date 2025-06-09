@@ -1,5 +1,5 @@
 import { Department } from '@/domain/entities/department'
-import { DepartmentRepository } from '@/domain/repositories/department-repositorie'
+import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { createSlug } from '@/utils/text'
 
 export class InMemoryDepartmentRepository extends DepartmentRepository {

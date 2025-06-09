@@ -1,19 +1,10 @@
-import fastifyCors from '@fastify/cors'
-import { fastify } from 'fastify'
-import {
-    ZodTypeProvider,
-    jsonSchemaTransform,
-    serializerCompiler,
-    validatorCompiler,
-} from 'fastify-type-provider-zod'
+import { WhatsAppMessageServiceFactory } from '../factory/whats-app-message-service-factory'
+import { app } from './app'
 import { receiveMessage } from './routes/message/receive-message'
 
-const app = fastify()
+const whatsAppMessageService = WhatsAppMessageServiceFactory.create()
 
-app.setValidatorCompiler(validatorCompiler)
-app.setSerializerCompiler(serializerCompiler)
-app.register(fastifyCors)
-app.register(receiveMessage)
+app.register(receiveMessage, { whatsAppMessageService })
 
 app.listen({ port: 3000 }).then((...args) => {
     console.log(`Server running on -> ${args}`)

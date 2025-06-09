@@ -118,6 +118,10 @@ export class Conversation extends Entity<ConversationProps> {
         return Boolean(this.props.endedAt)
     }
 
+    get currentState() {
+        return this.props.currentState
+    }
+
     set currentState(state: ConversationState) {
         this.props.currentState = state
     }

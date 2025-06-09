@@ -1,8 +1,15 @@
+import { WhatsAppMessageService } from '@/domain/whats-app/application/services/whats-app-message-service'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 
-export async function receiveMessage(app: FastifyInstance) {
+type Resources = {
+    whatsAppMessageService: WhatsAppMessageService
+}
+export async function receiveMessage(
+    app: FastifyInstance,
+    resources: Resources
+) {
     app.withTypeProvider<ZodTypeProvider>().post('/message', {
         // schema: {
         // body: z.object({
@@ -20,9 +27,18 @@ export async function receiveMessage(app: FastifyInstance) {
         handler: async (req, reply) => {
             // const { email, password, name } = req.body
             // return reply.status(201).send({ email, password, name })
+            const { whatsAppMessageService } = resources
 
             console.log('body')
             console.log(req.body)
+
+            const res = await whatsAppMessageService.processIncomingMessage(
+                req.body.clientPhone,
+                req.body.messageContent
+            )
+
+            console.log('res')
+            console.log(res)
 
             return reply.status(201).send({ message: 'Message received' })
         },
