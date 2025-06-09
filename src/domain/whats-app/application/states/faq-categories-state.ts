@@ -2,18 +2,18 @@ import { Conversation } from '@/domain/entities/conversation'
 import { ConversationState } from './conversation-state'
 import { MenuOption, StateInfo } from '../../@types'
 import { StateTransition } from './state-transition'
-import { FAQ, FAQCategory } from '@/domain/entities/faq'
+import { FAQCategory } from '@/domain/entities/faq'
 
 export class FAQCategoriesState extends ConversationState {
     constructor(
         conversation: Conversation,
-        private faqData: FAQ
+        private categories: FAQCategory[]
     ) {
         super(conversation)
     }
 
     handleMessage(messageContent: string): StateTransition {
-        const selectedCategory = this.findCategoryNameByMessage(messageContent)
+        const selectedCategory = this.findCategoryByMessage(messageContent)
 
         if (selectedCategory) {
             return StateTransition.toFAQItems(selectedCategory)
@@ -22,28 +22,28 @@ export class FAQCategoriesState extends ConversationState {
         return StateTransition.stayInCurrent('Categoria não encontrada')
     }
 
-    private findCategoryNameByMessage(message: string): string | null {
+    private findCategoryByMessage(message: string): string | null {
         const normalized = message.toLowerCase().trim()
-        const categoryNames = this.faqData.getCategoryNames()
+        const categoryNames = this.categories.map(category => category.name)
 
-        // Tenta por número primeiro
+        // Try by number first
         const numberMatch = normalized.match(/^\d+$/)
         if (numberMatch) {
             const index = Number.parseInt(numberMatch[0]) - 1
             return categoryNames[index] || null
         }
 
-        // Depois por nome parcial
-        const categoryFromPartialName =
-            this.faqData.findCategoryByPartialName(normalized)
-
-        return categoryFromPartialName?.name || null
+        // Try by name
+        const category = this.categories.find(cat =>
+            cat.name.toLowerCase().includes(normalized)
+        )
+        return category?.name || null
     }
 
     getMenuOptions(): MenuOption[] {
-        return this.faqData.getCategoryNames().map((categoryName, index) => ({
+        return this.categories.map((category, index) => ({
             key: (index + 1).toString(),
-            label: categoryName,
+            label: category.name,
         }))
     }
 

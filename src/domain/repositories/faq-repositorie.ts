@@ -1,5 +1,11 @@
-import { FAQ } from '../entities/faq'
+import { FAQ, FAQCategory, FAQItem } from '../entities/faq'
 
 export abstract class FAQRepository {
-    abstract findFirst(): Promise<FAQ | null>
+    abstract save(
+        category: string,
+        question: string,
+        answer: string
+    ): Promise<void>
+    abstract findCategories(): Promise<FAQCategory[]>
+    abstract findItemsByCategory(categoryName: string): Promise<FAQItem[]>
 }

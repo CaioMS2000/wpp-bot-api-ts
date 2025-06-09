@@ -1,14 +1,14 @@
 import { Conversation } from '@/domain/entities/conversation'
-import { MenuOption, StateInfo } from '../../@types'
 import { ConversationState } from './conversation-state'
+import { FAQItem } from '@/domain/entities/faq'
 import { StateTransition } from './state-transition'
-import { FAQ } from '@/domain/entities/faq'
+import { MenuOption, StateInfo } from '../../@types'
 
 export class FAQItemsState extends ConversationState {
     constructor(
         conversation: Conversation,
         private categoryName: string,
-        private faqData: FAQ
+        private items: FAQItem[]
     ) {
         super(conversation)
     }
@@ -29,13 +29,6 @@ export class FAQItemsState extends ConversationState {
         )
     }
 
-    getMenuOptions(): MenuOption[] {
-        return [
-            { key: '0', label: 'Voltar para categorias' },
-            { key: 'menu', label: 'Menu principal' },
-        ]
-    }
-
     getStateInfo(): StateInfo {
         return {
             name: 'faq_items',
@@ -44,16 +37,19 @@ export class FAQItemsState extends ConversationState {
         }
     }
 
-    getFAQContent(): string {
-        const category = this.faqData.getCategoryByName(this.categoryName)
-        if (!category) return 'Categoria não encontrada'
+    getMenuOptions(): MenuOption[] {
+        return [
+            { key: '0', label: 'Voltar para categorias' },
+            { key: 'menu', label: 'Menu principal' },
+        ]
+    }
 
-        let content = `*${category.name}*\n\n`
-        category.items.forEach((item, index) => {
+    getFAQContent(): string {
+        let content = `*${this.categoryName}*\n\n`
+        this.items.forEach((item, index) => {
             content += `*${index + 1}. ${item.question}*\n`
             content += `${item.answer}\n\n`
         })
-
         return content
     }
 }

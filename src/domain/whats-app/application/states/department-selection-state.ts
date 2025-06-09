@@ -1,8 +1,8 @@
+import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
 import { MenuOption, StateInfo } from '../../@types'
-import { StateTransition } from './state-transition'
 import { ConversationState } from './conversation-state'
-import { Conversation } from '@/domain/entities/conversation'
+import { StateTransition } from './state-transition'
 
 export class DepartmentSelectionState extends ConversationState {
     constructor(
@@ -22,7 +22,7 @@ export class DepartmentSelectionState extends ConversationState {
         return StateTransition.stayInCurrent('Departamento não encontrado')
     }
 
-    private findDepartmentByMessage(message: string): Department | null {
+    private findDepartmentByMessage(message: string): Nullable<Department> {
         const normalized = message.toLowerCase().trim()
 
         // Tenta por número primeiro

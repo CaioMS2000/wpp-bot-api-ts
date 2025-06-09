@@ -90,7 +90,7 @@ export class WhatsAppMessageService {
         conversation: Conversation,
         content: string,
         from: 'client' | 'employee' | 'AI'
-    ): Promise<void> {
+    ): Promise<Message> {
         const message = Message.create({
             conversation,
             timestamp: new Date(),
@@ -99,6 +99,8 @@ export class WhatsAppMessageService {
         })
 
         await this.messageRepo.save(message)
+
+        return message
     }
 
     private async handleExternalDataRequirement(
@@ -108,29 +110,28 @@ export class WhatsAppMessageService {
         // Using 2 'switch' statements to satisfy TypeScript and BiomeJS, and still not cause runtime errors
         switch (transition.targetState) {
             case 'faq_categories':
-                const faqData = await this.faqRepo.findFirst() // Assume que existe um FAQ principal
-                if (faqData) {
+                const categories = await this.faqRepo.findCategories()
+                if (categories.length > 0) {
                     const faqCatState = new FAQCategoriesState(
                         conversation,
-                        faqData
+                        categories
                     )
                     conversation.transitionToState(faqCatState)
                 } else {
-                    // Fallback se não encontrar FAQ
                     const initialState = new InitialMenuState(conversation)
                     conversation.transitionToState(initialState)
                 }
                 break
 
             case 'faq_items':
-                // FAQ items não precisa buscar dados externos, usa os dados já carregados
-                const currentFaqData = await this.faqRepo.findFirst()
-                if (currentFaqData) {
-                    const categoryName = transition.data as string
+                const categoryName = transition.data as string
+                const items =
+                    await this.faqRepo.findItemsByCategory(categoryName)
+                if (items.length > 0) {
                     const faqItemsState = new FAQItemsState(
                         conversation,
                         categoryName,
-                        currentFaqData
+                        items
                     )
                     conversation.transitionToState(faqItemsState)
                 }
