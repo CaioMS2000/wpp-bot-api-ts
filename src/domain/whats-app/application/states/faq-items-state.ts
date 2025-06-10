@@ -1,8 +1,8 @@
 import { Conversation } from '@/domain/entities/conversation'
-import { ConversationState } from './conversation-state'
 import { FAQItem } from '@/domain/entities/faq'
+import { MenuOption } from '../../@types'
+import { ConversationState } from './conversation-state'
 import { StateTransition } from './state-transition'
-import { MenuOption, StateInfo } from '../../@types'
 
 export class FAQItemsState extends ConversationState {
     constructor(
@@ -14,42 +14,19 @@ export class FAQItemsState extends ConversationState {
     }
 
     handleMessage(messageContent: string): StateTransition {
-        const normalized = messageContent.toLowerCase().trim()
+        throw new Error('Method not implemented.')
+    }
 
-        if (normalized.includes('voltar') || normalized === '0') {
-            return StateTransition.toFAQCategories()
-        }
-
-        if (normalized.includes('menu') || normalized.includes('início')) {
-            return StateTransition.toInitialMenu()
-        }
-
-        return StateTransition.stayInCurrent(
-            "Digite 'voltar' para ver outras categorias ou 'menu' para o menu principal"
+    getResponse(): string {
+        const faqOptions: MenuOption[] = this.items.map((item, index) => ({
+            key: (index + 1).toString(),
+            label: `${item.question}\n${item.answer}`,
+        }))
+        return this.formatMenuOptions(
+            [
+                { key: 'categories', label: 'Voltar para categorias' },
+                { key: 'menu', label: 'Menu principal' },
+            ].concat(faqOptions)
         )
-    }
-
-    getStateInfo(): StateInfo {
-        return {
-            name: 'faq_items',
-            requiresExternalData: false,
-            nextPossibleStates: ['faq_categories', 'initial_menu'],
-        }
-    }
-
-    getMenuOptions(): MenuOption[] {
-        return [
-            { key: '0', label: 'Voltar para categorias' },
-            { key: 'menu', label: 'Menu principal' },
-        ]
-    }
-
-    getFAQContent(): string {
-        let content = `*${this.categoryName}*\n\n`
-        this.items.forEach((item, index) => {
-            content += `*${index + 1}. ${item.question}*\n`
-            content += `${item.answer}\n\n`
-        })
-        return content
     }
 }

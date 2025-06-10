@@ -40,7 +40,7 @@ export class AIChatState extends ConversationState {
         )
     }
 
-    getMenuOptions(): MenuOption[] {
+    getResponse(): MenuOption[] {
         return this.departments.map((dept, index) => ({
             key: (index + 1).toString(),
             label: dept.name,

@@ -1,8 +1,8 @@
 import { Conversation } from '@/domain/entities/conversation'
-import { ConversationState } from './conversation-state'
-import { MenuOption, StateInfo } from '../../@types'
-import { StateTransition } from './state-transition'
 import { FAQCategory } from '@/domain/entities/faq'
+import { MenuOption } from '../../@types'
+import { ConversationState } from './conversation-state'
+import { StateTransition } from './state-transition'
 
 export class FAQCategoriesState extends ConversationState {
     constructor(
@@ -13,45 +13,33 @@ export class FAQCategoriesState extends ConversationState {
     }
 
     handleMessage(messageContent: string): StateTransition {
-        const selectedCategory = this.findCategoryByMessage(messageContent)
+        console.log('FAQCategoriesState')
+        console.log('messageContent')
+        console.log(messageContent)
 
-        if (selectedCategory) {
-            return StateTransition.toFAQItems(selectedCategory)
+        if (messageContent === 'Menu principal') {
+            return StateTransition.toInitialMenu()
         }
 
-        return StateTransition.stayInCurrent('Categoria não encontrada')
-    }
-
-    private findCategoryByMessage(message: string): string | null {
-        const normalized = message.toLowerCase().trim()
-        const categoryNames = this.categories.map(category => category.name)
-
-        // Try by number first
-        const numberMatch = normalized.match(/^\d+$/)
-        if (numberMatch) {
-            const index = Number.parseInt(numberMatch[0]) - 1
-            return categoryNames[index] || null
-        }
-
-        // Try by name
-        const category = this.categories.find(cat =>
-            cat.name.toLowerCase().includes(normalized)
+        const correspondingCategory = this.categories.find(
+            category => category.name === messageContent
         )
-        return category?.name || null
-    }
 
-    getMenuOptions(): MenuOption[] {
-        return this.categories.map((category, index) => ({
-            key: (index + 1).toString(),
-            label: category.name,
-        }))
-    }
-
-    getStateInfo(): StateInfo {
-        return {
-            name: 'faq_categories',
-            requiresExternalData: false, // Dados já foram carregados
-            nextPossibleStates: ['faq_items', 'initial_menu'],
+        if (!correspondingCategory) {
+            return StateTransition.stayInCurrent()
         }
+
+        return StateTransition.toFAQItems(correspondingCategory.name)
+    }
+
+    getResponse(): string {
+        return this.formatMenuOptions(
+            this.categories
+                .map((category, index) => ({
+                    key: (index + 1).toString(),
+                    label: category.name,
+                }))
+                .concat([{ key: 'menu', label: 'Menu principal' }])
+        )
     }
 }

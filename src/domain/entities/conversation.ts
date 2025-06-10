@@ -3,11 +3,7 @@ import { Client } from './client'
 import type { Message } from './message'
 import { ConversationState } from '../whats-app/application/states/conversation-state'
 import { InitialMenuState } from '../whats-app/application/states/initial-menu-state'
-import {
-    MenuOption,
-    MessageProcessingResult,
-    ResponseData,
-} from '../whats-app/@types'
+import { MenuOption } from '../whats-app/@types'
 import { StateTransition } from '../whats-app/application/states/state-transition'
 
 export type ConversationProps = {
@@ -42,56 +38,28 @@ export class Conversation extends Entity<ConversationProps> {
             id
         )
 
-        conversation.currentState = new InitialMenuState(conversation)
+        conversation.props.currentState = new InitialMenuState(conversation)
 
         return conversation
     }
 
-    // Método principal para processar mensagens
-    processMessage(messageContent: string): MessageProcessingResult {
-        // A entidade delega para o estado atual
+    processMessage(messageContent: string) {
+        console.log('processMessage')
+        console.log('currentState')
+        console.log(this.currentState)
+
         const transition = this.currentState.handleMessage(messageContent)
 
-        return {
-            transition,
-            currentStateInfo: this.currentState.getStateInfo(),
-            requiresExternalData: !!transition.requiresExternalData,
-            responseData: this.buildResponse(transition),
-        }
+        return transition
     }
 
-    // Método para transição de estado (chamado pelo Service após obter dados externos)
     transitionToState(newState: ConversationState): void {
-        this.currentState = newState
+        this.props.currentState = newState
         this.props.lastStateChange = new Date()
-    }
-
-    getCurrentMenuOptions(): MenuOption[] {
-        return this.currentState.getMenuOptions()
-    }
-
-    private buildResponse(transition: StateTransition): ResponseData {
-        if (transition.type === 'stay_current') {
-            return {
-                message:
-                    transition.message ||
-                    'Opção não reconhecida. Tente novamente:',
-                options: this.getCurrentMenuOptions(),
-            }
-        }
-
-        return {
-            message: transition.message || 'Processando...',
-            requiresDataFetch: !!transition.requiresExternalData,
-        }
     }
 
     get client() {
         return this.props.client
-    }
-
-    get currentStateName() {
-        return this.currentState.getStateInfo().name
     }
 
     get startedAt() {
@@ -120,13 +88,5 @@ export class Conversation extends Entity<ConversationProps> {
 
     get currentState() {
         return this.props.currentState
-    }
-
-    set currentState(state: ConversationState) {
-        this.props.currentState = state
-    }
-
-    set lastStateChange(value: Date) {
-        this.props.lastStateChange = value
     }
 }

@@ -7,12 +7,7 @@ import { ConversationRepository } from '@/domain/repositories/conversation-repos
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { FAQRepository } from '@/domain/repositories/faq-repository'
 import { MessageRepository } from '@/domain/repositories/message-repository'
-import {
-    DepartmentValidation,
-    MenuOption,
-    MessageProcessingResult,
-    WhatsAppResponse,
-} from '../../@types'
+import { MenuOption } from '../../@types'
 import { AIChatState } from '../states/ai-chat-state'
 import { DepartmentChatState } from '../states/department-chat-state'
 import { DepartmentSelectionState } from '../states/department-selection-state'
@@ -23,20 +18,21 @@ import { StateTransition } from '../states/state-transition'
 
 export class WhatsAppMessageService {
     constructor(
-        private conversationRepo: ConversationRepository,
-        public departmentRepo: DepartmentRepository,
-        public faqRepo: FAQRepository,
-        private messageRepo: MessageRepository,
-        private clientRepo: ClientRepository
+        private conversationRepository: ConversationRepository,
+        public departmentRepository: DepartmentRepository,
+        public faqRepository: FAQRepository,
+        private messageRepository: MessageRepository,
+        private clientRepository: ClientRepository
     ) {}
 
-    async processIncomingMessage(
-        clientPhone: string,
-        messageContent: string
-    ): Promise<WhatsAppResponse> {
-        // 1. Busca ou cria conversa
+    async processIncomingMessage(clientPhone: string, messageContent: string) {
+        console.log('\n\n\n\n\n\n\nprocessIncomingMessage')
+        console.log('messageContent', messageContent)
+
         let conversation =
-            await this.conversationRepo.findActiveByClientPhone(clientPhone)
+            await this.conversationRepository.findActiveByClientPhone(
+                clientPhone
+            )
 
         if (!conversation) {
             const client = await this.getOrCreateClient(clientPhone)
@@ -46,31 +42,34 @@ export class WhatsAppMessageService {
                 participants: [client],
                 messages: [],
             })
-            await this.conversationRepo.save(conversation)
+            await this.conversationRepository.save(conversation)
         }
 
-        // 2. Processa mensagem na entidade
+        await this.saveMessage(conversation, messageContent, 'client')
+        await this.conversationRepository.save(conversation)
+
         const result = conversation.processMessage(messageContent)
 
-        // 3. Se precisa de dados externos, busca e recria o estado
-        if (result.requiresExternalData) {
-            await this.handleExternalDataRequirement(
-                conversation,
-                result.transition
-            )
+        console.log('result')
+        console.log(result)
+
+        if (result.type === 'transition') {
+            await this.handleTransition(conversation, result)
         }
 
-        // 4. Salva mensagem e conversa
-        await this.saveMessage(conversation, messageContent, 'client')
-        await this.conversationRepo.save(conversation)
+        console.log('\nconversation')
+        console.log(conversation)
+        console.log(conversation.currentState.getResponse())
 
-        // 5. Prepara resposta
-        return this.buildWhatsAppResponse(conversation, result)
+        return {
+            to: conversation.client.phone,
+            message: conversation.currentState.getResponse(),
+        }
     }
 
     private async getOrCreateClient(phone: string): Promise<Client> {
         // Tenta buscar cliente existente
-        let client = await this.clientRepo.findByPhone(phone)
+        let client = await this.clientRepository.findByPhone(phone)
 
         if (!client) {
             // Cria novo cliente
@@ -80,7 +79,7 @@ export class WhatsAppMessageService {
                 department: '',
                 event_history: [],
             })
-            await this.clientRepo.save(client)
+            await this.clientRepository.save(client)
         }
 
         return client
@@ -98,141 +97,61 @@ export class WhatsAppMessageService {
             content,
         })
 
-        await this.messageRepo.save(message)
+        await this.messageRepository.save(message)
 
         return message
     }
 
-    private async handleExternalDataRequirement(
+    private async handleTransition(
         conversation: Conversation,
         transition: StateTransition
-    ): Promise<void> {
-        // Using 2 'switch' statements to satisfy TypeScript and BiomeJS, and still not cause runtime errors
+    ) {
+        console.log('\n\nhandleTransition')
+        // console.log("conversation")
+        // console.log(conversation)
+        console.log('transition')
+        console.log(transition)
+
         switch (transition.targetState) {
-            case 'faq_categories':
-                const categories = await this.faqRepo.findCategories()
-                if (categories.length > 0) {
-                    const faqCatState = new FAQCategoriesState(
-                        conversation,
-                        categories
-                    )
-                    conversation.transitionToState(faqCatState)
-                } else {
-                    const initialState = new InitialMenuState(conversation)
-                    conversation.transitionToState(initialState)
-                }
-                break
-
-            case 'faq_items':
-                const categoryName = transition.data as string
-                const items =
-                    await this.faqRepo.findItemsByCategory(categoryName)
-                if (items.length > 0) {
-                    const faqItemsState = new FAQItemsState(
-                        conversation,
-                        categoryName,
-                        items
-                    )
-                    conversation.transitionToState(faqItemsState)
-                }
-                break
-
             case 'initial_menu':
-                const initialState = new InitialMenuState(conversation)
-                conversation.transitionToState(initialState)
+                conversation.transitionToState(
+                    new InitialMenuState(conversation)
+                )
+                break
+            case 'faq_categories':
+                const faqCategories = await this.faqRepository.findCategories()
+
+                conversation.transitionToState(
+                    new FAQCategoriesState(conversation, faqCategories)
+                )
+                break
+            case 'faq_items':
+                if (typeof transition.data !== 'string') {
+                    throw new Error('Invalid transition data')
+                }
+
+                const faqItems = await this.faqRepository.findItemsByCategory(
+                    transition.data
+                )
+
+                conversation.transitionToState(
+                    new FAQItemsState(conversation, transition.data, faqItems)
+                )
                 break
         }
 
-        const allDepartments = await this.departmentRepo.findAllActive()
+        const availableDepartments =
+            await this.departmentRepository.findAllActive()
 
         switch (transition.targetState) {
             case 'department_selection':
-                const departmentState = new DepartmentSelectionState(
-                    conversation,
-                    allDepartments
-                )
-                conversation.transitionToState(departmentState)
-                break
-
-            case 'department_validation':
-                // Primeiro busca os departamentos
-                const isValidDept = this.validateDepartmentSelection(
-                    transition.data as string,
-                    allDepartments
-                )
-
-                if (isValidDept.valid) {
-                    // Vai direto para o chat do departamento
-                    const deptChatState = new DepartmentChatState(
+                conversation.transitionToState(
+                    new DepartmentSelectionState(
                         conversation,
-                        isValidDept.department!
+                        availableDepartments
                     )
-                    conversation.transitionToState(deptChatState)
-                } else {
-                    // Vai para seleção de departamentos
-                    const departmentState = new DepartmentSelectionState(
-                        conversation,
-                        allDepartments
-                    )
-                    conversation.transitionToState(departmentState)
-                }
-                break
-
-            case 'ai_chat':
-                const aiChatState = new AIChatState(
-                    conversation,
-                    allDepartments
                 )
-                conversation.transitionToState(aiChatState)
                 break
         }
-    }
-
-    private validateDepartmentSelection(
-        message: string,
-        departments: Department[]
-    ): DepartmentValidation {
-        // Tenta por número
-        const numberMatch = message.match(/^\d+$/)
-        if (numberMatch) {
-            const index = Number.parseInt(numberMatch[0]) - 1
-            const dept = departments[index]
-            return { valid: !!dept, department: dept }
-        }
-
-        // Tenta por nome
-        const dept = departments.find(d =>
-            d.name.toLowerCase().includes(message.toLowerCase())
-        )
-
-        return { valid: !!dept, department: dept }
-    }
-
-    private buildWhatsAppResponse(
-        conversation: Conversation,
-        result: MessageProcessingResult
-    ): WhatsAppResponse {
-        let responseText = result.responseData.message
-
-        // Para FAQ items, inclui o conteúdo das perguntas e respostas
-        if (conversation.currentStateName === 'faq_items') {
-            const faqState = conversation.currentState as FAQItemsState
-            responseText = faqState.getFAQContent()
-        }
-
-        const options = conversation.getCurrentMenuOptions()
-        if (options.length > 0) {
-            responseText += `\n\n${this.formatMenuOptions(options)}`
-        }
-
-        return {
-            to: conversation.client.phone,
-            message: responseText,
-            conversation_id: conversation.id,
-        }
-    }
-
-    private formatMenuOptions(options: MenuOption[]): string {
-        return options.map(opt => `${opt.key} - ${opt.label}`).join('\n')
     }
 }

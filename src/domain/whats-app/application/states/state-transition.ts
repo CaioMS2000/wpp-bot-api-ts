@@ -1,8 +1,9 @@
+export type TransitionType = 'transition' | 'stay_current'
 export type StateTransitionProps = {
-    targetState: Nullable<string>
-    message: Nullable<string>
-    data: Nullable<any>
-    requiresExternalData: Nullable<boolean>
+    targetState?: Nullable<string>
+    message?: Nullable<string>
+    data?: Nullable<any>
+    requiresExternalData?: Nullable<boolean>
 }
 
 const defaultStateTransitionProps: StateTransitionProps = {
@@ -14,7 +15,7 @@ const defaultStateTransitionProps: StateTransitionProps = {
 
 export class StateTransition {
     constructor(
-        public type: 'transition' | 'stay_current',
+        public type: TransitionType,
         public stateTransitionProps: Partial<StateTransitionProps> = defaultStateTransitionProps
     ) {
         this.stateTransitionProps = {
@@ -92,7 +93,7 @@ export class StateTransition {
         })
     }
 
-    static stayInCurrent(message: string): StateTransition {
+    static stayInCurrent(message: Nullable<string> = null): StateTransition {
         return new StateTransition('stay_current', { message })
     }
 }
