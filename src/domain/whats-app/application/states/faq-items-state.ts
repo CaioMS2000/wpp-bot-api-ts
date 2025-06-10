@@ -29,4 +29,12 @@ export class FAQItemsState extends ConversationState {
             ].concat(faqOptions)
         )
     }
+
+    shouldAutoTransition(): boolean {
+        return true
+    }
+
+    getAutoTransition(): StateTransition {
+        return StateTransition.toFAQCategories()
+    }
 }

@@ -15,4 +15,12 @@ export abstract class ConversationState {
     protected formatMenuOptions(options: MenuOption[]): string {
         return options.map(opt => `${opt.key} - ${opt.label}`).join('\n')
     }
+
+    shouldAutoTransition(): boolean {
+        return false
+    }
+
+    getAutoTransition(): Nullable<StateTransition> {
+        return null
+    }
 }

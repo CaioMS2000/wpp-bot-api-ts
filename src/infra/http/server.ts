@@ -1,7 +1,30 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { Department } from '@/domain/entities/department'
 import { WhatsAppMessageServiceFactory } from '../factory/whats-app-message-service-factory'
 import { app } from './app'
 import { receiveMessage } from './routes/message/receive-message'
+
+// Função para encontrar a raiz do projeto procurando por package.json
+function findProjectRoot(currentDir: string): string {
+    const rootMarkers = ['package.json', '.git']
+    let dir = currentDir
+
+    while (dir !== path.parse(dir).root) {
+        for (const marker of rootMarkers) {
+            if (fs.existsSync(path.join(dir, marker))) {
+                return dir
+            }
+        }
+        dir = path.dirname(dir) // Move para o diretório pai
+    }
+
+    // Se não encontrou, retorna o diretório atual como fallback
+    return currentDir
+}
+
+const projectRoot = findProjectRoot(__dirname)
+const outputPath = path.join(projectRoot, 'response.json')
 
 const whatsAppMessageService = WhatsAppMessageServiceFactory.create()
 
@@ -60,6 +83,10 @@ async function sendMessage(message: string) {
         console.log('\n\nrequest response:')
         console.log(data)
 
+        // Escreve na raiz do projeto
+        fs.writeFileSync(outputPath, JSON.stringify(data, null, 2), 'utf-8')
+        // console.log(`Resposta salva em ${outputPath}`)
+
         return data
     } catch (error) {
         console.error(error)
@@ -81,9 +108,17 @@ async function main() {
 
     await sendMessage('suporte')
 
-    await new Promise(resolve => setTimeout(resolve, 1000 * 5))
+    await new Promise(resolve => setTimeout(resolve, 1000 * 2))
 
     await sendMessage('Menu principal')
+
+    await new Promise(resolve => setTimeout(resolve, 1000 * 1))
+
+    await sendMessage('2')
+
+    await new Promise(resolve => setTimeout(resolve, 1000 * 1))
+
+    await sendMessage('Departamento de TI')
 }
 
 main()

@@ -13,15 +13,33 @@ export class DepartmentSelectionState extends ConversationState {
     }
 
     handleMessage(messageContent: string): StateTransition {
-        throw new Error('Method not implemented.')
+        console.log('\n\nmessageContent')
+        console.log(messageContent)
+        console.log('available departments')
+        console.log(this.departments)
+
+        const correspondingDepartment = this.departments.find(
+            dept => dept.name === messageContent
+        )
+
+        console.log('correspondingDepartment')
+        console.log(correspondingDepartment)
+
+        if (correspondingDepartment) {
+            return StateTransition.toDepartmentChat(messageContent)
+        }
+
+        return StateTransition.stayInCurrent()
     }
 
     getResponse(): string {
         return this.formatMenuOptions(
-            this.departments.map((dept, index) => ({
-                key: (index + 1).toString(),
-                label: dept.name,
-            }))
+            this.departments
+                .map((dept, index) => ({
+                    key: (index + 1).toString(),
+                    label: dept.name,
+                }))
+                .concat([{ key: 'menu', label: 'Menu principal' }])
         )
     }
 }

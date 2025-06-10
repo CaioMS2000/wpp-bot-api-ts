@@ -48,6 +48,7 @@ export class WhatsAppMessageService {
         await this.saveMessage(conversation, messageContent, 'client')
         await this.conversationRepository.save(conversation)
 
+        const messages: string[] = []
         const result = conversation.processMessage(messageContent)
 
         console.log('result')
@@ -61,9 +62,20 @@ export class WhatsAppMessageService {
         console.log(conversation)
         console.log(conversation.currentState.getResponse())
 
+        messages.push(conversation.currentState.getResponse())
+
+        if (conversation.currentState.shouldAutoTransition()) {
+            const autoTransition = conversation.currentState.getAutoTransition()
+            if (autoTransition && autoTransition.type === 'transition') {
+                await this.handleTransition(conversation, autoTransition)
+                // Captura a segunda resposta
+                messages.push(conversation.currentState.getResponse())
+            }
+        }
+
         return {
             to: conversation.client.phone,
-            message: conversation.currentState.getResponse(),
+            messages,
         }
     }
 
@@ -150,6 +162,23 @@ export class WhatsAppMessageService {
                         conversation,
                         availableDepartments
                     )
+                )
+                break
+            case 'department_chat':
+                if (typeof transition.data !== 'string') {
+                    throw new Error('Invalid transition data')
+                }
+
+                const department = availableDepartments.find(
+                    department => department.name === transition.data
+                )
+
+                if (!department) {
+                    throw new Error('Department not found')
+                }
+
+                conversation.transitionToState(
+                    new DepartmentChatState(conversation, department)
                 )
                 break
         }
