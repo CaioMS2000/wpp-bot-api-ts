@@ -1,83 +1,98 @@
+export type StateTransitionProps = {
+    targetState: Nullable<string>
+    message: Nullable<string>
+    data: Nullable<any>
+    requiresExternalData: Nullable<boolean>
+}
+
+const defaultStateTransitionProps: StateTransitionProps = {
+    targetState: null,
+    message: null,
+    data: null,
+    requiresExternalData: false,
+}
+
 export class StateTransition {
     constructor(
         public type: 'transition' | 'stay_current',
-        public targetState: Nullable<string>,
-        public message: Nullable<string>,
-        public data: Nullable<any>,
-        public requiresExternalData = false
-    ) {}
+        public stateTransitionProps: Partial<StateTransitionProps> = defaultStateTransitionProps
+    ) {
+        this.stateTransitionProps = {
+            ...defaultStateTransitionProps,
+            ...stateTransitionProps,
+        }
+    }
+
+    get targetState() {
+        return this.stateTransitionProps.targetState
+    }
+
+    get message() {
+        return this.stateTransitionProps.message
+    }
+
+    get data() {
+        return this.stateTransitionProps.data
+    }
+
+    get requiresExternalData() {
+        return this.stateTransitionProps.requiresExternalData
+    }
 
     static toAIChat(): StateTransition {
-        return new StateTransition(
-            'transition',
-            'ai_chat',
-            'Conectando com IA...',
-            null,
-            false
-        )
+        return new StateTransition('transition', {
+            targetState: 'ai_chat',
+            message: 'Conectando com IA...',
+        })
     }
 
     static toFAQCategories(): StateTransition {
-        return new StateTransition(
-            'transition',
-            'faq_categories',
-            'Carregando categorias...',
-            null,
-            true
-        )
+        return new StateTransition('transition', {
+            targetState: 'faq_categories',
+            message: 'Carregando categorias...',
+            requiresExternalData: true,
+        })
     }
 
     static toFAQItems(categoryName: string): StateTransition {
-        return new StateTransition(
-            'transition',
-            'faq_items',
-            null,
-            categoryName,
-            false
-        )
+        return new StateTransition('transition', {
+            targetState: 'faq_items',
+            data: categoryName,
+        })
     }
 
     static toInitialMenu(): StateTransition {
-        return new StateTransition(
-            'transition',
-            'initial_menu',
-            'Voltando ao menu principal...',
-            null,
-            false
-        )
+        return new StateTransition('transition', {
+            targetState: 'initial_menu',
+            message: 'Voltando ao menu principal...',
+        })
     }
 
     static toDepartmentValidation(message: string): StateTransition {
-        return new StateTransition(
-            'transition',
-            'department_validation',
-            null,
+        return new StateTransition('transition', {
+            targetState: 'department_validation',
             message,
-            true
-        )
+            requiresExternalData: true,
+        })
     }
 
     static toDepartmentSelection(): StateTransition {
-        return new StateTransition(
-            'transition',
-            'department_selection',
-            'Carregando departamentos...',
-            null,
-            true
-        )
+        return new StateTransition('transition', {
+            targetState: 'department_selection',
+            message: 'Carregando departamentos...',
+            requiresExternalData: true,
+        })
     }
 
     static toDepartmentChat(departmentName: string): StateTransition {
-        return new StateTransition(
-            'transition',
-            'department_chat',
-            `Conectando com ${departmentName}...`,
-            departmentName,
-            false
-        )
+        return new StateTransition('transition', {
+            targetState: 'department_chat',
+            message: `Conectando com ${departmentName}...`,
+            data: departmentName,
+        })
     }
 
     static stayInCurrent(message: string): StateTransition {
-        return new StateTransition('stay_current', null, message, null, false)
+        return new StateTransition('stay_current', { message })
     }
 }

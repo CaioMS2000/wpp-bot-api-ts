@@ -6,24 +6,37 @@ import { z } from 'zod'
 type Resources = {
     whatsAppMessageService: WhatsAppMessageService
 }
+
+const receiveMessageBodySchema = z.union([
+    z
+        .object({
+            'client-phone': z.string().min(3),
+            'message-content': z.string().min(3),
+        })
+        .transform(data => ({
+            clientPhone: data['client-phone'],
+            messageContent: data['message-content'],
+        })),
+    z.object({
+        clientPhone: z.string().min(3),
+        messageContent: z.string().min(3),
+    }),
+])
+
 export async function receiveMessage(
     app: FastifyInstance,
     resources: Resources
 ) {
     app.withTypeProvider<ZodTypeProvider>().post('/message', {
-        // schema: {
-        // body: z.object({
-        //     name: z.string().min(3),
-        //     email: z.string().email(),
-        //     password: z.string().min(6),
-        // }),
-        // response: {
-        //     201: z.object({
-        //         id: z.string().uuid(),
-        //         email: z.string().email(),
-        //     }),
-        // },
-        // },
+        schema: {
+            body: receiveMessageBodySchema,
+            // response: {
+            //     201: z.object({
+            //         id: z.string().uuid(),
+            //         email: z.string().email(),
+            //     }),
+            // },
+        },
         handler: async (req, reply) => {
             // const { email, password, name } = req.body
             // return reply.status(201).send({ email, password, name })

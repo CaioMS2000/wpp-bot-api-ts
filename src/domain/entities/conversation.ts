@@ -55,7 +55,7 @@ export class Conversation extends Entity<ConversationProps> {
         return {
             transition,
             currentStateInfo: this.currentState.getStateInfo(),
-            requiresExternalData: transition.requiresExternalData,
+            requiresExternalData: !!transition.requiresExternalData,
             responseData: this.buildResponse(transition),
         }
     }
@@ -82,7 +82,7 @@ export class Conversation extends Entity<ConversationProps> {
 
         return {
             message: transition.message || 'Processando...',
-            requiresDataFetch: transition.requiresExternalData,
+            requiresDataFetch: !!transition.requiresExternalData,
         }
     }
 
