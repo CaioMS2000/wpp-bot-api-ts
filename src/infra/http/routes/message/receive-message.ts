@@ -18,8 +18,8 @@ const receiveMessageBodySchema = z.union([
             messageContent: data['message-content'],
         })),
     z.object({
-        clientPhone: z.string().min(3),
-        messageContent: z.string().min(3),
+        clientPhone: z.string().min(10),
+        messageContent: z.string(),
     }),
 ])
 

@@ -24,8 +24,8 @@ import { StateTransition } from '../states/state-transition'
 export class WhatsAppMessageService {
     constructor(
         private conversationRepo: ConversationRepository,
-        private departmentRepo: DepartmentRepository,
-        private faqRepo: FAQRepository,
+        public departmentRepo: DepartmentRepository,
+        public faqRepo: FAQRepository,
         private messageRepo: MessageRepository,
         private clientRepo: ClientRepository
     ) {}
