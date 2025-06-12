@@ -48,9 +48,13 @@ temp/
 *.tsbuildinfo
 
 # files
+.venv
 write_files.py
 notes.txt
 tree.txt
 command.txt
 arquivos.txt
 response.json
+ddd.md
+temp.md
+watch.py

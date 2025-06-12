@@ -3,10 +3,10 @@
   "extends": [
     "node_modules/@caioms/biomejs-config/biome.json"
   ],
-  "linter":{
-    "rules":{
-      "correctness":{
-        "noSwitchDeclarations":"off"
+  "linter": {
+    "rules": {
+      "correctness": {
+        "noSwitchDeclarations": "off"
       }
     }
   }

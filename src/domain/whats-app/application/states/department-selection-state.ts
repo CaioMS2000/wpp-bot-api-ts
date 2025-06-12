@@ -26,7 +26,8 @@ export class DepartmentSelectionState extends ConversationState {
         console.log(correspondingDepartment)
 
         if (correspondingDepartment) {
-            return StateTransition.toDepartmentChat(messageContent)
+            // return StateTransition.toDepartmentChat(messageContent)
+            return StateTransition.toDepartmentQueue(messageContent)
         }
 
         return StateTransition.stayInCurrent()

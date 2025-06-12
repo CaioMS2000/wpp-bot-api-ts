@@ -85,6 +85,14 @@ export class StateTransition {
         })
     }
 
+    static toDepartmentQueue(departmentName: string): StateTransition {
+        return new StateTransition('transition', {
+            targetState: 'department_queue',
+            message: `['message' param]Você está na fila de espera de ${departmentName}, em breve um atendente entrará em contato. Caso queira sair da fila de espera, digite "sair".`,
+            data: departmentName,
+        })
+    }
+
     static toDepartmentChat(departmentName: string): StateTransition {
         return new StateTransition('transition', {
             targetState: 'department_chat',

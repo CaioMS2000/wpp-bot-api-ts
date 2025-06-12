@@ -10,6 +10,7 @@ import { MessageRepository } from '@/domain/repositories/message-repository'
 import { MenuOption } from '../../@types'
 import { AIChatState } from '../states/ai-chat-state'
 import { DepartmentChatState } from '../states/department-chat-state'
+import { DepartmentQueueState } from '../states/department-queue-state'
 import { DepartmentSelectionState } from '../states/department-selection-state'
 import { FAQCategoriesState } from '../states/faq-categories-state'
 import { FAQItemsState } from '../states/faq-items-state'
@@ -164,7 +165,7 @@ export class WhatsAppMessageService {
                     )
                 )
                 break
-            case 'department_chat':
+            case 'department_chat': {
                 if (typeof transition.data !== 'string') {
                     throw new Error('Invalid transition data')
                 }
@@ -181,6 +182,25 @@ export class WhatsAppMessageService {
                     new DepartmentChatState(conversation, department)
                 )
                 break
+            }
+            case 'department_queue': {
+                if (typeof transition.data !== 'string') {
+                    throw new Error('Invalid transition data')
+                }
+
+                const department = availableDepartments.find(
+                    department => department.name === transition.data
+                )
+
+                if (!department) {
+                    throw new Error('Department not found')
+                }
+
+                conversation.transitionToState(
+                    new DepartmentQueueState(conversation, department)
+                )
+                break
+            }
         }
     }
 }
