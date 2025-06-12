@@ -44,10 +44,6 @@ export class Conversation extends Entity<ConversationProps> {
     }
 
     processMessage(messageContent: string) {
-        console.log('processMessage')
-        console.log('currentState')
-        console.log(this.currentState)
-
         const transition = this.currentState.handleMessage(messageContent)
 
         return transition

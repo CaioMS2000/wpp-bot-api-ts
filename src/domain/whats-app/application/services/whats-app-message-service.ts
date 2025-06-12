@@ -1,3 +1,4 @@
+import { OutputPort } from '@/core/output/output-port'
 import { Client } from '@/domain/entities/client'
 import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
@@ -19,6 +20,7 @@ import { StateTransition } from '../states/state-transition'
 
 export class WhatsAppMessageService {
     constructor(
+        private outputPort: OutputPort,
         private conversationRepository: ConversationRepository,
         public departmentRepository: DepartmentRepository,
         public faqRepository: FAQRepository,
@@ -27,8 +29,9 @@ export class WhatsAppMessageService {
     ) {}
 
     async processIncomingMessage(clientPhone: string, messageContent: string) {
+        console.clear()
         console.log('\n\n\n\n\n\n\nprocessIncomingMessage')
-        console.log('messageContent', messageContent)
+        console.log(`message content: ${messageContent}`)
 
         let conversation =
             await this.conversationRepository.findActiveByClientPhone(
@@ -50,34 +53,54 @@ export class WhatsAppMessageService {
         await this.conversationRepository.save(conversation)
 
         const messages: string[] = []
-        const result = conversation.processMessage(messageContent)
 
-        console.log('result')
-        console.log(result)
+        console.log(
+            `I'll proccess message using this state: ${conversation.currentState.constructor.name}`
+        )
+        const result = conversation.processMessage(messageContent)
 
         if (result.type === 'transition') {
             await this.handleTransition(conversation, result)
         }
 
-        console.log('\nconversation')
+        console.log('\npost "handleTransition"\nconversation')
         console.log(conversation)
-        console.log(conversation.currentState.getResponse())
 
-        messages.push(conversation.currentState.getResponse())
+        // messages.push(conversation.currentState.getResponse())
+
+        // if (conversation.currentState.shouldAutoTransition()) {
+        //     const autoTransition = conversation.currentState.getAutoTransition()
+        //     if (autoTransition && autoTransition.type === 'transition') {
+        //         await this.handleTransition(conversation, autoTransition)
+        //         messages.push(conversation.currentState.getResponse())
+        //     }
+        // }
+
+        if (conversation.currentState.entryMessage) {
+            messages.push(conversation.currentState.entryMessage)
+        }
 
         if (conversation.currentState.shouldAutoTransition()) {
+            console.log("let's auto transit")
             const autoTransition = conversation.currentState.getAutoTransition()
             if (autoTransition && autoTransition.type === 'transition') {
                 await this.handleTransition(conversation, autoTransition)
-                // Captura a segunda resposta
-                messages.push(conversation.currentState.getResponse())
+
+                console.log(
+                    '\npost "handleTransition" for auto transit\nconversation'
+                )
+                console.log(conversation)
+
+                if (conversation.currentState.entryMessage) {
+                    messages.push(conversation.currentState.entryMessage)
+                }
             }
         }
 
-        return {
-            to: conversation.client.phone,
-            messages,
-        }
+        this.outputPort.handle({
+            input: messageContent,
+            outpuy: { to: conversation.client.phone, messages },
+        })
     }
 
     private async getOrCreateClient(phone: string): Promise<Client> {
@@ -119,7 +142,7 @@ export class WhatsAppMessageService {
         conversation: Conversation,
         transition: StateTransition
     ) {
-        console.log('\n\nhandleTransition')
+        console.log('\n\n"handleTransition" method')
         // console.log("conversation")
         // console.log(conversation)
         console.log('transition')

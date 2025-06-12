@@ -20,7 +20,7 @@ export class DepartmentQueueState extends ConversationState {
         return StateTransition.stayInCurrent()
     }
 
-    getResponse(): string {
-        return `[getResponse]Você está na fila de espera do ${this.department.name}, em breve um atendente entrará em contato. Caso queira sair da fila de espera, digite "sair".`
+    get entryMessage() {
+        return `Você está na fila de espera do ${this.department.name}, em breve um atendente entrará em contato. Caso queira sair da fila de espera, digite "sair".`
     }
 }

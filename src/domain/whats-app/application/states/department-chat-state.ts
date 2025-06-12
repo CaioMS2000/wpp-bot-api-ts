@@ -16,10 +16,7 @@ export class DepartmentChatState extends ConversationState {
         throw new Error('Method not implemented.')
     }
 
-    getResponse(): string {
-        return this.formatMenuOptions([
-            { key: 'menu', label: 'Voltar ao menu principal' },
-            { key: 'encerrar', label: 'Encerrar atendimento' },
-        ])
+    get entryMessage() {
+        return null
     }
 }

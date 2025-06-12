@@ -13,10 +13,6 @@ export class FAQCategoriesState extends ConversationState {
     }
 
     handleMessage(messageContent: string): StateTransition {
-        console.log('FAQCategoriesState')
-        console.log('messageContent')
-        console.log(messageContent)
-
         if (messageContent === 'Menu principal') {
             return StateTransition.toInitialMenu()
         }
@@ -32,7 +28,7 @@ export class FAQCategoriesState extends ConversationState {
         return StateTransition.toFAQItems(correspondingCategory.name)
     }
 
-    getResponse(): string {
+    get entryMessage() {
         return this.formatMenuOptions(
             this.categories
                 .map((category, index) => ({

@@ -45,12 +45,12 @@ export async function receiveMessage(
             // console.log('body')
             // console.log(req.body)
 
-            const res = await whatsAppMessageService.processIncomingMessage(
+            await whatsAppMessageService.processIncomingMessage(
                 req.body.clientPhone,
                 req.body.messageContent
             )
 
-            return reply.status(201).send(res)
+            return reply.status(201).send({ message: 'Messagege received' })
         },
     })
 }

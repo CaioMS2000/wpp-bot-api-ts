@@ -17,17 +17,12 @@ export class FAQItemsState extends ConversationState {
         throw new Error('Method not implemented.')
     }
 
-    getResponse(): string {
+    get entryMessage(): string {
         const faqOptions: MenuOption[] = this.items.map((item, index) => ({
             key: (index + 1).toString(),
             label: `${item.question}\n${item.answer}`,
         }))
-        return this.formatMenuOptions(
-            [
-                { key: 'categories', label: 'Voltar para categorias' },
-                { key: 'menu', label: 'Menu principal' },
-            ].concat(faqOptions)
-        )
+        return this.formatMenuOptions(faqOptions)
     }
 
     shouldAutoTransition(): boolean {

@@ -3,14 +3,10 @@ import { MenuOption } from '../../@types'
 import { StateTransition } from './state-transition'
 
 export abstract class ConversationState {
-    protected conversation: Conversation
-
-    constructor(conversation: Conversation) {
-        this.conversation = conversation
-    }
+    constructor(protected conversation: Conversation) {}
 
     abstract handleMessage(messageContent: string): StateTransition
-    abstract getResponse(): string
+    abstract entryMessage: Nullable<string>
 
     protected formatMenuOptions(options: MenuOption[]): string {
         return options.map(opt => `${opt.key} - ${opt.label}`).join('\n')

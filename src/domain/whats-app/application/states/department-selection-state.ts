@@ -13,11 +13,6 @@ export class DepartmentSelectionState extends ConversationState {
     }
 
     handleMessage(messageContent: string): StateTransition {
-        console.log('\n\nmessageContent')
-        console.log(messageContent)
-        console.log('available departments')
-        console.log(this.departments)
-
         const correspondingDepartment = this.departments.find(
             dept => dept.name === messageContent
         )
@@ -33,7 +28,7 @@ export class DepartmentSelectionState extends ConversationState {
         return StateTransition.stayInCurrent()
     }
 
-    getResponse(): string {
+    get entryMessage() {
         return this.formatMenuOptions(
             this.departments
                 .map((dept, index) => ({

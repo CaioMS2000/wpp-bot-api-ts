@@ -76,11 +76,15 @@ export async function interactionMock() {
 
     await sendMessage('2')
 
+    await new Promise(resolve => setTimeout(resolve, 1000 * 2))
+
+    await sendMessage('Menu principal')
+
     await new Promise(resolve => setTimeout(resolve, 1000 * 1))
 
     await sendMessage('Departamento de TI')
 
     await new Promise(resolve => setTimeout(resolve, 1000 * 1))
 
-    await sendMessage('Departamento de TI')
+    await sendMessage('alguma mensagem')
 }
