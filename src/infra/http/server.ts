@@ -1,8 +1,10 @@
+import path from 'node:path'
 import { Department } from '@/domain/entities/department'
 import { WhatsAppMessageServiceFactory } from '../factory/whats-app-message-service-factory'
 import { app } from './app'
 import { receiveMessage } from './routes/message/receive-message'
 import { interactionMock } from './interaction-mock'
+import { emptyJsonFile, findProjectRoot } from '@/utils/files'
 
 const whatsAppMessageService = WhatsAppMessageServiceFactory.create()
 
@@ -42,6 +44,10 @@ whatsAppMessageService.faqRepository.save(
 )
 
 app.register(receiveMessage, { whatsAppMessageService })
+
+const projectRoot = findProjectRoot(__dirname)
+const responseFilePath = path.join(projectRoot, 'response.json')
+emptyJsonFile(responseFilePath)
 
 async function main() {
     const serverAddress = await app.listen({ port: 3000 })

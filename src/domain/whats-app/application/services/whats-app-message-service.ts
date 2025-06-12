@@ -17,6 +17,7 @@ import { FAQCategoriesState } from '../states/faq-categories-state'
 import { FAQItemsState } from '../states/faq-items-state'
 import { InitialMenuState } from '../states/initial-menu-state'
 import { StateTransition } from '../states/state-transition'
+import { Employee } from '@/domain/entities/employee'
 
 export class WhatsAppMessageService {
     constructor(
@@ -33,13 +34,14 @@ export class WhatsAppMessageService {
         console.log('\n\n\n\n\n\n\nprocessIncomingMessage')
         console.log(`message content: ${messageContent}`)
 
+        let client = await this.getOrCreateClient(clientPhone)
         let conversation =
             await this.conversationRepository.findActiveByClientPhone(
                 clientPhone
             )
 
         if (!conversation) {
-            const client = await this.getOrCreateClient(clientPhone)
+            client = await this.getOrCreateClient(clientPhone)
             conversation = Conversation.create({
                 client,
                 agent: 'AI',
@@ -49,7 +51,11 @@ export class WhatsAppMessageService {
             await this.conversationRepository.save(conversation)
         }
 
-        await this.saveMessage(conversation, messageContent, 'client')
+        if (!client) {
+            throw new Error('Failed to create client')
+        }
+
+        await this.saveMessage(conversation, messageContent, 'client', client)
         await this.conversationRepository.save(conversation)
 
         const messages: string[] = []
@@ -65,16 +71,6 @@ export class WhatsAppMessageService {
 
         console.log('\npost "handleTransition"\nconversation')
         console.log(conversation)
-
-        // messages.push(conversation.currentState.getResponse())
-
-        // if (conversation.currentState.shouldAutoTransition()) {
-        //     const autoTransition = conversation.currentState.getAutoTransition()
-        //     if (autoTransition && autoTransition.type === 'transition') {
-        //         await this.handleTransition(conversation, autoTransition)
-        //         messages.push(conversation.currentState.getResponse())
-        //     }
-        // }
 
         if (conversation.currentState.entryMessage) {
             messages.push(conversation.currentState.entryMessage)
@@ -99,19 +95,20 @@ export class WhatsAppMessageService {
 
         this.outputPort.handle({
             input: messageContent,
-            outpuy: { to: conversation.client.phone, messages },
+            output: { to: conversation.client.phone, messages },
         })
     }
 
     private async getOrCreateClient(phone: string): Promise<Client> {
         // Tenta buscar cliente existente
+        console.log(`look for client with this phone: ${phone}`)
         let client = await this.clientRepository.findByPhone(phone)
 
         if (!client) {
             // Cria novo cliente
+            console.log('we need to create a new client')
             client = Client.create({
                 phone,
-                state: 'initial_menu',
                 department: '',
                 event_history: [],
             })
@@ -124,13 +121,15 @@ export class WhatsAppMessageService {
     private async saveMessage(
         conversation: Conversation,
         content: string,
-        from: 'client' | 'employee' | 'AI'
+        from: 'client' | 'employee' | 'AI',
+        sender: Client | Employee
     ): Promise<Message> {
         const message = Message.create({
             conversation,
             timestamp: new Date(),
             from,
             content,
+            sender,
         })
 
         await this.messageRepository.save(message)

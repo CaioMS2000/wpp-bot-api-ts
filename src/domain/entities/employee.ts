@@ -1,15 +1,15 @@
 import { Entity } from '@/core/entities/entity'
 
-export type ClientProps = {
+export type EmployeeProps = {
     phone: string
     department: Nullable<string>
     event_history: any[]
 }
 
-export class Client extends Entity<ClientProps> {
-    static create(props: ClientProps, id?: string) {
-        const client = new Client(props, id)
-        return client
+export class Employee extends Entity<EmployeeProps> {
+    static create(props: EmployeeProps, id?: string) {
+        const employee = new Employee(props, id)
+        return employee
     }
 
     get phone() {

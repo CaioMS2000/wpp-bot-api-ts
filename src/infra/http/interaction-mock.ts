@@ -1,26 +1,9 @@
+import { appendToJsonObject, findProjectRoot } from '@/utils/files'
 import fs from 'node:fs'
 import path from 'node:path'
 
-// Função para encontrar a raiz do projeto procurando por package.json
-function findProjectRoot(currentDir: string): string {
-    const rootMarkers = ['package.json', '.git']
-    let dir = currentDir
-
-    while (dir !== path.parse(dir).root) {
-        for (const marker of rootMarkers) {
-            if (fs.existsSync(path.join(dir, marker))) {
-                return dir
-            }
-        }
-        dir = path.dirname(dir) // Move para o diretório pai
-    }
-
-    // Se não encontrou, retorna o diretório atual como fallback
-    return currentDir
-}
-
 const projectRoot = findProjectRoot(__dirname)
-const outputPath = path.join(projectRoot, 'response.json')
+const responseFilePath = path.join(projectRoot, 'response.json')
 
 async function sendMessage(message: string) {
     try {
@@ -40,16 +23,10 @@ async function sendMessage(message: string) {
         console.log('\n\nrequest response:')
         console.log(data)
 
-        // Escreve na raiz do projeto
-        fs.writeFileSync(
-            outputPath,
-            JSON.stringify(
-                { ...(data as Record<string, unknown>), input: message },
-                null,
-                2
-            ),
-            'utf-8'
-        )
+        // appendToJsonObject(responseFilePath, {
+        //     ...(data as Record<string, unknown>),
+        //     input: message,
+        // })
 
         return data
     } catch (error) {
