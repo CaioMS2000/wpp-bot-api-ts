@@ -1,22 +1,22 @@
 import { OutputPort } from '@/core/output/output-port'
 import { Client } from '@/domain/entities/client'
 import { Conversation } from '@/domain/entities/conversation'
+import { Employee } from '@/domain/entities/employee'
 import { Message } from '@/domain/entities/message'
 import { ClientRepository } from '@/domain/repositories/client-repository'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
+import { EmployeeRepository } from '@/domain/repositories/employee-repository'
 import { FAQRepository } from '@/domain/repositories/faq-repository'
-import { MessageRepository } from '@/domain/repositories/message-repository'
-import { DepartmentChatState } from '../states/department-chat-state'
-import { DepartmentQueueState } from '../states/department-queue-state'
-import { DepartmentSelectionState } from '../states/department-selection-state'
+import { DepartmentChatState } from '../states/client-only/department-chat-state'
 import { FAQCategoriesState } from '../states/faq-categories-state'
 import { FAQItemsState } from '../states/faq-items-state'
 import { InitialMenuState } from '../states/initial-menu-state'
 import { StateTransition } from '../states/state-transition'
-import { Employee } from '@/domain/entities/employee'
-import { EmployeeRepository } from '@/domain/repositories/employee-repository'
-import { MessageHandler } from '../handler/message-handler'
+import { MessageHandler } from './message-handler'
+import { MessageRepository } from '@/domain/repositories/message-repository'
+import { DepartmentSelectionState } from '../states/client-only/department-selection-state'
+import { DepartmentQueueState } from '../states/client-only/department-queue-state'
 
 export class ClientMessageHandler extends MessageHandler {
     constructor(
@@ -49,9 +49,6 @@ export class ClientMessageHandler extends MessageHandler {
         if (!conversation) {
             conversation = Conversation.create({
                 client: user,
-                agent: 'AI',
-                participants: [user],
-                messages: [],
             })
             await this.conversationRepository.save(conversation)
         }

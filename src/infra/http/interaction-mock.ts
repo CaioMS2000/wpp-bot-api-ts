@@ -1,10 +1,3 @@
-import { appendToJsonObject, findProjectRoot } from '@/utils/files'
-import fs from 'node:fs'
-import path from 'node:path'
-
-const projectRoot = findProjectRoot(__dirname)
-const responseFilePath = path.join(projectRoot, 'response.json')
-
 async function sendMessage(message: string) {
     try {
         const response = await fetch('http://localhost:3000/message', {
@@ -22,11 +15,6 @@ async function sendMessage(message: string) {
 
         console.log('\n\nrequest response:')
         console.log(data)
-
-        // appendToJsonObject(responseFilePath, {
-        //     ...(data as Record<string, unknown>),
-        //     input: message,
-        // })
 
         return data
     } catch (error) {

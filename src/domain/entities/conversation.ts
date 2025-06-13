@@ -11,7 +11,7 @@ export type ConversationProps = {
     startedAt: Date
     endedAt: Nullable<Date>
     lastStateChange: Nullable<Date>
-    agent: 'employee' | 'AI'
+    agent: Nullable<'employee' | 'AI'>
     participants: any[]
     messages: Message[]
     currentState: ConversationState
@@ -19,21 +19,32 @@ export type ConversationProps = {
 
 export class Conversation extends Entity<ConversationProps> {
     static create(
-        props: Optional<
-            ConversationProps,
-            'startedAt' | 'endedAt' | 'currentState' | 'lastStateChange'
-        >,
+        props: RequireOnly<ConversationProps, 'client'>,
         id?: string
     ) {
         const temporaryState = null as unknown as ConversationState
         const state = props.currentState || temporaryState
+        const defaults: Pick<
+            ConversationProps,
+            | 'startedAt'
+            | 'lastStateChange'
+            | 'endedAt'
+            | 'agent'
+            | 'currentState'
+        > = {
+            startedAt: new Date(),
+            lastStateChange: new Date(),
+            endedAt: null,
+            agent: null,
+            currentState: state,
+        }
+
         const conversation = new Conversation(
             {
+                ...defaults,
                 ...props,
-                startedAt: props.startedAt ?? new Date(),
-                lastStateChange: props.lastStateChange ?? new Date(),
-                endedAt: props.endedAt ?? null,
-                currentState: state,
+                messages: props.messages ?? [],
+                participants: props.participants ?? [],
             },
             id
         )

@@ -1,8 +1,8 @@
 import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
-import { MenuOption } from '../../@types'
-import { ConversationState } from './conversation-state'
-import { StateTransition } from './state-transition'
+import { MenuOption } from '../../../@types'
+import { ConversationState } from '../conversation-state'
+import { StateTransition } from '../state-transition'
 
 export class DepartmentChatState extends ConversationState {
     constructor(
