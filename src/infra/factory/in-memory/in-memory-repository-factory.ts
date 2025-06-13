@@ -3,13 +3,13 @@ import { ConversationRepository } from '@/domain/repositories/conversation-repos
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { FAQRepository } from '@/domain/repositories/faq-repository'
 import { MessageRepository } from '@/domain/repositories/message-repository'
-import { InMemoryClientRepository } from '../database/repositories/in-memory/client-repository'
-import { InMemoryConversationRepository } from '../database/repositories/in-memory/conversation-repository'
-import { InMemoryDepartmentRepository } from '../database/repositories/in-memory/department-repository'
-import { InMemoryFAQRepository } from '../database/repositories/in-memory/faq-repository'
-import { InMemoryMessageRepository } from '../database/repositories/in-memory/message-repository'
+import { InMemoryClientRepository } from '../../database/repositories/in-memory/client-repository'
+import { InMemoryConversationRepository } from '../../database/repositories/in-memory/conversation-repository'
+import { InMemoryDepartmentRepository } from '../../database/repositories/in-memory/department-repository'
+import { InMemoryFAQRepository } from '../../database/repositories/in-memory/faq-repository'
+import { InMemoryMessageRepository } from '../../database/repositories/in-memory/message-repository'
 import { EmployeeRepository } from '@/domain/repositories/employee-repository'
-import { InMemoryEmployeeRepository } from '../database/repositories/in-memory/employee-repository'
+import { InMemoryEmployeeRepository } from '../../database/repositories/in-memory/employee-repository'
 
 export class InMemoryRepositoryFactory {
     static createClientRepository(): ClientRepository {

@@ -1,14 +1,14 @@
-import { WhatsAppMessageService } from '@/domain/whats-app/application/services/whats-app-message-service'
-import { InMemoryRepositoryFactory } from './in-memory-repository-factory'
 import { ConsoleOutputPort } from '@/core/output/console-output-port'
 import { FileOutputPort } from '@/core/output/file-output-port'
 import { OutputPort } from '@/core/output/output-port'
 import { MessageHandlerFactory } from '@/domain/whats-app/application/factory/message-handler-factory'
+import { WhatsAppMessageService } from '@/domain/whats-app/application/services/whats-app-message-service'
+import { InMemoryRepositoryFactory } from './in-memory-repository-factory'
 
 const currentOutputPort: OutputPort = new FileOutputPort()
 // const currentOutputPort: OutputPort = new ConsoleOutputPort()
 
-export class WhatsAppMessageServiceFactory {
+export class InMemoryWhatsAppMessageServiceFactory {
     static create() {
         const outputPort = currentOutputPort
         const conversationRepository =
