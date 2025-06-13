@@ -1,3 +1,15 @@
+import { env } from '@/env'
+import dayjs from 'dayjs'
+import 'dayjs/locale/pt-br' // importa o locale português do Brasil
+import localizedFormat from 'dayjs/plugin/localizedFormat'
+import timezone from 'dayjs/plugin/timezone'
+import utc from 'dayjs/plugin/utc'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
+dayjs.extend(localizedFormat)
+dayjs.locale('pt-br')
+
 export enum LogLevel {
     INFO = 'INFO',
     WARN = 'WARN',
@@ -7,7 +19,7 @@ export enum LogLevel {
 
 export class Logger {
     private getTimestamp(): string {
-        return new Date().toISOString()
+        return dayjs(new Date()).format('HH:mm:ss.SSS - YYYY-MM-DD')
     }
 
     private formatMessage(level: LogLevel, message: string): string {
@@ -30,8 +42,10 @@ export class Logger {
     }
 
     debug(message: string): void {
-        if (process.env.NODE_ENV !== 'production') {
+        if (env.MODE !== 'production') {
             console.debug(this.formatMessage(LogLevel.DEBUG, message))
         }
     }
 }
+
+export const logger: Logger = new Logger()

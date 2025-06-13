@@ -6,6 +6,7 @@ import { receiveMessage } from './routes/message/receive-message'
 import { interactionMock } from './interaction-mock'
 import { emptyJsonFile, findProjectRoot } from '@/utils/files'
 import { Employee } from '@/domain/entities/employee'
+import { logger } from '@/core/logger'
 
 const whatsAppMessageService = WhatsAppMessageServiceFactory.create()
 
@@ -61,7 +62,8 @@ async function main() {
     const serverAddress = await app.listen({ port: 3000 })
 
     console.clear()
-    console.log(`Server running on -> ${serverAddress}`)
+    // console.log(`Server running on -> ${serverAddress}`)
+    logger.info(`Server running on -> ${serverAddress}`)
 
     await interactionMock()
 }

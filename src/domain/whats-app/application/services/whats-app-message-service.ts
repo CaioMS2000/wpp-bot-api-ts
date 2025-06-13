@@ -8,8 +8,8 @@ import { MessageRepository } from '@/domain/repositories/message-repository'
 import { Employee } from '@/domain/entities/employee'
 import { EmployeeRepository } from '@/domain/repositories/employee-repository'
 import { MessageHandler } from '../handler/message-handler'
-import { ClientMessageHandler } from '../handler/client-message-handler'
 import { MessageHandlerFactory } from '../factory/message-handler-factory'
+import { logger } from '@/core/logger'
 
 export class WhatsAppMessageService {
     private messageHandlers: Record<string, MessageHandler>
@@ -28,21 +28,23 @@ export class WhatsAppMessageService {
     }
 
     async processIncomingMessage(phone: string, messageContent: string) {
-        console.clear()
-        console.log('\n\n\n\n\n\n\nprocessIncomingMessage')
-        console.log(`message content: ${messageContent}`)
+        // console.clear()
+        logger.info(`\n\n\n\n\n\n\nProcessing new message from ${phone}`)
+        logger.debug(`Message content: ${messageContent}`)
 
         const user = await this.identifyUser(phone)
         const messageHandler = this.getHandlerForUser(user)
+
         await messageHandler.process(user, messageContent)
+        logger.info('Message processed successfully')
     }
 
     private async getOrCreateClient(phone: string): Promise<Client> {
-        console.log(`look for client with this phone: ${phone}`)
+        logger.debug(`Looking for client with phone: ${phone}`)
         let client = await this.clientRepository.findByPhone(phone)
 
         if (!client) {
-            console.log('we need to create a new client')
+            logger.info(`Creating new client for phone: ${phone}`)
             client = Client.create({
                 phone,
                 department: '',
@@ -55,12 +57,19 @@ export class WhatsAppMessageService {
     }
 
     private async getEmployee(phone: string): Promise<Nullable<Employee>> {
-        console.log(`look for employee with this phone: ${phone}`)
+        logger.debug(`Looking for employee with phone: ${phone}`)
+
         const employee = await this.employeeRepository.findByPhone(phone)
+
+        if (employee) {
+            logger.debug(`Employee found: ${employee.id}`)
+        }
 
         return employee
     }
     private initializeMessageHandlers(): Record<string, MessageHandler> {
+        logger.debug('Initializing message handlers')
+
         return {
             clientMessageHandler:
                 this.messageHandlerFactory.createClientMessageHandler(),
@@ -70,20 +79,34 @@ export class WhatsAppMessageService {
     }
 
     private async identifyUser(phone: string): Promise<Client | Employee> {
+        logger.debug(`Identifying user type for phone: ${phone}`)
+
         const employee = await this.getEmployee(phone)
-        if (employee) return employee
+
+        if (employee) {
+            logger.debug('User identified as employee')
+            return employee
+        }
+
+        logger.debug('User identified as client')
 
         return this.getOrCreateClient(phone)
     }
 
     private getHandlerForUser(user: Client | Employee): MessageHandler {
         if (this.isClient(user)) {
+            logger.debug('Using client message handler')
+
             return this.messageHandlers.clientMessageHandler
         }
 
         if (this.isEmployee(user)) {
+            logger.debug('Using employee message handler')
+
             return this.messageHandlers.employeeMessageHandler
         }
+
+        logger.error(`Invalid user type: ${typeof user}`)
 
         throw new Error('Invalid user type')
     }
