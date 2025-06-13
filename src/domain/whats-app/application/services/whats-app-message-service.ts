@@ -1,26 +1,19 @@
 import { OutputPort } from '@/core/output/output-port'
 import { Client } from '@/domain/entities/client'
-import { Conversation } from '@/domain/entities/conversation'
-import { Department } from '@/domain/entities/department'
-import { Message } from '@/domain/entities/message'
 import { ClientRepository } from '@/domain/repositories/client-repository'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { FAQRepository } from '@/domain/repositories/faq-repository'
 import { MessageRepository } from '@/domain/repositories/message-repository'
-import { MenuOption } from '../../@types'
-import { AIChatState } from '../states/ai-chat-state'
-import { DepartmentChatState } from '../states/department-chat-state'
-import { DepartmentQueueState } from '../states/department-queue-state'
-import { DepartmentSelectionState } from '../states/department-selection-state'
-import { FAQCategoriesState } from '../states/faq-categories-state'
-import { FAQItemsState } from '../states/faq-items-state'
-import { InitialMenuState } from '../states/initial-menu-state'
-import { StateTransition } from '../states/state-transition'
 import { Employee } from '@/domain/entities/employee'
 import { EmployeeRepository } from '@/domain/repositories/employee-repository'
+import { MessageHandler } from '../handler/message-handler'
+import { ClientMessageHandler } from '../handler/client-message-handler'
+import { MessageHandlerFactory } from '../factory/message-handler-factory'
 
 export class WhatsAppMessageService {
+    private messageHandlers: Record<string, MessageHandler>
+
     constructor(
         private outputPort: OutputPort,
         private conversationRepository: ConversationRepository,
@@ -28,80 +21,20 @@ export class WhatsAppMessageService {
         public faqRepository: FAQRepository,
         private messageRepository: MessageRepository,
         private clientRepository: ClientRepository,
-        public employeeRepository: EmployeeRepository
-    ) {}
+        public employeeRepository: EmployeeRepository,
+        private messageHandlerFactory: MessageHandlerFactory
+    ) {
+        this.messageHandlers = this.initializeMessageHandlers()
+    }
 
     async processIncomingMessage(phone: string, messageContent: string) {
         console.clear()
         console.log('\n\n\n\n\n\n\nprocessIncomingMessage')
         console.log(`message content: ${messageContent}`)
 
-        const employee = await this.getEmployee(phone)
-
-        if (employee) {
-        } else {
-        }
-        let client = await this.getOrCreateClient(phone)
-        let conversation =
-            await this.conversationRepository.findActiveByClientPhone(phone)
-
-        if (!conversation) {
-            client = await this.getOrCreateClient(phone)
-            conversation = Conversation.create({
-                client,
-                agent: 'AI',
-                participants: [client],
-                messages: [],
-            })
-            await this.conversationRepository.save(conversation)
-        }
-
-        if (!client) {
-            throw new Error('Failed to create client')
-        }
-
-        await this.saveMessage(conversation, messageContent, 'client', client)
-        await this.conversationRepository.save(conversation)
-
-        const messages: string[] = []
-
-        console.log(
-            `I'll proccess message using this state: ${conversation.currentState.constructor.name}`
-        )
-        const result = conversation.processMessage(messageContent)
-
-        if (result.type === 'transition') {
-            await this.handleTransition(conversation, result)
-        }
-
-        console.log('\npost "handleTransition"\nconversation')
-        console.log(conversation)
-
-        if (conversation.currentState.entryMessage) {
-            messages.push(conversation.currentState.entryMessage)
-        }
-
-        if (conversation.currentState.shouldAutoTransition()) {
-            console.log("let's auto transit")
-            const autoTransition = conversation.currentState.getAutoTransition()
-            if (autoTransition && autoTransition.type === 'transition') {
-                await this.handleTransition(conversation, autoTransition)
-
-                console.log(
-                    '\npost "handleTransition" for auto transit\nconversation'
-                )
-                console.log(conversation)
-
-                if (conversation.currentState.entryMessage) {
-                    messages.push(conversation.currentState.entryMessage)
-                }
-            }
-        }
-
-        this.outputPort.handle({
-            input: messageContent,
-            output: { to: conversation.client.phone, messages },
-        })
+        const user = await this.identifyUser(phone)
+        const messageHandler = this.getHandlerForUser(user)
+        await messageHandler.process(user, messageContent)
     }
 
     private async getOrCreateClient(phone: string): Promise<Client> {
@@ -121,122 +54,45 @@ export class WhatsAppMessageService {
         return client
     }
 
-    private async getEmployee(phone: string): Promise<Employee> {
+    private async getEmployee(phone: string): Promise<Nullable<Employee>> {
         console.log(`look for employee with this phone: ${phone}`)
         const employee = await this.employeeRepository.findByPhone(phone)
 
-        if (!employee) {
-            throw new Error('There is no employee with this fone')
-        }
-
         return employee
     }
-
-    private async saveMessage(
-        conversation: Conversation,
-        content: string,
-        from: 'client' | 'employee' | 'AI',
-        sender: Client | Employee
-    ): Promise<Message> {
-        const message = Message.create({
-            conversation,
-            timestamp: new Date(),
-            from,
-            content,
-            sender,
-        })
-
-        await this.messageRepository.save(message)
-
-        return message
+    private initializeMessageHandlers(): Record<string, MessageHandler> {
+        return {
+            clientMessageHandler:
+                this.messageHandlerFactory.createClientMessageHandler(),
+            employeeMessageHandler:
+                this.messageHandlerFactory.createEmployeeMessageHandler(),
+        }
     }
 
-    private async handleTransition(
-        conversation: Conversation,
-        transition: StateTransition
-    ) {
-        console.log('\n\n"handleTransition" method')
-        // console.log("conversation")
-        // console.log(conversation)
-        console.log('transition')
-        console.log(transition)
+    private async identifyUser(phone: string): Promise<Client | Employee> {
+        const employee = await this.getEmployee(phone)
+        if (employee) return employee
 
-        switch (transition.targetState) {
-            case 'initial_menu':
-                conversation.transitionToState(
-                    new InitialMenuState(conversation)
-                )
-                break
-            case 'faq_categories':
-                const faqCategories = await this.faqRepository.findCategories()
+        return this.getOrCreateClient(phone)
+    }
 
-                conversation.transitionToState(
-                    new FAQCategoriesState(conversation, faqCategories)
-                )
-                break
-            case 'faq_items':
-                if (typeof transition.data !== 'string') {
-                    throw new Error('Invalid transition data')
-                }
-
-                const faqItems = await this.faqRepository.findItemsByCategory(
-                    transition.data
-                )
-
-                conversation.transitionToState(
-                    new FAQItemsState(conversation, transition.data, faqItems)
-                )
-                break
+    private getHandlerForUser(user: Client | Employee): MessageHandler {
+        if (this.isClient(user)) {
+            return this.messageHandlers.clientMessageHandler
         }
 
-        const availableDepartments =
-            await this.departmentRepository.findAllActive()
-
-        switch (transition.targetState) {
-            case 'department_selection':
-                conversation.transitionToState(
-                    new DepartmentSelectionState(
-                        conversation,
-                        availableDepartments
-                    )
-                )
-                break
-            case 'department_chat': {
-                if (typeof transition.data !== 'string') {
-                    throw new Error('Invalid transition data')
-                }
-
-                const department = availableDepartments.find(
-                    department => department.name === transition.data
-                )
-
-                if (!department) {
-                    throw new Error('Department not found')
-                }
-
-                conversation.transitionToState(
-                    new DepartmentChatState(conversation, department)
-                )
-                break
-            }
-            case 'department_queue': {
-                if (typeof transition.data !== 'string') {
-                    throw new Error('Invalid transition data')
-                }
-
-                const department = availableDepartments.find(
-                    department => department.name === transition.data
-                )
-
-                if (!department) {
-                    throw new Error('Department not found')
-                }
-
-                conversation.transitionToState(
-                    new DepartmentQueueState(conversation, department)
-                )
-                break
-            }
+        if (this.isEmployee(user)) {
+            return this.messageHandlers.employeeMessageHandler
         }
+
+        throw new Error('Invalid user type')
+    }
+
+    private isClient(user: Client | Employee): user is Client {
+        return user instanceof Client
+    }
+
+    private isEmployee(user: Client | Employee): user is Employee {
+        return user instanceof Employee
     }
 }

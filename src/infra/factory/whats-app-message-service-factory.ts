@@ -3,22 +3,45 @@ import { InMemoryRepositoryFactory } from './in-memory-repository-factory'
 import { ConsoleOutputPort } from '@/core/output/console-output-port'
 import { FileOutputPort } from '@/core/output/file-output-port'
 import { OutputPort } from '@/core/output/output-port'
+import { MessageHandlerFactory } from '@/domain/whats-app/application/factory/message-handler-factory'
 
 const currentOutputPort: OutputPort = new FileOutputPort()
 // const currentOutputPort: OutputPort = new ConsoleOutputPort()
 
 export class WhatsAppMessageServiceFactory {
-    inMemoryRepositoryFactory = new InMemoryRepositoryFactory()
-
     static create() {
-        return new WhatsAppMessageService(
-            currentOutputPort,
-            InMemoryRepositoryFactory.createConversationRepository(),
-            InMemoryRepositoryFactory.createDepartmentRepository(),
-            InMemoryRepositoryFactory.createFAQRepository(),
-            InMemoryRepositoryFactory.createMessageRepository(),
-            InMemoryRepositoryFactory.createClientRepository(),
+        const outputPort = currentOutputPort
+        const conversationRepository =
+            InMemoryRepositoryFactory.createConversationRepository()
+        const departmentRepository =
+            InMemoryRepositoryFactory.createDepartmentRepository()
+        const faqRepository = InMemoryRepositoryFactory.createFAQRepository()
+        const messageRepository =
+            InMemoryRepositoryFactory.createMessageRepository()
+        const clientRepository =
+            InMemoryRepositoryFactory.createClientRepository()
+        const employeeRepository =
             InMemoryRepositoryFactory.createEmployeeRepository()
+
+        const messageHandlerFactory = new MessageHandlerFactory(
+            outputPort,
+            conversationRepository,
+            departmentRepository,
+            faqRepository,
+            messageRepository,
+            clientRepository,
+            employeeRepository
+        )
+
+        return new WhatsAppMessageService(
+            outputPort,
+            conversationRepository,
+            departmentRepository,
+            faqRepository,
+            messageRepository,
+            clientRepository,
+            employeeRepository,
+            messageHandlerFactory
         )
     }
 }
