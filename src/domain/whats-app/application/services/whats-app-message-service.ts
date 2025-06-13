@@ -18,6 +18,7 @@ import { FAQItemsState } from '../states/faq-items-state'
 import { InitialMenuState } from '../states/initial-menu-state'
 import { StateTransition } from '../states/state-transition'
 import { Employee } from '@/domain/entities/employee'
+import { EmployeeRepository } from '@/domain/repositories/employee-repository'
 
 export class WhatsAppMessageService {
     constructor(
@@ -26,22 +27,26 @@ export class WhatsAppMessageService {
         public departmentRepository: DepartmentRepository,
         public faqRepository: FAQRepository,
         private messageRepository: MessageRepository,
-        private clientRepository: ClientRepository
+        private clientRepository: ClientRepository,
+        public employeeRepository: EmployeeRepository
     ) {}
 
-    async processIncomingMessage(clientPhone: string, messageContent: string) {
+    async processIncomingMessage(phone: string, messageContent: string) {
         console.clear()
         console.log('\n\n\n\n\n\n\nprocessIncomingMessage')
         console.log(`message content: ${messageContent}`)
 
-        let client = await this.getOrCreateClient(clientPhone)
+        const employee = await this.getEmployee(phone)
+
+        if (employee) {
+        } else {
+        }
+        let client = await this.getOrCreateClient(phone)
         let conversation =
-            await this.conversationRepository.findActiveByClientPhone(
-                clientPhone
-            )
+            await this.conversationRepository.findActiveByClientPhone(phone)
 
         if (!conversation) {
-            client = await this.getOrCreateClient(clientPhone)
+            client = await this.getOrCreateClient(phone)
             conversation = Conversation.create({
                 client,
                 agent: 'AI',
@@ -100,12 +105,10 @@ export class WhatsAppMessageService {
     }
 
     private async getOrCreateClient(phone: string): Promise<Client> {
-        // Tenta buscar cliente existente
         console.log(`look for client with this phone: ${phone}`)
         let client = await this.clientRepository.findByPhone(phone)
 
         if (!client) {
-            // Cria novo cliente
             console.log('we need to create a new client')
             client = Client.create({
                 phone,
@@ -116,6 +119,17 @@ export class WhatsAppMessageService {
         }
 
         return client
+    }
+
+    private async getEmployee(phone: string): Promise<Employee> {
+        console.log(`look for employee with this phone: ${phone}`)
+        const employee = await this.employeeRepository.findByPhone(phone)
+
+        if (!employee) {
+            throw new Error('There is no employee with this fone')
+        }
+
+        return employee
     }
 
     private async saveMessage(

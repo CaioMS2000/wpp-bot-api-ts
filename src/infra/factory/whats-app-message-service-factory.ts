@@ -17,7 +17,8 @@ export class WhatsAppMessageServiceFactory {
             InMemoryRepositoryFactory.createDepartmentRepository(),
             InMemoryRepositoryFactory.createFAQRepository(),
             InMemoryRepositoryFactory.createMessageRepository(),
-            InMemoryRepositoryFactory.createClientRepository()
+            InMemoryRepositoryFactory.createClientRepository(),
+            InMemoryRepositoryFactory.createEmployeeRepository()
         )
     }
 }

@@ -8,10 +8,16 @@ import { InMemoryConversationRepository } from '../database/repositories/in-memo
 import { InMemoryDepartmentRepository } from '../database/repositories/in-memory/department-repository'
 import { InMemoryFAQRepository } from '../database/repositories/in-memory/faq-repository'
 import { InMemoryMessageRepository } from '../database/repositories/in-memory/message-repository'
+import { EmployeeRepository } from '@/domain/repositories/employee-repository'
+import { InMemoryEmployeeRepository } from '../database/repositories/in-memory/employee-repository'
 
 export class InMemoryRepositoryFactory {
     static createClientRepository(): ClientRepository {
         return new InMemoryClientRepository()
+    }
+
+    static createEmployeeRepository(): EmployeeRepository {
+        return new InMemoryEmployeeRepository()
     }
 
     static createConversationRepository(): ConversationRepository {

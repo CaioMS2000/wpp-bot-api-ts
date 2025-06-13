@@ -5,6 +5,7 @@ import { app } from './app'
 import { receiveMessage } from './routes/message/receive-message'
 import { interactionMock } from './interaction-mock'
 import { emptyJsonFile, findProjectRoot } from '@/utils/files'
+import { Employee } from '@/domain/entities/employee'
 
 const whatsAppMessageService = WhatsAppMessageServiceFactory.create()
 
@@ -20,6 +21,13 @@ whatsAppMessageService.departmentRepository.save(
         name: 'Departamento de Vendas',
         employee: [],
         queue: [],
+    })
+)
+whatsAppMessageService.employeeRepository.save(
+    Employee.create({
+        department: 'Departamento de TI',
+        event_history: [],
+        phone: '5562993765721',
     })
 )
 whatsAppMessageService.faqRepository.save(
