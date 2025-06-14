@@ -5,11 +5,29 @@ import { ConversationState } from '../conversation-state'
 import { StateTransition } from '../state-transition'
 
 export class DepartmentSelectionState extends ConversationState {
+    private menuOptions: MenuOption[]
+
     constructor(
         conversation: Conversation,
         private departments: Department[]
     ) {
         super(conversation)
+
+        this.menuOptions = departments
+            .map((dept, index) => ({
+                key: (index + 1).toString(),
+                label: dept.name,
+                forClient: true,
+                forEmployee: false,
+            }))
+            .concat([
+                {
+                    key: 'menu',
+                    label: 'Menu principal',
+                    forClient: true,
+                    forEmployee: true,
+                },
+            ])
     }
 
     handleMessage(messageContent: string): StateTransition {
@@ -29,13 +47,6 @@ export class DepartmentSelectionState extends ConversationState {
     }
 
     get entryMessage() {
-        return this.formatMenuOptions(
-            this.departments
-                .map((dept, index) => ({
-                    key: (index + 1).toString(),
-                    label: dept.name,
-                }))
-                .concat([{ key: 'menu', label: 'Menu principal' }])
-        )
+        return this.formatMenuOptions(this.menuOptions)
     }
 }

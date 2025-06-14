@@ -14,21 +14,30 @@ import { ConversationRepository } from '@/domain/repositories/conversation-repos
 export class InMemoryConversationRepository extends ConversationRepository {
     private data: Record<string, Conversation> = {}
 
+    async save(conversation: Conversation): Promise<void> {
+        const identifier = `${conversation.user.id}-${conversation.agent}-${dayjs(conversation.startedAt).format('hh:mm-DD-MM-YYYY')}`
+
+        this.data[identifier] = conversation
+    }
+
     async findActiveByClientPhone(
         clientPhone: string
     ): Promise<Nullable<Conversation>> {
         const conversations = Object.values(this.data).filter(
             conversation =>
-                conversation.client.phone === clientPhone &&
-                !conversation.endedAt
+                conversation.user.phone === clientPhone && !conversation.endedAt
         )
 
         return conversations.length > 0 ? conversations[0] : null
     }
 
-    async save(conversation: Conversation): Promise<void> {
-        const identifier = `${conversation.client.id}-${conversation.agent}-${dayjs(conversation.startedAt).format('hh:mm-DD-MM-YYYY')}`
-
-        this.data[identifier] = conversation
+    async findActiveByEmployeePhone(
+        employeePhone: string
+    ): Promise<Nullable<Conversation>> {
+        const conversations = Object.values(this.data).filter(
+            conversation =>
+                conversation.agent === employeePhone && !conversation.endedAt
+        )
+        return conversations.length > 0 ? conversations[0] : null
     }
 }

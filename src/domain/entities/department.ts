@@ -9,8 +9,12 @@ export type DepartmentProps = {
 }
 
 export class Department extends Entity<DepartmentProps> {
-    static create(props: DepartmentProps, id?: string) {
-        const department = new Department(props, id)
+    static create(props: RequireOnly<DepartmentProps, 'name'>, id?: string) {
+        const defaults: Omit<DepartmentProps, 'name'> = {
+            queue: [],
+            employee: [],
+        }
+        const department = new Department({ ...defaults, ...props }, id)
         return department
     }
 

@@ -17,6 +17,8 @@ import { MessageHandler } from './message-handler'
 import { MessageRepository } from '@/domain/repositories/message-repository'
 import { DepartmentSelectionState } from '../states/client-only/department-selection-state'
 import { DepartmentQueueState } from '../states/client-only/department-queue-state'
+import { logger } from '@/core/logger'
+import { Department } from '@/domain/entities/department'
 
 export class ClientMessageHandler extends MessageHandler {
     constructor(
@@ -36,10 +38,14 @@ export class ClientMessageHandler extends MessageHandler {
         messageContent: string
     ): Promise<void> {
         if (user instanceof Employee) {
+            logger.error('Invalid user type: Employee in ClientMessageHandler')
             throw new Error(
                 'This handler is for clients but you passed an employee'
             )
         }
+
+        logger.info(`Processing message from client: ${user.phone}`)
+        logger.debug(`Message content: ${messageContent}`)
 
         let conversation =
             await this.conversationRepository.findActiveByClientPhone(
@@ -47,8 +53,9 @@ export class ClientMessageHandler extends MessageHandler {
             )
 
         if (!conversation) {
+            logger.info(`Creating new conversation for client: ${user.phone}`)
             conversation = Conversation.create({
-                client: user,
+                user,
             })
             await this.conversationRepository.save(conversation)
         }
@@ -58,32 +65,25 @@ export class ClientMessageHandler extends MessageHandler {
 
         const messages: string[] = []
 
-        console.log(
-            `I'll proccess message using this state: ${conversation.currentState.constructor.name}`
+        logger.debug(
+            `Current conversation state: ${conversation.currentState.constructor.name}`
         )
         const result = conversation.processMessage(messageContent)
 
         if (result.type === 'transition') {
+            logger.debug(`State transition triggered: ${result.targetState}`)
             await this.handleTransition(conversation, result)
         }
-
-        console.log('\npost "handleTransition"\nconversation')
-        console.log(conversation)
 
         if (conversation.currentState.entryMessage) {
             messages.push(conversation.currentState.entryMessage)
         }
 
         if (conversation.currentState.shouldAutoTransition()) {
-            console.log("let's auto transit")
+            logger.debug('Auto transition triggered')
             const autoTransition = conversation.currentState.getAutoTransition()
             if (autoTransition && autoTransition.type === 'transition') {
                 await this.handleTransition(conversation, autoTransition)
-
-                console.log(
-                    '\npost "handleTransition" for auto transit\nconversation'
-                )
-                console.log(conversation)
 
                 if (conversation.currentState.entryMessage) {
                     messages.push(conversation.currentState.entryMessage)
@@ -93,8 +93,10 @@ export class ClientMessageHandler extends MessageHandler {
 
         this.outputPort.handle({
             input: messageContent,
-            output: { to: conversation.client.phone, messages },
+            output: { to: conversation.user.phone, messages },
         })
+
+        logger.info('Message processing completed successfully')
     }
 
     private async saveMessage(
@@ -103,6 +105,7 @@ export class ClientMessageHandler extends MessageHandler {
         from: 'client' | 'employee' | 'AI',
         sender: Client | Employee
     ): Promise<Message> {
+        logger.debug(`Saving message from ${from}`)
         const message = Message.create({
             conversation,
             timestamp: new Date(),
@@ -120,11 +123,10 @@ export class ClientMessageHandler extends MessageHandler {
         conversation: Conversation,
         transition: StateTransition
     ) {
-        console.log('\n\n"handleTransition" method')
-        // console.log("conversation")
-        // console.log(conversation)
-        console.log('transition')
-        console.log(transition)
+        logger.debug(`Handling transition to state: ${transition.targetState}`)
+
+        const availableDepartments =
+            await this.departmentRepository.findAllActive()
 
         switch (transition.targetState) {
             case 'initial_menu':
@@ -141,6 +143,7 @@ export class ClientMessageHandler extends MessageHandler {
                 break
             case 'faq_items':
                 if (typeof transition.data !== 'string') {
+                    logger.error('Invalid transition data for FAQ items')
                     throw new Error('Invalid transition data')
                 }
 
@@ -152,12 +155,6 @@ export class ClientMessageHandler extends MessageHandler {
                     new FAQItemsState(conversation, transition.data, faqItems)
                 )
                 break
-        }
-
-        const availableDepartments =
-            await this.departmentRepository.findAllActive()
-
-        switch (transition.targetState) {
             case 'department_selection':
                 conversation.transitionToState(
                     new DepartmentSelectionState(
@@ -168,16 +165,14 @@ export class ClientMessageHandler extends MessageHandler {
                 break
             case 'department_chat': {
                 if (typeof transition.data !== 'string') {
+                    logger.error('Invalid transition data for department chat')
                     throw new Error('Invalid transition data')
                 }
 
-                const department = availableDepartments.find(
-                    department => department.name === transition.data
+                const department = this.findDepartment(
+                    availableDepartments,
+                    transition.data
                 )
-
-                if (!department) {
-                    throw new Error('Department not found')
-                }
 
                 conversation.transitionToState(
                     new DepartmentChatState(conversation, department)
@@ -186,16 +181,14 @@ export class ClientMessageHandler extends MessageHandler {
             }
             case 'department_queue': {
                 if (typeof transition.data !== 'string') {
+                    logger.error('Invalid transition data for department queue')
                     throw new Error('Invalid transition data')
                 }
 
-                const department = availableDepartments.find(
-                    department => department.name === transition.data
+                const department = this.findDepartment(
+                    availableDepartments,
+                    transition.data
                 )
-
-                if (!department) {
-                    throw new Error('Department not found')
-                }
 
                 conversation.transitionToState(
                     new DepartmentQueueState(conversation, department)
@@ -203,5 +196,17 @@ export class ClientMessageHandler extends MessageHandler {
                 break
             }
         }
+    }
+
+    private findDepartment(
+        departments: Department[],
+        name: string
+    ): Department {
+        const department = departments.find(dept => dept.name === name)
+        if (!department) {
+            logger.error(`Department not found: ${name}`)
+            throw new Error('Department not found')
+        }
+        return department
     }
 }

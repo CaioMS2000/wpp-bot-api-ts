@@ -3,12 +3,14 @@ import { Entity } from '@/core/entities/entity'
 export type ClientProps = {
     phone: string
     department: Nullable<string>
-    event_history: any[]
 }
 
 export class Client extends Entity<ClientProps> {
-    static create(props: ClientProps, id?: string) {
-        const client = new Client(props, id)
+    static create(props: RequireOnly<ClientProps, 'phone'>, id?: string) {
+        const defaults: Omit<ClientProps, 'phone'> = {
+            department: null,
+        }
+        const client = new Client({ ...defaults, ...props }, id)
         return client
     }
 
@@ -18,9 +20,5 @@ export class Client extends Entity<ClientProps> {
 
     get department() {
         return this.props.department
-    }
-
-    get event_history() {
-        return this.props.event_history
     }
 }

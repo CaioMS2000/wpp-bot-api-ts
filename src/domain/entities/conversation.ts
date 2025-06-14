@@ -3,11 +3,12 @@ import { Client } from './client'
 import type { Message } from './message'
 import { ConversationState } from '../whats-app/application/states/conversation-state'
 import { InitialMenuState } from '../whats-app/application/states/initial-menu-state'
-import { MenuOption } from '../whats-app/@types'
-import { StateTransition } from '../whats-app/application/states/state-transition'
+import { Employee } from './employee'
+
+type UserType = Client | Employee
 
 export type ConversationProps = {
-    client: Client
+    user: UserType
     startedAt: Date
     endedAt: Nullable<Date>
     lastStateChange: Nullable<Date>
@@ -18,10 +19,7 @@ export type ConversationProps = {
 }
 
 export class Conversation extends Entity<ConversationProps> {
-    static create(
-        props: RequireOnly<ConversationProps, 'client'>,
-        id?: string
-    ) {
+    static create(props: RequireOnly<ConversationProps, 'user'>, id?: string) {
         const temporaryState = null as unknown as ConversationState
         const state = props.currentState || temporaryState
         const defaults: Pick<
@@ -65,8 +63,8 @@ export class Conversation extends Entity<ConversationProps> {
         this.props.lastStateChange = new Date()
     }
 
-    get client() {
-        return this.props.client
+    get user() {
+        return this.props.user
     }
 
     get startedAt() {

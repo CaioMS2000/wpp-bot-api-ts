@@ -5,11 +5,29 @@ import { ConversationState } from './conversation-state'
 import { StateTransition } from './state-transition'
 
 export class FAQCategoriesState extends ConversationState {
+    private menuOptions: MenuOption[]
+
     constructor(
         conversation: Conversation,
         private categories: FAQCategory[]
     ) {
         super(conversation)
+
+        this.menuOptions = categories
+            .map((category, index) => ({
+                key: (index + 1).toString(),
+                label: category.name,
+                forClient: true,
+                forEmployee: true,
+            }))
+            .concat([
+                {
+                    key: 'menu',
+                    label: 'Menu principal',
+                    forClient: true,
+                    forEmployee: true,
+                },
+            ])
     }
 
     handleMessage(messageContent: string): StateTransition {
@@ -29,13 +47,6 @@ export class FAQCategoriesState extends ConversationState {
     }
 
     get entryMessage() {
-        return this.formatMenuOptions(
-            this.categories
-                .map((category, index) => ({
-                    key: (index + 1).toString(),
-                    label: category.name,
-                }))
-                .concat([{ key: 'menu', label: 'Menu principal' }])
-        )
+        return this.formatMenuOptions(this.menuOptions)
     }
 }

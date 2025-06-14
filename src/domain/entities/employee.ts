@@ -3,7 +3,6 @@ import { Entity } from '@/core/entities/entity'
 export type EmployeeProps = {
     phone: string
     department: Nullable<string>
-    event_history: any[]
 }
 
 export class Employee extends Entity<EmployeeProps> {
@@ -18,9 +17,5 @@ export class Employee extends Entity<EmployeeProps> {
 
     get department() {
         return this.props.department
-    }
-
-    get event_history() {
-        return this.props.event_history
     }
 }

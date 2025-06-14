@@ -34,10 +34,10 @@ export class MessageHandlerFactory {
 
     createEmployeeMessageHandler(): MessageHandler {
         return new EmployeeMessageHandler(
-            // this.outputPort,
-            // this.conversationRepository,
+            this.outputPort,
+            this.conversationRepository,
             // this.departmentRepository,
-            // this.messageRepository,
+            this.messageRepository
             // this.clientRepository
         )
     }

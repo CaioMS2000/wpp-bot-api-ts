@@ -10,6 +10,7 @@ import { EmployeeRepository } from '@/domain/repositories/employee-repository'
 import { MessageHandler } from '../handler/message-handler'
 import { MessageHandlerFactory } from '../factory/message-handler-factory'
 import { logger } from '@/core/logger'
+import { isClient, isEmployee } from '@/utils/entity'
 
 export class WhatsAppMessageService {
     private messageHandlers: Record<string, MessageHandler>
@@ -47,8 +48,6 @@ export class WhatsAppMessageService {
             logger.info(`Creating new client for phone: ${phone}`)
             client = Client.create({
                 phone,
-                department: '',
-                event_history: [],
             })
             await this.clientRepository.save(client)
         }
@@ -94,13 +93,13 @@ export class WhatsAppMessageService {
     }
 
     private getHandlerForUser(user: Client | Employee): MessageHandler {
-        if (this.isClient(user)) {
+        if (isClient(user)) {
             logger.debug('Using client message handler')
 
             return this.messageHandlers.clientMessageHandler
         }
 
-        if (this.isEmployee(user)) {
+        if (isEmployee(user)) {
             logger.debug('Using employee message handler')
 
             return this.messageHandlers.employeeMessageHandler
@@ -109,13 +108,5 @@ export class WhatsAppMessageService {
         logger.error(`Invalid user type: ${typeof user}`)
 
         throw new Error('Invalid user type')
-    }
-
-    private isClient(user: Client | Employee): user is Client {
-        return user instanceof Client
-    }
-
-    private isEmployee(user: Client | Employee): user is Employee {
-        return user instanceof Employee
     }
 }

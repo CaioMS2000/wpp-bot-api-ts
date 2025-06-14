@@ -5,12 +5,21 @@ import { ConversationState } from './conversation-state'
 import { StateTransition } from './state-transition'
 
 export class FAQItemsState extends ConversationState {
+    private menuOptions: MenuOption[]
+
     constructor(
         conversation: Conversation,
         private categoryName: string,
         private items: FAQItem[]
     ) {
         super(conversation)
+
+        this.menuOptions = items.map((item, index) => ({
+            key: (index + 1).toString(),
+            label: `${item.question}\n${item.answer}`,
+            forClient: true,
+            forEmployee: true,
+        }))
     }
 
     handleMessage(messageContent: string): StateTransition {
@@ -18,11 +27,7 @@ export class FAQItemsState extends ConversationState {
     }
 
     get entryMessage(): string {
-        const faqOptions: MenuOption[] = this.items.map((item, index) => ({
-            key: (index + 1).toString(),
-            label: `${item.question}\n${item.answer}`,
-        }))
-        return this.formatMenuOptions(faqOptions)
+        return this.formatMenuOptions(this.menuOptions)
     }
 
     shouldAutoTransition(): boolean {

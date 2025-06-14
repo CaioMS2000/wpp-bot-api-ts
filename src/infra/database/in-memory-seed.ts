@@ -1,6 +1,5 @@
 import { Department } from '@/domain/entities/department'
 import { Employee } from '@/domain/entities/employee'
-import { InMemoryWhatsAppMessageServiceFactory } from '../factory/in-memory/in-memory-whats-app-message-service-factory'
 import { WhatsAppMessageService } from '@/domain/whats-app/application/services/whats-app-message-service'
 
 export async function seedInMemoryRepositories(
@@ -9,21 +8,16 @@ export async function seedInMemoryRepositories(
     whatsAppMessageService.departmentRepository.save(
         Department.create({
             name: 'Departamento de TI',
-            employee: [],
-            queue: [],
         })
     )
     whatsAppMessageService.departmentRepository.save(
         Department.create({
             name: 'Departamento de Vendas',
-            employee: [],
-            queue: [],
         })
     )
     whatsAppMessageService.employeeRepository.save(
         Employee.create({
             department: 'Departamento de TI',
-            event_history: [],
             phone: '5562993765721',
         })
     )
