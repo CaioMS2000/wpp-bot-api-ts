@@ -18,6 +18,18 @@ export class InitialMenuState extends ConversationState {
             forEmployee: false,
         },
         { key: '3', label: 'FAQ', forClient: true, forEmployee: true },
+        {
+            key: '4',
+            label: 'Ver fila',
+            forClient: false,
+            forEmployee: true,
+        },
+        {
+            key: '5',
+            label: 'Atender próximo',
+            forClient: false,
+            forEmployee: true,
+        },
     ]
 
     handleMessage(messageContent: string): StateTransition {

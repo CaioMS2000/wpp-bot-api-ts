@@ -1,9 +1,9 @@
-async function sendMessage(message: string) {
+async function sendMessage(message: string, phone: string) {
     try {
         const response = await fetch('http://localhost:3000/message', {
             method: 'POST',
             body: JSON.stringify({
-                clientPhone: '5562993765723',
+                clientPhone: phone,
                 messageContent: message,
             }),
             headers: {
@@ -22,34 +22,52 @@ async function sendMessage(message: string) {
     }
 }
 
+async function clientSendMessage(message: string) {
+    await sendMessage(message, '5562993765723')
+}
+
+async function employeeSendMessage(message: string) {
+    await sendMessage(message, '5562993765721')
+}
+
 export async function interactionMock() {
-    await sendMessage('oi')
+    await clientSendMessage('oi')
 
-    await new Promise(resolve => setTimeout(resolve, 1000 * 1))
+    // await new Promise(resolve => setTimeout(resolve, 1000 * 1))
 
-    await sendMessage('3')
+    await clientSendMessage('3')
 
-    await new Promise(resolve => setTimeout(resolve, 1000 * 1))
+    // await new Promise(resolve => setTimeout(resolve, 1000 * 1))
 
-    await sendMessage('suporte')
+    await clientSendMessage('suporte')
 
-    await new Promise(resolve => setTimeout(resolve, 1000 * 2))
+    // await new Promise(resolve => setTimeout(resolve, 1000 * 2))
 
-    await sendMessage('Menu principal')
+    await clientSendMessage('Menu principal')
 
-    await new Promise(resolve => setTimeout(resolve, 1000 * 1))
+    // await new Promise(resolve => setTimeout(resolve, 1000 * 1))
 
-    await sendMessage('2')
+    await clientSendMessage('2')
 
-    await new Promise(resolve => setTimeout(resolve, 1000 * 2))
+    // await new Promise(resolve => setTimeout(resolve, 1000 * 2))
 
-    await sendMessage('Menu principal')
+    await clientSendMessage('Menu principal')
 
-    await new Promise(resolve => setTimeout(resolve, 1000 * 1))
+    // await new Promise(resolve => setTimeout(resolve, 1000 * 1))
 
-    await sendMessage('Departamento de TI')
+    await clientSendMessage('Departamento de TI')
 
-    await new Promise(resolve => setTimeout(resolve, 1000 * 1))
+    // await new Promise(resolve => setTimeout(resolve, 1000 * 1))
 
-    await sendMessage('alguma mensagem')
+    await clientSendMessage('alguma mensagem')
+
+    // await new Promise(resolve => setTimeout(resolve, 1000 * 1))
+
+    await employeeSendMessage('alguma mensagem')
+
+    await employeeSendMessage('3')
+
+    await employeeSendMessage('vendas')
+
+    await employeeSendMessage('Menu principal')
 }

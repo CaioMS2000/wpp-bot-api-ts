@@ -36,9 +36,8 @@ export class MessageHandlerFactory {
         return new EmployeeMessageHandler(
             this.outputPort,
             this.conversationRepository,
-            // this.departmentRepository,
-            this.messageRepository
-            // this.clientRepository
+            this.messageRepository,
+            this.faqRepository
         )
     }
 }

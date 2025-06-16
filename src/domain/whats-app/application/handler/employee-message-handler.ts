@@ -8,12 +8,17 @@ import { ConversationRepository } from '@/domain/repositories/conversation-repos
 import { MessageRepository } from '@/domain/repositories/message-repository'
 import { StateTransition } from '../states/state-transition'
 import { MessageHandler } from './message-handler'
+import { FAQRepository } from '@/domain/repositories/faq-repository'
+import { FAQItemsState } from '../states/faq-items-state'
+import { FAQCategoriesState } from '../states/faq-categories-state'
+import { InitialMenuState } from '../states/initial-menu-state'
 
 export class EmployeeMessageHandler extends MessageHandler {
     constructor(
         private outputPort: OutputPort,
         private conversationRepository: ConversationRepository,
-        private messageRepository: MessageRepository
+        private messageRepository: MessageRepository,
+        public faqRepository: FAQRepository
     ) {
         super()
     }
@@ -57,6 +62,25 @@ export class EmployeeMessageHandler extends MessageHandler {
         if (conversation.currentState.entryMessage) {
             messages.push(conversation.currentState.entryMessage)
         }
+
+        if (conversation.currentState.shouldAutoTransition()) {
+            logger.debug('Auto transition triggered')
+            const autoTransition = conversation.currentState.getAutoTransition()
+            if (autoTransition && autoTransition.type === 'transition') {
+                await this.handleTransition(conversation, autoTransition)
+
+                if (conversation.currentState.entryMessage) {
+                    messages.push(conversation.currentState.entryMessage)
+                }
+            }
+        }
+
+        this.outputPort.handle({
+            input: messageContent,
+            output: { to: conversation.user.phone, messages },
+        })
+
+        logger.info('Message processing completed successfully')
     }
 
     private async saveMessage(
@@ -85,6 +109,32 @@ export class EmployeeMessageHandler extends MessageHandler {
         logger.debug(`Handling transition to state: ${transition.targetState}`)
 
         switch (transition.targetState) {
+            case 'initial_menu':
+                conversation.transitionToState(
+                    new InitialMenuState(conversation)
+                )
+                break
+            case 'faq_categories':
+                const faqCategories = await this.faqRepository.findCategories()
+
+                conversation.transitionToState(
+                    new FAQCategoriesState(conversation, faqCategories)
+                )
+                break
+            case 'faq_items':
+                if (typeof transition.data !== 'string') {
+                    logger.error('Invalid transition data for FAQ items')
+                    throw new Error('Invalid transition data')
+                }
+
+                const faqItems = await this.faqRepository.findItemsByCategory(
+                    transition.data
+                )
+
+                conversation.transitionToState(
+                    new FAQItemsState(conversation, transition.data, faqItems)
+                )
+                break
         }
     }
 }
