@@ -1,6 +1,8 @@
+import { StateName } from '../factory/state-factory'
+
 export type TransitionType = 'transition' | 'stay_current'
 export type StateTransitionProps = {
-    targetState: Nullable<string>
+    targetState: Nullable<StateName>
     data: Nullable<any>
     requiresExternalData: Nullable<boolean>
 }
@@ -57,13 +59,6 @@ export class StateTransition {
     static toInitialMenu(): StateTransition {
         return new StateTransition('transition', {
             targetState: 'initial_menu',
-        })
-    }
-
-    static toDepartmentValidation(message: string): StateTransition {
-        return new StateTransition('transition', {
-            targetState: 'department_validation',
-            requiresExternalData: true,
         })
     }
 

@@ -8,27 +8,26 @@ import { EmployeeRepository } from '@/domain/repositories/employee-repository'
 import { MessageHandler } from '../handler/message-handler'
 import { ClientMessageHandler } from '../handler/client-message-handler'
 import { EmployeeMessageHandler } from '../handler/employee-message-handler'
+import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
 
 export class MessageHandlerFactory {
     constructor(
         private outputPort: OutputPort,
         private conversationRepository: ConversationRepository,
-        private departmentRepository: DepartmentRepository,
         private faqRepository: FAQRepository,
         private messageRepository: MessageRepository,
-        private clientRepository: ClientRepository,
-        private employeeRepository: EmployeeRepository
+        private employeeRepository: EmployeeRepository,
+        private listActiveDepartmentsUseCase: ListActiveDepartmentsUseCase
     ) {}
 
     createClientMessageHandler(): MessageHandler {
         return new ClientMessageHandler(
             this.outputPort,
             this.conversationRepository,
-            this.departmentRepository,
             this.faqRepository,
             this.messageRepository,
-            this.clientRepository,
-            this.employeeRepository
+            this.employeeRepository,
+            this.listActiveDepartmentsUseCase
         )
     }
 

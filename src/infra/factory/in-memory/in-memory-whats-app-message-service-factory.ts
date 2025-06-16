@@ -4,33 +4,37 @@ import { OutputPort } from '@/core/output/output-port'
 import { MessageHandlerFactory } from '@/domain/whats-app/application/factory/message-handler-factory'
 import { WhatsAppMessageService } from '@/domain/whats-app/application/services/whats-app-message-service'
 import { InMemoryRepositoryFactory } from './in-memory-repository-factory'
+import { UseCaseFactory } from '@/domain/whats-app/application/factory/use-case-factory'
+import { RepositoryFactory } from '@/domain/whats-app/application/factory/repository-factory'
 
 const currentOutputPort: OutputPort = new FileOutputPort()
 // const currentOutputPort: OutputPort = new ConsoleOutputPort()
 
 export class InMemoryWhatsAppMessageServiceFactory {
-    static create() {
+    constructor(
+        private useCaseFactory: UseCaseFactory,
+        private repositoryFactory: RepositoryFactory
+    ) {}
+    createService() {
         const outputPort = currentOutputPort
         const conversationRepository =
-            InMemoryRepositoryFactory.createConversationRepository()
+            this.repositoryFactory.createConversationRepository()
         const departmentRepository =
-            InMemoryRepositoryFactory.createDepartmentRepository()
-        const faqRepository = InMemoryRepositoryFactory.createFAQRepository()
+            this.repositoryFactory.createDepartmentRepository()
+        const faqRepository = this.repositoryFactory.createFAQRepository()
         const messageRepository =
-            InMemoryRepositoryFactory.createMessageRepository()
-        const clientRepository =
-            InMemoryRepositoryFactory.createClientRepository()
+            this.repositoryFactory.createMessageRepository()
+        const clientRepository = this.repositoryFactory.createClientRepository()
         const employeeRepository =
-            InMemoryRepositoryFactory.createEmployeeRepository()
+            this.repositoryFactory.createEmployeeRepository()
 
         const messageHandlerFactory = new MessageHandlerFactory(
             outputPort,
             conversationRepository,
-            departmentRepository,
             faqRepository,
             messageRepository,
-            clientRepository,
-            employeeRepository
+            employeeRepository,
+            this.useCaseFactory.getListActiveDepartmentsUseCase()
         )
 
         return new WhatsAppMessageService(

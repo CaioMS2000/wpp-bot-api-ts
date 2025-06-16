@@ -12,27 +12,27 @@ import { EmployeeRepository } from '@/domain/repositories/employee-repository'
 import { InMemoryEmployeeRepository } from '../../database/repositories/in-memory/employee-repository'
 
 export class InMemoryRepositoryFactory {
-    static createClientRepository(): ClientRepository {
+    createClientRepository(): ClientRepository {
         return new InMemoryClientRepository()
     }
 
-    static createEmployeeRepository(): EmployeeRepository {
+    createEmployeeRepository(): EmployeeRepository {
         return new InMemoryEmployeeRepository()
     }
 
-    static createConversationRepository(): ConversationRepository {
+    createConversationRepository(): ConversationRepository {
         return new InMemoryConversationRepository()
     }
 
-    static createDepartmentRepository(): DepartmentRepository {
+    createDepartmentRepository(): DepartmentRepository {
         return new InMemoryDepartmentRepository()
     }
 
-    static createFAQRepository(): FAQRepository {
+    createFAQRepository(): FAQRepository {
         return new InMemoryFAQRepository()
     }
 
-    static createMessageRepository(): MessageRepository {
+    createMessageRepository(): MessageRepository {
         return new InMemoryMessageRepository()
     }
 }

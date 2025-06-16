@@ -1,11 +1,11 @@
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
 
-export class ListDepartmentsUseCase {
+export class ListActiveDepartmentsUseCase {
     constructor(private departmentRepository: DepartmentRepository) {}
 
-    async execute(): Promise<string[]> {
+    async execute() {
         const departments = await this.departmentRepository.findAllActive()
 
-        return departments.map(d => d.name)
+        return departments
     }
 }

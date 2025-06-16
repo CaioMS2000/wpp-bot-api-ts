@@ -6,13 +6,21 @@ import { app } from './app'
 import { interactionMock } from './interaction-mock'
 import { receiveMessage } from './routes/message/receive-message'
 import { seedInMemoryRepositories } from '../database/in-memory-seed'
+import { UseCaseFactory } from '@/domain/whats-app/application/factory/use-case-factory'
+import { RepositoryFactory } from '@/domain/whats-app/application/factory/repository-factory'
+import { InMemoryRepositoryFactory } from '../factory/in-memory/in-memory-repository-factory'
 
 const projectRoot = findProjectRoot(__dirname)
 const responseFilePath = path.join(projectRoot, 'response.json')
 
 emptyJsonFile(responseFilePath)
 
-const whatsAppMessageService = InMemoryWhatsAppMessageServiceFactory.create()
+const repositoryFactory: RepositoryFactory = new InMemoryRepositoryFactory()
+const useCaseFactory = new UseCaseFactory(repositoryFactory)
+const inMemoryWhatsAppMessageServiceFactory =
+    new InMemoryWhatsAppMessageServiceFactory(useCaseFactory, repositoryFactory)
+const whatsAppMessageService =
+    inMemoryWhatsAppMessageServiceFactory.createService()
 
 app.register(receiveMessage, { whatsAppMessageService })
 

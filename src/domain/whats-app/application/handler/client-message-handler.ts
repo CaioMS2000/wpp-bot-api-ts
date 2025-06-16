@@ -19,16 +19,18 @@ import { DepartmentSelectionState } from '../states/client-only/department-selec
 import { DepartmentQueueState } from '../states/client-only/department-queue-state'
 import { logger } from '@/core/logger'
 import { Department } from '@/domain/entities/department'
+import { StateFactory } from '../factory/state-factory'
+import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
 
 export class ClientMessageHandler extends MessageHandler {
     constructor(
         private outputPort: OutputPort,
         private conversationRepository: ConversationRepository,
-        public departmentRepository: DepartmentRepository,
+        // public departmentRepository: DepartmentRepository,
         public faqRepository: FAQRepository,
         private messageRepository: MessageRepository,
-        private clientRepository: ClientRepository,
-        public employeeRepository: EmployeeRepository
+        public employeeRepository: EmployeeRepository,
+        private listActiveDepartmentsUseCase: ListActiveDepartmentsUseCase
     ) {
         super()
     }
@@ -125,9 +127,6 @@ export class ClientMessageHandler extends MessageHandler {
     ) {
         logger.debug(`Handling transition to state: ${transition.targetState}`)
 
-        const availableDepartments =
-            await this.departmentRepository.findAllActive()
-
         switch (transition.targetState) {
             case 'initial_menu':
                 conversation.transitionToState(
@@ -138,7 +137,11 @@ export class ClientMessageHandler extends MessageHandler {
                 const faqCategories = await this.faqRepository.findCategories()
 
                 conversation.transitionToState(
-                    new FAQCategoriesState(conversation, faqCategories)
+                    StateFactory.create(
+                        'faq_categories',
+                        conversation,
+                        faqCategories
+                    )
                 )
                 break
             case 'faq_items':
@@ -152,12 +155,22 @@ export class ClientMessageHandler extends MessageHandler {
                 )
 
                 conversation.transitionToState(
-                    new FAQItemsState(conversation, transition.data, faqItems)
+                    StateFactory.create('faq_items', conversation, [
+                        transition.data,
+                        faqItems,
+                    ])
                 )
                 break
+        }
+
+        const availableDepartments =
+            await this.listActiveDepartmentsUseCase.execute()
+
+        switch (transition.targetState) {
             case 'department_selection':
                 conversation.transitionToState(
-                    new DepartmentSelectionState(
+                    StateFactory.create(
+                        'department_selection',
                         conversation,
                         availableDepartments
                     )
@@ -175,7 +188,11 @@ export class ClientMessageHandler extends MessageHandler {
                 )
 
                 conversation.transitionToState(
-                    new DepartmentChatState(conversation, department)
+                    StateFactory.create(
+                        'department_chat',
+                        conversation,
+                        department
+                    )
                 )
                 break
             }
