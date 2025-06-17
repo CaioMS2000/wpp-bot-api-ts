@@ -1,7 +1,7 @@
 import { Entity } from '@/core/entities/entity'
+import { Client } from './client'
 import { Conversation } from './conversation'
 import { Employee } from './employee'
-import { Client } from './client'
 
 export type MessageProps = {
     conversation: Conversation

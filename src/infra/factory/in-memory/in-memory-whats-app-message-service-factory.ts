@@ -2,10 +2,10 @@ import { ConsoleOutputPort } from '@/core/output/console-output-port'
 import { FileOutputPort } from '@/core/output/file-output-port'
 import { OutputPort } from '@/core/output/output-port'
 import { MessageHandlerFactory } from '@/domain/whats-app/application/factory/message-handler-factory'
+import { RepositoryFactory } from '@/domain/whats-app/application/factory/repository-factory'
+import { UseCaseFactory } from '@/domain/whats-app/application/factory/use-case-factory'
 import { WhatsAppMessageService } from '@/domain/whats-app/application/services/whats-app-message-service'
 import { InMemoryRepositoryFactory } from './in-memory-repository-factory'
-import { UseCaseFactory } from '@/domain/whats-app/application/factory/use-case-factory'
-import { RepositoryFactory } from '@/domain/whats-app/application/factory/repository-factory'
 
 const currentOutputPort: OutputPort = new FileOutputPort()
 // const currentOutputPort: OutputPort = new ConsoleOutputPort()

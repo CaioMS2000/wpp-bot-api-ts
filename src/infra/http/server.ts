@@ -1,13 +1,13 @@
 import path from 'node:path'
 import { logger } from '@/core/logger'
+import { RepositoryFactory } from '@/domain/whats-app/application/factory/repository-factory'
+import { UseCaseFactory } from '@/domain/whats-app/application/factory/use-case-factory'
 import { emptyJsonFile, findProjectRoot } from '@/utils/files'
+import { InMemoryRepositoryFactory } from '../factory/in-memory/in-memory-repository-factory'
 import { InMemoryWhatsAppMessageServiceFactory } from '../factory/in-memory/in-memory-whats-app-message-service-factory'
 import { app } from './app'
 import { interactionMock } from './interaction-mock'
 import { receiveMessage } from './routes/message/receive-message'
-import { UseCaseFactory } from '@/domain/whats-app/application/factory/use-case-factory'
-import { RepositoryFactory } from '@/domain/whats-app/application/factory/repository-factory'
-import { InMemoryRepositoryFactory } from '../factory/in-memory/in-memory-repository-factory'
 
 const projectRoot = findProjectRoot(__dirname)
 const responseFilePath = path.join(projectRoot, 'response.json')

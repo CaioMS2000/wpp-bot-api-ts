@@ -1,18 +1,18 @@
 import { logger } from '@/core/logger'
 import { OutputPort } from '@/core/output/output-port'
 import { Client } from '@/domain/entities/client'
+import { Company } from '@/domain/entities/company'
 import { Conversation } from '@/domain/entities/conversation'
 import { Employee } from '@/domain/entities/employee'
 import { Message } from '@/domain/entities/message'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
-import { MessageRepository } from '@/domain/repositories/message-repository'
 import { FAQRepository } from '@/domain/repositories/faq-repository'
+import { MessageRepository } from '@/domain/repositories/message-repository'
 import { StateFactory } from '../factory/state-factory'
 import { StateTransition } from '../states/state-transition'
-import { MessageHandler } from './message-handler'
-import { FindConversationByUserPhoneUseCase } from '../use-cases/find-conversation-by-user-phone'
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
-import { Company } from '@/domain/entities/company'
+import { FindConversationByUserPhoneUseCase } from '../use-cases/find-conversation-by-user-phone'
+import { MessageHandler } from './message-handler'
 
 export class EmployeeMessageHandler extends MessageHandler {
     constructor(

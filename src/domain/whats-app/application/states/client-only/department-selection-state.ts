@@ -1,9 +1,9 @@
+import { logger } from '@/core/logger'
 import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
 import { MenuOption } from '../../../@types'
 import { ConversationState } from '../conversation-state'
 import { StateTransition } from '../state-transition'
-import { logger } from '@/core/logger'
 
 export class DepartmentSelectionState extends ConversationState {
     private menuOptions: MenuOption[]

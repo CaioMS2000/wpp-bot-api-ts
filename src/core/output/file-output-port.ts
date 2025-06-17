@@ -1,6 +1,6 @@
 import path from 'node:path'
-import { OutputPort } from './output-port'
 import { appendToJsonObject, findProjectRoot } from '@/utils/files'
+import { OutputPort } from './output-port'
 
 export class FileOutputPort implements OutputPort {
     handle(response: any): void | Promise<void> {

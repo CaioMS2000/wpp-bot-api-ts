@@ -1,3 +1,4 @@
+import { logger } from '@/core/logger'
 import { Client } from '@/domain/entities/client'
 import { Company } from '@/domain/entities/company'
 import { Employee } from '@/domain/entities/employee'
@@ -6,7 +7,6 @@ import { CompanyRepository } from '@/domain/repositories/company-repository'
 import { EmployeeRepository } from '@/domain/repositories/employee-repository'
 import { FindEmployeeByPhoneUseCase } from './find-employee-by-phone-use-case'
 import { FindOrCreateClientUseCase } from './find-or-create-client'
-import { logger } from '@/core/logger'
 
 export type SenderContext =
     | {

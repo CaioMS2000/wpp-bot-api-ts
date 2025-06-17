@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/infra/http/server.ts",
     "lint": "biome check .",
+    "lint:hard": "biome check --write --unsafe ./src",
     "format": "biome format --write .",
     "prepare": "husky"
   },

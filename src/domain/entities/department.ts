@@ -1,7 +1,7 @@
 import { Entity } from '@/core/entities/entity'
-import type { Employee } from './employee'
 import type { Client } from './client'
 import { Company } from './company'
+import type { Employee } from './employee'
 
 export type DepartmentProps = {
     name: string

@@ -1,6 +1,7 @@
 import { logger } from '@/core/logger'
 import { OutputPort } from '@/core/output/output-port'
 import { Client } from '@/domain/entities/client'
+import { Company } from '@/domain/entities/company'
 import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
 import { Employee } from '@/domain/entities/employee'
@@ -25,7 +26,6 @@ import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departmen
 import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
 import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
 import { MessageHandler } from './message-handler'
-import { Company } from '@/domain/entities/company'
 
 export class ClientMessageHandler extends MessageHandler {
     constructor(

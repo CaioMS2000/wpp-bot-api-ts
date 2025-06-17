@@ -1,8 +1,8 @@
+import { logger } from '@/core/logger'
 import { isClient, isEmployee } from '@/utils/entity'
 import { MenuOption } from '../../@types'
 import { ConversationState } from './conversation-state'
 import { StateTransition } from './state-transition'
-import { logger } from '@/core/logger'
 
 export class InitialMenuState extends ConversationState {
     private menuOptions: MenuOption[] = [
