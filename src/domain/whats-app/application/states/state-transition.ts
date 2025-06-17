@@ -36,6 +36,10 @@ export class StateTransition {
         return this.stateTransitionProps.requiresExternalData
     }
 
+    static stayInCurrent(message: Nullable<string> = null): StateTransition {
+        return new StateTransition('stay_current')
+    }
+
     static toAIChat(): StateTransition {
         return new StateTransition('transition', {
             targetState: 'ai_chat',
@@ -83,7 +87,10 @@ export class StateTransition {
         })
     }
 
-    static stayInCurrent(message: Nullable<string> = null): StateTransition {
-        return new StateTransition('stay_current')
+    static toDepartmentListQueue(): StateTransition {
+        return new StateTransition('transition', {
+            targetState: 'department_queue_list',
+            requiresExternalData: true,
+        })
     }
 }

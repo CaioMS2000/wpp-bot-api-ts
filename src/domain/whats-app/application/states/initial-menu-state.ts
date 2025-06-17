@@ -34,15 +34,17 @@ export class InitialMenuState extends ConversationState {
     ]
 
     handleMessage(messageContent: string): StateTransition {
+        let res: NotDefined<Nullable<StateTransition>> = undefined
+
         if (isClient(this.conversation.user)) {
-            return this.handleClientMessage(messageContent)
+            res = this.handleClientMessage(messageContent)
         }
 
         if (isEmployee(this.conversation.user)) {
-            return this.handleEmployeeMessage(messageContent)
+            res = this.handleEmployeeMessage(messageContent)
         }
 
-        return StateTransition.stayInCurrent(this.entryMessage)
+        return res ?? StateTransition.stayInCurrent(this.entryMessage)
     }
 
     get entryMessage() {
@@ -57,7 +59,7 @@ export class InitialMenuState extends ConversationState {
         )
     }
 
-    private handleClientMessage(messageContent: string): StateTransition {
+    private handleClientMessage(messageContent: string) {
         if (messageContent === '1') {
             return StateTransition.toAIChat()
         }
@@ -69,11 +71,12 @@ export class InitialMenuState extends ConversationState {
         if (messageContent === '3') {
             return StateTransition.toFAQCategories()
         }
-
-        return StateTransition.stayInCurrent(this.entryMessage)
     }
 
-    private handleEmployeeMessage(messageContent: string): StateTransition {
-        return StateTransition.stayInCurrent(this.entryMessage)
+    private handleEmployeeMessage(messageContent: string) {
+        if (messageContent === '4') {
+        }
+
+        return undefined
     }
 }

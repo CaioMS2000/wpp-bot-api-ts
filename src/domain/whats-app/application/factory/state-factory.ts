@@ -10,6 +10,7 @@ import { ConversationState } from '../states/conversation-state'
 import { FAQCategoriesState } from '../states/faq-categories-state'
 import { FAQItemsState } from '../states/faq-items-state'
 import { InitialMenuState } from '../states/initial-menu-state'
+import { ListDepartmentQueueState } from '../states/employee-only/list-department-client-queue-state'
 
 export type StateName =
     | 'initial_menu'
@@ -19,6 +20,7 @@ export type StateName =
     | 'department_queue'
     | 'department_chat'
     | 'ai_chat'
+    | 'department_queue_list'
 
 export class StateFactory {
     static create(
@@ -85,6 +87,12 @@ export class StateFactory {
 
             case 'ai_chat':
                 return new AIChatState(conversation)
+
+            case 'department_queue_list':
+                if (!StateFactory.isDepartment(data)) {
+                    throw new Error('Data must be a Department object')
+                }
+                return new ListDepartmentQueueState(conversation, data)
 
             default:
                 throw new Error(`Unknown state: ${name}`)
