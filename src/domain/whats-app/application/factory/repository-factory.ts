@@ -1,4 +1,5 @@
 import { ClientRepository } from '@/domain/repositories/client-repository'
+import { CompanyRepository } from '@/domain/repositories/company-repository'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { EmployeeRepository } from '@/domain/repositories/employee-repository'
@@ -12,4 +13,5 @@ export abstract class RepositoryFactory {
     abstract createDepartmentRepository(): DepartmentRepository
     abstract createFAQRepository(): FAQRepository
     abstract createMessageRepository(): MessageRepository
+    abstract createCompanyRepository(): CompanyRepository
 }

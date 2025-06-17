@@ -25,6 +25,7 @@ import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departmen
 import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
 import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
 import { MessageHandler } from './message-handler'
+import { Company } from '@/domain/entities/company'
 
 export class ClientMessageHandler extends MessageHandler {
     constructor(
@@ -42,6 +43,7 @@ export class ClientMessageHandler extends MessageHandler {
     }
 
     async process(
+        company: Company,
         user: Client | Employee,
         messageContent: string
     ): Promise<void> {
@@ -56,7 +58,7 @@ export class ClientMessageHandler extends MessageHandler {
         logger.debug(`Message content: ${messageContent}`)
 
         const messages: string[] = []
-        const conversation = await this.getOrCreateConversation(user)
+        const conversation = await this.getOrCreateConversation(company, user)
 
         await this.saveMessage(conversation, messageContent, 'client', user)
         await this.conversationRepository.save(conversation)
@@ -223,7 +225,7 @@ export class ClientMessageHandler extends MessageHandler {
         return department
     }
 
-    private async getOrCreateConversation(user: Client) {
+    private async getOrCreateConversation(company: Company, user: Client) {
         let conversation =
             await this.findConversationByUserPhoneUseCase.execute(user.phone)
 
@@ -231,6 +233,7 @@ export class ClientMessageHandler extends MessageHandler {
             logger.info(`Creating new conversation for client: ${user.phone}`)
             conversation = await this.createConversationUseCase.execute({
                 user,
+                company,
             })
         }
 

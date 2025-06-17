@@ -1,13 +1,15 @@
 import { Entity } from '@/core/entities/entity'
-import { Client } from './client'
-import type { Message } from './message'
 import { ConversationState } from '../whats-app/application/states/conversation-state'
 import { InitialMenuState } from '../whats-app/application/states/initial-menu-state'
+import { Client } from './client'
 import { Employee } from './employee'
+import type { Message } from './message'
+import { Company } from './company'
 
 type UserType = Client | Employee
 
 export type ConversationProps = {
+    company: Company
     user: UserType
     startedAt: Date
     endedAt: Nullable<Date>
@@ -16,27 +18,29 @@ export type ConversationProps = {
     participants: any[]
     messages: Message[]
     currentState: ConversationState
+    aiServiceThreadId: Nullable<string>
+    aiServiceThreadResume: Nullable<string>
 }
 
-export type CreateConversationInput = RequireOnly<ConversationProps, 'user'>
+export type CreateConversationInput = RequireOnly<
+    ConversationProps,
+    'user' | 'company'
+>
 
 export class Conversation extends Entity<ConversationProps> {
     static create(props: CreateConversationInput, id?: string) {
         const temporaryState = null as unknown as ConversationState
         const state = props.currentState || temporaryState
-        const defaults: Pick<
-            ConversationProps,
-            | 'startedAt'
-            | 'lastStateChange'
-            | 'endedAt'
-            | 'agent'
-            | 'currentState'
-        > = {
+        const defaults: Omit<ConversationProps, 'user' | 'company'> = {
             startedAt: new Date(),
             lastStateChange: new Date(),
             endedAt: null,
             agent: null,
+            aiServiceThreadId: null,
+            aiServiceThreadResume: null,
             currentState: state,
+            participants: [],
+            messages: [],
         }
 
         const conversation = new Conversation(

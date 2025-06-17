@@ -5,6 +5,7 @@ import { FindOrCreateClientUseCase } from '../use-cases/find-or-create-client'
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
 import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
 import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
+import { ResolveSenderContextUseCase } from '../use-cases/resolve-sender-context-use-case'
 import { RepositoryFactory } from './repository-factory'
 
 export class UseCaseFactory {
@@ -49,6 +50,14 @@ export class UseCaseFactory {
     getCreateConversationUseCase(): CreateConversationUseCase {
         return new CreateConversationUseCase(
             this.repositoryFactory.createConversationRepository()
+        )
+    }
+
+    getResolveSenderContextUseCase(): ResolveSenderContextUseCase {
+        return new ResolveSenderContextUseCase(
+            this.repositoryFactory.createCompanyRepository(),
+            this.getFindEmployeeByPhoneUseCase(),
+            this.getFindOrCreateClientUseCase()
         )
     }
 }

@@ -10,6 +10,8 @@ import { InMemoryFAQRepository } from '../../database/repositories/in-memory/faq
 import { InMemoryMessageRepository } from '../../database/repositories/in-memory/message-repository'
 import { EmployeeRepository } from '@/domain/repositories/employee-repository'
 import { InMemoryEmployeeRepository } from '../../database/repositories/in-memory/employee-repository'
+import { CompanyRepository } from '@/domain/repositories/company-repository'
+import { InMemoryCompanyRepository } from '@/infra/database/repositories/in-memory/company-repository'
 
 export class InMemoryRepositoryFactory {
     createClientRepository(): ClientRepository {
@@ -34,5 +36,9 @@ export class InMemoryRepositoryFactory {
 
     createMessageRepository(): MessageRepository {
         return new InMemoryMessageRepository()
+    }
+
+    createCompanyRepository(): CompanyRepository {
+        return new InMemoryCompanyRepository()
     }
 }

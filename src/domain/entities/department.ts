@@ -1,16 +1,21 @@
 import { Entity } from '@/core/entities/entity'
 import type { Employee } from './employee'
 import type { Client } from './client'
+import { Company } from './company'
 
 export type DepartmentProps = {
     name: string
+    company: Company
     queue: Client[]
     employee: Employee[]
 }
 
 export class Department extends Entity<DepartmentProps> {
-    static create(props: RequireOnly<DepartmentProps, 'name'>, id?: string) {
-        const defaults: Omit<DepartmentProps, 'name'> = {
+    static create(
+        props: RequireOnly<DepartmentProps, 'name' | 'company'>,
+        id?: string
+    ) {
+        const defaults: Omit<DepartmentProps, 'name' | 'company'> = {
             queue: [],
             employee: [],
         }

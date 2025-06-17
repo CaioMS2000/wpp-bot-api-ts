@@ -11,49 +11,57 @@ import { MessageHandler } from '../handler/message-handler'
 import { MessageHandlerFactory } from '../factory/message-handler-factory'
 import { logger } from '@/core/logger'
 import { isClient, isEmployee } from '@/utils/entity'
-import { FindOrCreateClientUseCase } from '../use-cases/find-or-create-client'
-import { FindEmployeeByPhoneUseCase } from '../use-cases/find-employee-by-phone-use-case'
+import { ResolveSenderContextUseCase } from '../use-cases/resolve-sender-context-use-case'
 
 export class WhatsAppMessageService {
     private messageHandlers: Record<string, MessageHandler>
 
     constructor(
         private outputPort: OutputPort,
-        private conversationRepository: ConversationRepository,
         public departmentRepository: DepartmentRepository,
         public faqRepository: FAQRepository,
-        private messageRepository: MessageRepository,
-        private clientRepository: ClientRepository,
         private messageHandlerFactory: MessageHandlerFactory,
-        private findOrCreateClientUseCase: FindOrCreateClientUseCase,
-        private findEmployeeByPhoneUseCase: FindEmployeeByPhoneUseCase
+        private resolveSenderContextUseCase: ResolveSenderContextUseCase
     ) {
         this.messageHandlers = this.initializeMessageHandlers()
     }
 
-    async processIncomingMessage(phone: string, messageContent: string) {
-        // console.clear()
-        logger.info(`\n\n\n\n\n\n\nProcessing new message from ${phone}`)
-        logger.debug(`Message content: ${messageContent}`)
+    async processIncomingMessage(
+        fromPhone: string,
+        toPhone: string,
+        messageContent: string
+    ) {
+        try {
+            // console.clear()
+            logger.info(
+                `\n\n\n\n\n\n\nProcessing new message from ${fromPhone}`
+            )
+            logger.debug(`Message content: ${messageContent}`)
 
-        const user = await this.identifyUser(phone)
-        const messageHandler = this.getHandlerForUser(user)
+            const { type, company, client, employee } =
+                await this.resolveSenderContextUseCase.execute(
+                    fromPhone,
+                    toPhone
+                )
+            const user: Client | Employee =
+                type === 'client' ? client! : employee!
+            const messageHandler = this.getHandlerForUser(user)
 
-        await messageHandler.process(user, messageContent)
-        logger.info('Message processed successfully')
-    }
+            await messageHandler.process(company, user, messageContent)
 
-    private async getEmployee(phone: string): Promise<Nullable<Employee>> {
-        logger.debug(`Looking for employee with phone: ${phone}`)
-
-        const employee = await this.findEmployeeByPhoneUseCase.execute(phone)
-
-        if (employee) {
-            logger.debug(`Employee found: ${employee.id}`)
+            logger.info('Message processed successfully')
+        } catch (error) {
+            if (error instanceof Error) {
+                logger.error(
+                    `Erro durante o processamento da mensagem: ${error.message}`
+                )
+                logger.debug(error.stack)
+            } else {
+                logger.debug(error)
+            }
         }
-
-        return employee
     }
+
     private initializeMessageHandlers(): Record<string, MessageHandler> {
         logger.debug('Initializing message handlers')
 
@@ -63,21 +71,6 @@ export class WhatsAppMessageService {
             employeeMessageHandler:
                 this.messageHandlerFactory.createEmployeeMessageHandler(),
         }
-    }
-
-    private async identifyUser(phone: string): Promise<Client | Employee> {
-        logger.debug(`Identifying user type for phone: ${phone}`)
-
-        const employee = await this.getEmployee(phone)
-
-        if (employee) {
-            logger.debug('User identified as employee')
-            return employee
-        }
-
-        logger.debug('User identified as client')
-
-        return await this.findOrCreateClientUseCase.execute(phone)
     }
 
     private getHandlerForUser(user: Client | Employee): MessageHandler {

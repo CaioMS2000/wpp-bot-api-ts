@@ -1,10 +1,13 @@
+import { logger } from '@/core/logger'
+
 async function sendMessage(message: string, phone: string) {
     try {
         const response = await fetch('http://localhost:3000/message', {
             method: 'POST',
             body: JSON.stringify({
-                clientPhone: phone,
-                messageContent: message,
+                from: phone,
+                to: '556236266103',
+                message: message,
             }),
             headers: {
                 'Content-Type': 'application/json',
@@ -13,8 +16,8 @@ async function sendMessage(message: string, phone: string) {
 
         const data = await response.json()
 
-        console.log('\n\nrequest response:')
-        console.log(data)
+        logger.print('\n\nrequest response:')
+        logger.print(data)
 
         return data
     } catch (error) {

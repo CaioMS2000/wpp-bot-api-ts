@@ -1,4 +1,6 @@
+import { Company } from '@/domain/entities/company'
 import { Employee } from '@/domain/entities/employee'
+import { Manager } from '@/domain/entities/manager'
 import { EmployeeRepository } from '@/domain/repositories/employee-repository'
 
 export class InMemoryEmployeeRepository extends EmployeeRepository {
@@ -19,10 +21,22 @@ export class InMemoryEmployeeRepository extends EmployeeRepository {
     }
 
     private async seedInMemoryData() {
+        const manager = Manager.create({
+            name: 'Eugenio Garcia',
+            email: 'manager@evolight.com',
+        })
+        const company = Company.create({
+            name: 'Evolight',
+            phone: '556236266103',
+            cnpj: '99999999999999',
+            manager,
+        })
+
         this.save(
             Employee.create({
                 department: 'Departamento de TI',
                 phone: '5562993765721',
+                company,
             })
         )
     }

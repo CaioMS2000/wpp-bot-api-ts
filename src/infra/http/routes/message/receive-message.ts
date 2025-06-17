@@ -7,21 +7,11 @@ type Resources = {
     whatsAppMessageService: WhatsAppMessageService
 }
 
-const receiveMessageBodySchema = z.union([
-    z
-        .object({
-            'client-phone': z.string().min(3),
-            'message-content': z.string().min(3),
-        })
-        .transform(data => ({
-            clientPhone: data['client-phone'],
-            messageContent: data['message-content'],
-        })),
-    z.object({
-        clientPhone: z.string().min(10),
-        messageContent: z.string(),
-    }),
-])
+const receiveMessageBodySchema = z.object({
+    from: z.string().min(10),
+    to: z.string().min(10),
+    message: z.string(),
+})
 
 export async function receiveMessage(
     app: FastifyInstance,
@@ -46,8 +36,9 @@ export async function receiveMessage(
             // console.log(req.body)
 
             await whatsAppMessageService.processIncomingMessage(
-                req.body.clientPhone,
-                req.body.messageContent
+                req.body.from,
+                req.body.to,
+                req.body.message
             )
 
             return reply.status(201).send({ message: 'Messagege received' })

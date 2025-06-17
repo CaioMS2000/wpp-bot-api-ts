@@ -43,14 +43,10 @@ export class InMemoryWhatsAppMessageServiceFactory {
 
         return new WhatsAppMessageService(
             outputPort,
-            conversationRepository,
             departmentRepository,
             faqRepository,
-            messageRepository,
-            clientRepository,
             messageHandlerFactory,
-            this.useCaseFactory.getFindOrCreateClientUseCase(),
-            this.useCaseFactory.getFindEmployeeByPhoneUseCase()
+            this.useCaseFactory.getResolveSenderContextUseCase()
         )
     }
 }

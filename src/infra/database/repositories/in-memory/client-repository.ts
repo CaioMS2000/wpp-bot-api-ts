@@ -1,4 +1,5 @@
 import { Client } from '@/domain/entities/client'
+import { Company } from '@/domain/entities/company'
 import { ClientRepository } from '@/domain/repositories/client-repository'
 
 export class InMemoryClientRepository extends ClientRepository {
@@ -8,7 +9,16 @@ export class InMemoryClientRepository extends ClientRepository {
         this.data[client.phone] = client
     }
 
-    async findByPhone(phone: string): Promise<Nullable<Client>> {
-        return this.data[phone] ?? null
+    async findByPhone(
+        company: Company,
+        phone: string
+    ): Promise<Nullable<Client>> {
+        const data = this.data[phone]
+
+        if (data && data.company.id === company.id) {
+            return data
+        }
+
+        return null
     }
 }

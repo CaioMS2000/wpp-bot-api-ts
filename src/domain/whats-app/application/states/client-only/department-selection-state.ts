@@ -3,6 +3,7 @@ import { Department } from '@/domain/entities/department'
 import { MenuOption } from '../../../@types'
 import { ConversationState } from '../conversation-state'
 import { StateTransition } from '../state-transition'
+import { logger } from '@/core/logger'
 
 export class DepartmentSelectionState extends ConversationState {
     private menuOptions: MenuOption[]
@@ -35,8 +36,8 @@ export class DepartmentSelectionState extends ConversationState {
             dept => dept.name === messageContent
         )
 
-        console.log('correspondingDepartment')
-        console.log(correspondingDepartment)
+        logger.print('correspondingDepartment')
+        logger.print(correspondingDepartment)
 
         if (correspondingDepartment) {
             // return StateTransition.toDepartmentChat(messageContent)
