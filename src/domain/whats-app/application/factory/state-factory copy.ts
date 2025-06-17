@@ -49,13 +49,75 @@ export class StateFactory {
         conversation: Conversation,
         data?: unknown
     ): ConversationState {
-        const creator = StateFactory.creators[name]
+        switch (name) {
+            case 'initial_menu':
+                return new InitialMenuState(conversation)
 
-        if (!creator) {
-            throw new Error(`Unknown state name: ${name}`)
+            case 'faq_categories': {
+                if (!Array.isArray(data)) {
+                    throw new Error(
+                        'Data for faq_categories must be an array of FAQCategory objects'
+                    )
+                }
+
+                if (!data.every(StateFactory.isFAQCategory)) {
+                    throw new Error(
+                        'Invalid FAQCategory format. Expected { name: string, items: FAQItem[] } ' +
+                            'where FAQItem is { question: string, answer: string }'
+                    )
+                }
+
+                return new FAQCategoriesState(
+                    conversation,
+                    data as FAQCategory[]
+                )
+            }
+
+            case 'faq_items': {
+                if (!StateFactory.isCategoryTuple(data)) {
+                    throw new Error(
+                        'Data must be in the format [categoryName: string, items: FAQItem[]] ' +
+                            'where FAQItem is { question: string, answer: string }'
+                    )
+                }
+
+                const [categoryName, items] = data
+                return new FAQItemsState(conversation, categoryName, items)
+            }
+
+            case 'department_selection': {
+                if (!isDepartmentArray(data)) {
+                    throw new Error(
+                        'Data must be an array of Department objects'
+                    )
+                }
+
+                return new DepartmentSelectionState(conversation, data)
+            }
+
+            case 'department_queue':
+            case 'department_chat': {
+                if (!isDepartment(data)) {
+                    throw new Error('Data must be a Department object')
+                }
+
+                return name === 'department_queue'
+                    ? new DepartmentQueueState(conversation, data)
+                    : new DepartmentChatState(conversation, data)
+            }
+
+            case 'ai_chat':
+                return new AIChatState(conversation)
+
+            case 'department_queue_list':
+                if (!isDepartment(data)) {
+                    throw new Error('Data must be a Department object')
+                }
+                return new ListDepartmentQueueState(conversation, data)
+
+            default:
+                throw new Error(`Unknown state: ${name}`)
         }
-
-        return creator.create(conversation, data)
     }
 
     private static isFAQCategory(category: unknown): category is FAQCategory {
