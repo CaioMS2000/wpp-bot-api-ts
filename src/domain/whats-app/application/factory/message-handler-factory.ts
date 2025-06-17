@@ -45,9 +45,11 @@ export class MessageHandlerFactory {
     createEmployeeMessageHandler(): MessageHandler {
         return new EmployeeMessageHandler(
             this.outputPort,
-            this.conversationRepository,
             this.messageRepository,
-            this.faqRepository
+            this.conversationRepository,
+            this.faqRepository,
+            this.findConversationByUserPhoneUseCase,
+            this.createConversationUseCase
         )
     }
 }

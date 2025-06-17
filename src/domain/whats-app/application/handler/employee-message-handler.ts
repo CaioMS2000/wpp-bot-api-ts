@@ -6,48 +6,44 @@ import { Employee } from '@/domain/entities/employee'
 import { Message } from '@/domain/entities/message'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
 import { MessageRepository } from '@/domain/repositories/message-repository'
+import { FAQRepository } from '@/domain/repositories/faq-repository'
+import { StateFactory } from '../factory/state-factory'
 import { StateTransition } from '../states/state-transition'
 import { MessageHandler } from './message-handler'
-import { FAQRepository } from '@/domain/repositories/faq-repository'
-import { FAQItemsState } from '../states/faq-items-state'
-import { FAQCategoriesState } from '../states/faq-categories-state'
-import { InitialMenuState } from '../states/initial-menu-state'
+import { FindConversationByUserPhoneUseCase } from '../use-cases/find-conversation-by-user-phone'
+import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
 
 export class EmployeeMessageHandler extends MessageHandler {
     constructor(
         private outputPort: OutputPort,
-        private conversationRepository: ConversationRepository,
         private messageRepository: MessageRepository,
-        public faqRepository: FAQRepository
+        private conversationRepository: ConversationRepository,
+        private faqRepository: FAQRepository,
+        private findConversationByUserPhoneUseCase: FindConversationByUserPhoneUseCase,
+        private createConversationUseCase: CreateConversationUseCase
     ) {
         super()
     }
+
     async process(
         user: Client | Employee,
         messageContent: string
     ): Promise<void> {
         if (user instanceof Client) {
+            logger.error('Invalid user type: Client in EmployeeMessageHandler')
             throw new Error(
-                'This handler is for employees but you passed an client'
+                'This handler is for employees but you passed a client'
             )
         }
 
-        let conversation =
-            await this.conversationRepository.findActiveByClientPhone(
-                user.phone
-            )
-
-        if (!conversation) {
-            conversation = Conversation.create({
-                user,
-            })
-            await this.conversationRepository.save(conversation)
-        }
-
-        await this.saveMessage(conversation, messageContent, 'client', user)
-        await this.conversationRepository.save(conversation)
+        logger.info(`Processing message from employee: ${user.phone}`)
+        logger.debug(`Message content: ${messageContent}`)
 
         const messages: string[] = []
+        const conversation = await this.getOrCreateConversation(user)
+
+        await this.saveMessage(conversation, messageContent, 'employee', user)
+        await this.conversationRepository.save(conversation)
 
         logger.debug(
             `Current conversation state: ${conversation.currentState.constructor.name}`
@@ -89,6 +85,7 @@ export class EmployeeMessageHandler extends MessageHandler {
         from: 'client' | 'employee' | 'AI',
         sender: Client | Employee
     ): Promise<Message> {
+        logger.debug(`Saving message from ${from}`)
         const message = Message.create({
             conversation,
             timestamp: new Date(),
@@ -111,14 +108,17 @@ export class EmployeeMessageHandler extends MessageHandler {
         switch (transition.targetState) {
             case 'initial_menu':
                 conversation.transitionToState(
-                    new InitialMenuState(conversation)
+                    StateFactory.create('initial_menu', conversation)
                 )
                 break
             case 'faq_categories':
                 const faqCategories = await this.faqRepository.findCategories()
-
                 conversation.transitionToState(
-                    new FAQCategoriesState(conversation, faqCategories)
+                    StateFactory.create(
+                        'faq_categories',
+                        conversation,
+                        faqCategories
+                    )
                 )
                 break
             case 'faq_items':
@@ -132,9 +132,26 @@ export class EmployeeMessageHandler extends MessageHandler {
                 )
 
                 conversation.transitionToState(
-                    new FAQItemsState(conversation, transition.data, faqItems)
+                    StateFactory.create('faq_items', conversation, [
+                        transition.data,
+                        faqItems,
+                    ])
                 )
                 break
         }
+    }
+
+    private async getOrCreateConversation(user: Employee) {
+        let conversation =
+            await this.findConversationByUserPhoneUseCase.execute(user.phone)
+
+        if (!conversation) {
+            logger.info(`Creating new conversation for employee: ${user.phone}`)
+            conversation = await this.createConversationUseCase.execute({
+                user,
+            })
+        }
+
+        return conversation
     }
 }
