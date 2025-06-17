@@ -34,7 +34,11 @@ export class InMemoryWhatsAppMessageServiceFactory {
             faqRepository,
             messageRepository,
             employeeRepository,
-            this.useCaseFactory.getListActiveDepartmentsUseCase()
+            this.useCaseFactory.getListActiveDepartmentsUseCase(),
+            this.useCaseFactory.getListFAQCategoriesUseCase(),
+            this.useCaseFactory.getListFAQCategorieItemsUseCase(),
+            this.useCaseFactory.getCreateConversationUseCase(),
+            this.useCaseFactory.getFindConversationByUserPhoneUseCase()
         )
 
         return new WhatsAppMessageService(
@@ -44,8 +48,9 @@ export class InMemoryWhatsAppMessageServiceFactory {
             faqRepository,
             messageRepository,
             clientRepository,
-            employeeRepository,
-            messageHandlerFactory
+            messageHandlerFactory,
+            this.useCaseFactory.getFindOrCreateClientUseCase(),
+            this.useCaseFactory.getFindEmployeeByPhoneUseCase()
         )
     }
 }

@@ -5,8 +5,10 @@ export type ClientProps = {
     department: Nullable<string>
 }
 
+export type CreateClientInput = RequireOnly<ClientProps, 'phone'>
+
 export class Client extends Entity<ClientProps> {
-    static create(props: RequireOnly<ClientProps, 'phone'>, id?: string) {
+    static create(props: CreateClientInput, id?: string) {
         const defaults: Omit<ClientProps, 'phone'> = {
             department: null,
         }

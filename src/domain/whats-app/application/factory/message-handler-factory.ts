@@ -9,6 +9,10 @@ import { MessageHandler } from '../handler/message-handler'
 import { ClientMessageHandler } from '../handler/client-message-handler'
 import { EmployeeMessageHandler } from '../handler/employee-message-handler'
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
+import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
+import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
+import { FindConversationByUserPhoneUseCase } from '../use-cases/find-conversation-by-user-phone'
+import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
 
 export class MessageHandlerFactory {
     constructor(
@@ -17,17 +21,24 @@ export class MessageHandlerFactory {
         private faqRepository: FAQRepository,
         private messageRepository: MessageRepository,
         private employeeRepository: EmployeeRepository,
-        private listActiveDepartmentsUseCase: ListActiveDepartmentsUseCase
+        private listActiveDepartmentsUseCase: ListActiveDepartmentsUseCase,
+        private listFAQCategoriesUseCase: ListFAQCategoriesUseCase,
+        private listFAQCategorieItemsUseCase: ListFAQCategorieItemsUseCase,
+        private createConversationUseCase: CreateConversationUseCase,
+        private findConversationByUserPhoneUseCase: FindConversationByUserPhoneUseCase
     ) {}
 
     createClientMessageHandler(): MessageHandler {
         return new ClientMessageHandler(
             this.outputPort,
-            this.conversationRepository,
-            this.faqRepository,
             this.messageRepository,
             this.employeeRepository,
-            this.listActiveDepartmentsUseCase
+            this.conversationRepository,
+            this.listActiveDepartmentsUseCase,
+            this.listFAQCategoriesUseCase,
+            this.listFAQCategorieItemsUseCase,
+            this.createConversationUseCase,
+            this.findConversationByUserPhoneUseCase
         )
     }
 

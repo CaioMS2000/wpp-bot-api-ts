@@ -11,6 +11,8 @@ import { MessageHandler } from '../handler/message-handler'
 import { MessageHandlerFactory } from '../factory/message-handler-factory'
 import { logger } from '@/core/logger'
 import { isClient, isEmployee } from '@/utils/entity'
+import { FindOrCreateClientUseCase } from '../use-cases/find-or-create-client'
+import { FindEmployeeByPhoneUseCase } from '../use-cases/find-employee-by-phone-use-case'
 
 export class WhatsAppMessageService {
     private messageHandlers: Record<string, MessageHandler>
@@ -22,8 +24,9 @@ export class WhatsAppMessageService {
         public faqRepository: FAQRepository,
         private messageRepository: MessageRepository,
         private clientRepository: ClientRepository,
-        public employeeRepository: EmployeeRepository,
-        private messageHandlerFactory: MessageHandlerFactory
+        private messageHandlerFactory: MessageHandlerFactory,
+        private findOrCreateClientUseCase: FindOrCreateClientUseCase,
+        private findEmployeeByPhoneUseCase: FindEmployeeByPhoneUseCase
     ) {
         this.messageHandlers = this.initializeMessageHandlers()
     }
@@ -40,25 +43,10 @@ export class WhatsAppMessageService {
         logger.info('Message processed successfully')
     }
 
-    private async getOrCreateClient(phone: string): Promise<Client> {
-        logger.debug(`Looking for client with phone: ${phone}`)
-        let client = await this.clientRepository.findByPhone(phone)
-
-        if (!client) {
-            logger.info(`Creating new client for phone: ${phone}`)
-            client = Client.create({
-                phone,
-            })
-            await this.clientRepository.save(client)
-        }
-
-        return client
-    }
-
     private async getEmployee(phone: string): Promise<Nullable<Employee>> {
         logger.debug(`Looking for employee with phone: ${phone}`)
 
-        const employee = await this.employeeRepository.findByPhone(phone)
+        const employee = await this.findEmployeeByPhoneUseCase.execute(phone)
 
         if (employee) {
             logger.debug(`Employee found: ${employee.id}`)
@@ -89,7 +77,7 @@ export class WhatsAppMessageService {
 
         logger.debug('User identified as client')
 
-        return this.getOrCreateClient(phone)
+        return await this.findOrCreateClientUseCase.execute(phone)
     }
 
     private getHandlerForUser(user: Client | Employee): MessageHandler {

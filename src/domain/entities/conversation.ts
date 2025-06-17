@@ -18,8 +18,10 @@ export type ConversationProps = {
     currentState: ConversationState
 }
 
+export type CreateConversationInput = RequireOnly<ConversationProps, 'user'>
+
 export class Conversation extends Entity<ConversationProps> {
-    static create(props: RequireOnly<ConversationProps, 'user'>, id?: string) {
+    static create(props: CreateConversationInput, id?: string) {
         const temporaryState = null as unknown as ConversationState
         const state = props.currentState || temporaryState
         const defaults: Pick<

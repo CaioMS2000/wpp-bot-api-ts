@@ -5,6 +5,12 @@ import { createSlug } from '@/utils/text'
 export class InMemoryFAQRepository extends FAQRepository {
     private data: Record<string, FAQItem & { category: string }> = {}
 
+    constructor() {
+        super()
+
+        this.seedInMemoryData()
+    }
+
     async save(
         category: string,
         question: string,
@@ -53,5 +59,28 @@ export class InMemoryFAQRepository extends FAQRepository {
         })
 
         return items
+    }
+
+    private async seedInMemoryData() {
+        this.save(
+            'suporte',
+            'Como faço para resetar minha senha?',
+            'Para resetar sua senha, acesse a página de login e clique em "Esqueci minha senha".'
+        )
+        this.save(
+            'suporte',
+            'O sistema está fora do ar, o que fazer?',
+            'Primeiro verifique sua conexão com a internet. Se o problema persistir, entre em contato com o suporte técnico.'
+        )
+        this.save(
+            'vendas',
+            'Quais são as formas de pagamento aceitas?',
+            'Aceitamos cartão de crédito, débito, PIX e boleto bancário.'
+        )
+        this.save(
+            'vendas',
+            'Qual o prazo de entrega dos produtos?',
+            'O prazo de entrega varia de acordo com sua localização, geralmente entre 3 a 7 dias úteis.'
+        )
     }
 }

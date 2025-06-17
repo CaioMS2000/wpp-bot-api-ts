@@ -1,6 +1,8 @@
+import { logger } from '@/core/logger'
 import { OutputPort } from '@/core/output/output-port'
 import { Client } from '@/domain/entities/client'
 import { Conversation } from '@/domain/entities/conversation'
+import { Department } from '@/domain/entities/department'
 import { Employee } from '@/domain/entities/employee'
 import { Message } from '@/domain/entities/message'
 import { ClientRepository } from '@/domain/repositories/client-repository'
@@ -8,29 +10,33 @@ import { ConversationRepository } from '@/domain/repositories/conversation-repos
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { EmployeeRepository } from '@/domain/repositories/employee-repository'
 import { FAQRepository } from '@/domain/repositories/faq-repository'
+import { MessageRepository } from '@/domain/repositories/message-repository'
+import { StateFactory } from '../factory/state-factory'
 import { DepartmentChatState } from '../states/client-only/department-chat-state'
+import { DepartmentQueueState } from '../states/client-only/department-queue-state'
+import { DepartmentSelectionState } from '../states/client-only/department-selection-state'
 import { FAQCategoriesState } from '../states/faq-categories-state'
 import { FAQItemsState } from '../states/faq-items-state'
 import { InitialMenuState } from '../states/initial-menu-state'
 import { StateTransition } from '../states/state-transition'
-import { MessageHandler } from './message-handler'
-import { MessageRepository } from '@/domain/repositories/message-repository'
-import { DepartmentSelectionState } from '../states/client-only/department-selection-state'
-import { DepartmentQueueState } from '../states/client-only/department-queue-state'
-import { logger } from '@/core/logger'
-import { Department } from '@/domain/entities/department'
-import { StateFactory } from '../factory/state-factory'
+import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
+import { FindConversationByUserPhoneUseCase } from '../use-cases/find-conversation-by-user-phone'
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
+import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
+import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
+import { MessageHandler } from './message-handler'
 
 export class ClientMessageHandler extends MessageHandler {
     constructor(
         private outputPort: OutputPort,
-        private conversationRepository: ConversationRepository,
-        // public departmentRepository: DepartmentRepository,
-        public faqRepository: FAQRepository,
         private messageRepository: MessageRepository,
         public employeeRepository: EmployeeRepository,
-        private listActiveDepartmentsUseCase: ListActiveDepartmentsUseCase
+        public conversationRepository: ConversationRepository,
+        private listActiveDepartmentsUseCase: ListActiveDepartmentsUseCase,
+        private listFAQCategoriesUseCase: ListFAQCategoriesUseCase,
+        private listFAQCategorieItemsUseCase: ListFAQCategorieItemsUseCase,
+        private createConversationUseCase: CreateConversationUseCase,
+        private findConversationByUserPhoneUseCase: FindConversationByUserPhoneUseCase
     ) {
         super()
     }
@@ -49,23 +55,11 @@ export class ClientMessageHandler extends MessageHandler {
         logger.info(`Processing message from client: ${user.phone}`)
         logger.debug(`Message content: ${messageContent}`)
 
-        let conversation =
-            await this.conversationRepository.findActiveByClientPhone(
-                user.phone
-            )
-
-        if (!conversation) {
-            logger.info(`Creating new conversation for client: ${user.phone}`)
-            conversation = Conversation.create({
-                user,
-            })
-            await this.conversationRepository.save(conversation)
-        }
+        const messages: string[] = []
+        const conversation = await this.getOrCreateConversation(user)
 
         await this.saveMessage(conversation, messageContent, 'client', user)
         await this.conversationRepository.save(conversation)
-
-        const messages: string[] = []
 
         logger.debug(
             `Current conversation state: ${conversation.currentState.constructor.name}`
@@ -134,7 +128,8 @@ export class ClientMessageHandler extends MessageHandler {
                 )
                 break
             case 'faq_categories':
-                const faqCategories = await this.faqRepository.findCategories()
+                const faqCategories =
+                    await this.listFAQCategoriesUseCase.execute()
 
                 conversation.transitionToState(
                     StateFactory.create(
@@ -150,9 +145,10 @@ export class ClientMessageHandler extends MessageHandler {
                     throw new Error('Invalid transition data')
                 }
 
-                const faqItems = await this.faqRepository.findItemsByCategory(
-                    transition.data
-                )
+                const faqItems =
+                    await this.listFAQCategorieItemsUseCase.execute(
+                        transition.data
+                    )
 
                 conversation.transitionToState(
                     StateFactory.create('faq_items', conversation, [
@@ -225,5 +221,19 @@ export class ClientMessageHandler extends MessageHandler {
             throw new Error('Department not found')
         }
         return department
+    }
+
+    private async getOrCreateConversation(user: Client) {
+        let conversation =
+            await this.findConversationByUserPhoneUseCase.execute(user.phone)
+
+        if (!conversation) {
+            logger.info(`Creating new conversation for client: ${user.phone}`)
+            conversation = await this.createConversationUseCase.execute({
+                user,
+            })
+        }
+
+        return conversation
     }
 }

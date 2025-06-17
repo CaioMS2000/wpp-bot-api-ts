@@ -5,7 +5,6 @@ import { InMemoryWhatsAppMessageServiceFactory } from '../factory/in-memory/in-m
 import { app } from './app'
 import { interactionMock } from './interaction-mock'
 import { receiveMessage } from './routes/message/receive-message'
-import { seedInMemoryRepositories } from '../database/in-memory-seed'
 import { UseCaseFactory } from '@/domain/whats-app/application/factory/use-case-factory'
 import { RepositoryFactory } from '@/domain/whats-app/application/factory/repository-factory'
 import { InMemoryRepositoryFactory } from '../factory/in-memory/in-memory-repository-factory'
@@ -30,7 +29,6 @@ async function main() {
     console.clear()
     logger.info(`Server running on -> ${serverAddress}`)
 
-    await seedInMemoryRepositories(whatsAppMessageService)
     await interactionMock()
 }
 
