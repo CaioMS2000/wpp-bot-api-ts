@@ -19,12 +19,20 @@ export enum LogLevel {
 
 type Loggable = string | Record<string, unknown> | Error | unknown
 
+const colorReset = '\x1b[0m'
+const color = '\x1b[36m'
+
 export class Logger {
     private readonly timezone: string = 'America/Sao_Paulo'
     private readonly logFormat = 'HH:mm:ss.SSS - YYYY-MM-DD'
 
-    print(data: unknown) {
-        console.log(data)
+    print(...data: any[]) {
+        const callerFile = this.getCallerFile()
+        const timestamp = this.getTimestamp()
+
+        console.log(`${color}[${timestamp}] ${callerFile}${colorReset}`)
+        console.log(...data)
+        console.log(`${color}==========${colorReset}\n`)
     }
 
     private getTimestamp(): string {
@@ -33,9 +41,21 @@ export class Logger {
 
     private getCallerFile(): string {
         const error = new Error()
-        const stack = error.stack?.split('\n')[4]
-        const match = stack?.match(/\((.*):\d+:\d+\)/)
-        return match ? match[1].split('/').slice(-2).join('/') : 'unknown'
+        const stackLines = error.stack?.split('\n') || []
+
+        const callerLine = stackLines.find(
+            line =>
+                line.includes('at ') &&
+                !line.includes('Logger.') &&
+                !line.includes('logger.ts')
+        )
+
+        if (!callerLine) return 'unknown'
+
+        const match = callerLine.match(/(?:\()?(.*?)(?::\d+:\d+)?(?:\))?$/)
+        const path = match?.[1] || 'unknown'
+
+        return path.split('/').slice(-2).join('/')
     }
 
     private formatMessage(level: LogLevel, message: string): string {

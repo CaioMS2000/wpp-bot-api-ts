@@ -16,8 +16,7 @@ async function sendMessage(message: string, phone: string) {
 
         const data = await response.json()
 
-        logger.print('\n\nrequest response:')
-        logger.print(data)
+        logger.print('\n\nrequest response:\n', data)
 
         return data
     } catch (error) {
@@ -66,6 +65,8 @@ export async function interactionMock() {
 
     // await new Promise(resolve => setTimeout(resolve, 1000 * 1))
 
+    console.log('\n\n\n\n\n\n\n')
+    console.log('==========')
     await employeeSendMessage('alguma mensagem')
 
     await employeeSendMessage('3')

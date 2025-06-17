@@ -43,6 +43,7 @@ export class WhatsAppMessageService {
                     fromPhone,
                     toPhone
                 )
+
             const user: Client | Employee =
                 type === 'client' ? client! : employee!
             const messageHandler = this.getHandlerForUser(user)

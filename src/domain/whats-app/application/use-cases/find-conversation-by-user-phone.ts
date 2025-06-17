@@ -1,3 +1,4 @@
+import { logger } from '@/core/logger'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
 
 export class FindConversationByUserPhoneUseCase {

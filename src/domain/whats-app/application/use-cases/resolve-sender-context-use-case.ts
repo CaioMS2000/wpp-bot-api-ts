@@ -35,16 +35,10 @@ export class ResolveSenderContextUseCase {
             throw new Error(`Empresa com número ${toPhone} não encontrada.`)
         }
 
-        logger.print('company found:')
-        logger.print(company)
-
         const employee =
             await this.findEmployeeByPhoneUseCase.execute(fromPhone)
 
-        logger.print('employee res:')
-        logger.print(employee)
-
-        if (employee && employee.company.id === company.id) {
+        if (employee && employee.company.cnpj === company.cnpj) {
             return { type: 'employee', company, employee, client: null }
         }
 
