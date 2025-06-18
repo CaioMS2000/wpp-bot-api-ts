@@ -14,8 +14,8 @@ export type ConversationProps = {
     startedAt: Date
     endedAt: Nullable<Date>
     lastStateChange: Nullable<Date>
-    agent: Nullable<'employee' | 'AI'>
-    participants: any[]
+    agent: Nullable<Employee | 'AI'>
+    participants: Employee[]
     messages: Message[]
     currentState: ConversationState
     aiServiceThreadId: Nullable<string>
@@ -69,6 +69,18 @@ export class Conversation extends Entity<ConversationProps> {
         this.props.lastStateChange = new Date()
     }
 
+    addParticipant(participant: Employee) {
+        this.props.participants.push(participant)
+    }
+
+    upsertAgent(agent: typeof this.props.agent) {
+        this.agent = agent
+
+        if (agent instanceof Employee) {
+            this.props.participants.push(agent)
+        }
+    }
+
     get user() {
         return this.props.user
     }
@@ -99,5 +111,10 @@ export class Conversation extends Entity<ConversationProps> {
 
     get currentState() {
         return this.props.currentState
+    }
+
+    // set agent(agent: Employee | 'AI' | null) {
+    set agent(agent: typeof this.props.agent) {
+        this.props.agent = agent
     }
 }

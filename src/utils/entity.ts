@@ -3,11 +3,13 @@ import { Department } from '@/domain/entities/department'
 import { Employee } from '@/domain/entities/employee'
 import { FAQItem } from '@/domain/entities/faq'
 
-export function isClient(user: Client | Employee): user is Client {
+// export function isClient(user: Client | Employee): user is Client {
+export function isClient(user: unknown): user is Client {
     return user instanceof Client
 }
 
-export function isEmployee(user: Client | Employee): user is Employee {
+// export function isEmployee(user: Client | Employee): user is Employee {
+export function isEmployee(user: unknown): user is Employee {
     return user instanceof Employee
 }
 

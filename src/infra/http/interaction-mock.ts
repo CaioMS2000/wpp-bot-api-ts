@@ -65,15 +65,17 @@ export async function interactionMock() {
 
     // await new Promise(resolve => setTimeout(resolve, 1000 * 1))
 
-    console.log('\n\n\n\n\n\n\n')
-    console.log('==========')
-    await employeeSendMessage('alguma mensagem')
+    // console.log('\n\n\n\n\n\n\n')
+    // console.log('==========')
+    // await employeeSendMessage('alguma mensagem')
 
-    await employeeSendMessage('3')
+    // await employeeSendMessage('3')
 
-    await employeeSendMessage('vendas')
+    // await employeeSendMessage('vendas')
 
-    await employeeSendMessage('Menu principal')
+    // await employeeSendMessage('Menu principal')
 
-    await employeeSendMessage('4')
+    // await employeeSendMessage('4')
+
+    // await employeeSendMessage('5')
 }

@@ -38,7 +38,8 @@ export class InMemoryWhatsAppMessageServiceFactory {
             this.useCaseFactory.getListFAQCategoriesUseCase(),
             this.useCaseFactory.getListFAQCategorieItemsUseCase(),
             this.useCaseFactory.getCreateConversationUseCase(),
-            this.useCaseFactory.getFindConversationByUserPhoneUseCase()
+            this.useCaseFactory.getFindConversationByUserPhoneUseCase(),
+            this.useCaseFactory.getTransferEmployeeToClientConversationUseCase()
         )
 
         return new WhatsAppMessageService(

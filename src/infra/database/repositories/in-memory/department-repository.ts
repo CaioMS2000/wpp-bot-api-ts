@@ -36,6 +36,7 @@ export class InMemoryDepartmentRepository extends DepartmentRepository {
             Department.create({
                 name: 'Departamento de TI',
                 company,
+                // queue: []
             })
         )
         await this.save(

@@ -93,4 +93,11 @@ export class StateTransition {
             requiresExternalData: true,
         })
     }
+
+    static toChatWithClient(): StateTransition {
+        return new StateTransition('transition', {
+            targetState: 'chat_with_client',
+            requiresExternalData: true,
+        })
+    }
 }

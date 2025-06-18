@@ -6,7 +6,7 @@ import { ClientRepository } from '@/domain/repositories/client-repository'
 import { CompanyRepository } from '@/domain/repositories/company-repository'
 import { EmployeeRepository } from '@/domain/repositories/employee-repository'
 import { FindEmployeeByPhoneUseCase } from './find-employee-by-phone-use-case'
-import { FindOrCreateClientUseCase } from './find-or-create-client'
+import { FindOrCreateClientUseCase } from './find-or-create-client-use-case'
 
 export type SenderContext =
     | {

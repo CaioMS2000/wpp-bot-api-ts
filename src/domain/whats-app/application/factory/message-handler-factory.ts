@@ -9,10 +9,11 @@ import { ClientMessageHandler } from '../handler/client-message-handler'
 import { EmployeeMessageHandler } from '../handler/employee-message-handler'
 import { MessageHandler } from '../handler/message-handler'
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
-import { FindConversationByUserPhoneUseCase } from '../use-cases/find-conversation-by-user-phone'
+import { FindConversationByUserPhoneUseCase } from '../use-cases/find-conversation-by-user-phone-use-case'
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
 import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
 import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
+import { TransferEmployeeToClientConversationUseCase } from '../use-cases/transfer-employee-to-client-conversation-use-case'
 
 export class MessageHandlerFactory {
     constructor(
@@ -25,7 +26,8 @@ export class MessageHandlerFactory {
         private listFAQCategoriesUseCase: ListFAQCategoriesUseCase,
         private listFAQCategorieItemsUseCase: ListFAQCategorieItemsUseCase,
         private createConversationUseCase: CreateConversationUseCase,
-        private findConversationByUserPhoneUseCase: FindConversationByUserPhoneUseCase
+        private findConversationByUserPhoneUseCase: FindConversationByUserPhoneUseCase,
+        private transferEmployeeToClientConversationUseCase: TransferEmployeeToClientConversationUseCase
     ) {}
 
     createClientMessageHandler(): MessageHandler {
@@ -50,7 +52,8 @@ export class MessageHandlerFactory {
             this.faqRepository,
             this.findConversationByUserPhoneUseCase,
             this.createConversationUseCase,
-            this.listActiveDepartmentsUseCase
+            this.listActiveDepartmentsUseCase,
+            this.transferEmployeeToClientConversationUseCase
         )
     }
 }

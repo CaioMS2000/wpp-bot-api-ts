@@ -12,9 +12,10 @@ import { MessageRepository } from '@/domain/repositories/message-repository'
 import { StateFactory } from '../factory/state-factory'
 import { StateTransition } from '../states/state-transition'
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
-import { FindConversationByUserPhoneUseCase } from '../use-cases/find-conversation-by-user-phone'
+import { FindConversationByUserPhoneUseCase } from '../use-cases/find-conversation-by-user-phone-use-case'
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
 import { MessageHandler } from './message-handler'
+import { TransferEmployeeToClientConversationUseCase } from '../use-cases/transfer-employee-to-client-conversation-use-case'
 
 export class EmployeeMessageHandler extends MessageHandler {
     constructor(
@@ -24,7 +25,8 @@ export class EmployeeMessageHandler extends MessageHandler {
         private faqRepository: FAQRepository,
         private findConversationByUserPhoneUseCase: FindConversationByUserPhoneUseCase,
         private createConversationUseCase: CreateConversationUseCase,
-        private listActiveDepartmentsUseCase: ListActiveDepartmentsUseCase
+        private listActiveDepartmentsUseCase: ListActiveDepartmentsUseCase,
+        private transferEmployeeToClientConversationUseCase: TransferEmployeeToClientConversationUseCase
     ) {
         super()
     }
@@ -69,7 +71,6 @@ export class EmployeeMessageHandler extends MessageHandler {
             const autoTransition = conversation.currentState.getAutoTransition()
             if (autoTransition && autoTransition.type === 'transition') {
                 await this.handleTransition(conversation, autoTransition)
-                logger.print('conversation post auto transition:', conversation)
 
                 if (conversation.currentState.entryMessage) {
                     messages.push(conversation.currentState.entryMessage)
@@ -144,20 +145,31 @@ export class EmployeeMessageHandler extends MessageHandler {
                     ])
                 )
                 break
-        }
-
-        const availableDepartments =
-            await this.listActiveDepartmentsUseCase.execute()
-
-        switch (transition.targetState) {
             case 'department_queue_list':
-                logger.print('Department queue list\ntransition:', transition)
-
                 conversation.transitionToState(
                     StateFactory.create('department_queue_list', conversation)
                 )
                 break
+            case 'chat_with_client':
+                const client =
+                    await this.transferEmployeeToClientConversationUseCase.execute(
+                        conversation
+                    )
+                conversation.transitionToState(
+                    StateFactory.create(
+                        'chat_with_client',
+                        conversation,
+                        client
+                    )
+                )
+                break
         }
+
+        // const availableDepartments =
+        //     await this.listActiveDepartmentsUseCase.execute()
+
+        // switch (transition.targetState) {
+        // }
     }
 
     private async getOrCreateConversation(company: Company, user: Employee) {
@@ -175,15 +187,15 @@ export class EmployeeMessageHandler extends MessageHandler {
         return conversation
     }
 
-    private findDepartment(
-        departments: Department[],
-        name: string
-    ): Department {
-        const department = departments.find(dept => dept.name === name)
-        if (!department) {
-            logger.error(`Department not found: ${name}`)
-            throw new Error('Department not found')
-        }
-        return department
-    }
+    // private findDepartment(
+    //     departments: Department[],
+    //     name: string
+    // ): Department {
+    //     const department = departments.find(dept => dept.name === name)
+    //     if (!department) {
+    //         logger.error(`Department not found: ${name}`)
+    //         throw new Error('Department not found')
+    //     }
+    //     return department
+    // }
 }

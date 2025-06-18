@@ -4,6 +4,7 @@ import { FAQCategory, FAQItem } from '@/domain/entities/faq'
 
 import { logger } from '@/core/logger'
 import {
+    isClient,
     isDepartment,
     isDepartmentArray,
     isEmployee,
@@ -18,16 +19,18 @@ import { ListDepartmentQueueState } from '../states/employee-only/list-departmen
 import { FAQCategoriesState } from '../states/faq-categories-state'
 import { FAQItemsState } from '../states/faq-items-state'
 import { InitialMenuState } from '../states/initial-menu-state'
+import { ChatWithClientState } from '../states/employee-only/chat-with-client-sate'
 
 export type StateName =
     | 'initial_menu'
+    | 'ai_chat'
     | 'faq_categories'
     | 'faq_items'
     | 'department_selection'
     | 'department_queue'
     | 'department_chat'
     | 'department_queue_list'
-    | 'ai_chat'
+    | 'chat_with_client'
 
 export class StateFactory {
     static create(
@@ -96,7 +99,6 @@ export class StateFactory {
                 return new DepartmentChatState(conversation, data)
             }
             case 'department_queue_list': {
-                logger.print(conversation.user)
                 if (isEmployee(conversation.user)) {
                     if (!isDepartment(conversation.user.department)) {
                         logger.error(
@@ -105,10 +107,6 @@ export class StateFactory {
                         )
                         throw new Error('Data must be a Department object')
                     }
-
-                    logger.print(
-                        'StateFactory: "department_queue_list" received a department'
-                    )
 
                     return new ListDepartmentQueueState(
                         conversation,
@@ -120,6 +118,13 @@ export class StateFactory {
                     "'department_queue_list' is only available for employees"
                 )
             }
+
+            case 'chat_with_client':
+                if (!isClient(data)) {
+                    throw new Error('Data must be a Client object')
+                }
+
+                return new ChatWithClientState(conversation, data)
 
             case 'ai_chat':
                 return new AIChatState(conversation)

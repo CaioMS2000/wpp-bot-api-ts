@@ -8,4 +8,7 @@ export abstract class ConversationRepository {
     abstract findActiveByEmployeePhone(
         clientPhone: string
     ): Promise<Nullable<Conversation>>
+    abstract findActiveByClientPhoneOrThrow(
+        clientPhone: string
+    ): Promise<Conversation>
 }

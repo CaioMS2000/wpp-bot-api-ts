@@ -40,4 +40,20 @@ export class InMemoryConversationRepository extends ConversationRepository {
         )
         return conversations.length > 0 ? conversations[0] : null
     }
+
+    async findActiveByClientPhoneOrThrow(
+        clientPhone: string
+    ): Promise<Conversation> {
+        const conversations = Object.values(this.data).filter(
+            conversation =>
+                conversation.user.phone === clientPhone && !conversation.endedAt
+        )
+        const conversation = conversations.shift()
+
+        if (!conversation) {
+            throw new Error('No active conversation found for client phone')
+        }
+
+        return conversation
+    }
 }
