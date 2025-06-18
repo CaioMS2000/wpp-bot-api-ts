@@ -1,10 +1,11 @@
 import { Entity } from '@/core/entities/entity'
 import { Company } from './company'
+import { Department } from './department'
 
 export type EmployeeProps = {
     phone: string
     company: Company
-    department: Nullable<string>
+    department: Nullable<Department>
 }
 
 export type CreateEmployeeInput = RequireOnly<

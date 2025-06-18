@@ -49,7 +49,8 @@ export class MessageHandlerFactory {
             this.conversationRepository,
             this.faqRepository,
             this.findConversationByUserPhoneUseCase,
-            this.createConversationUseCase
+            this.createConversationUseCase,
+            this.listActiveDepartmentsUseCase
         )
     }
 }

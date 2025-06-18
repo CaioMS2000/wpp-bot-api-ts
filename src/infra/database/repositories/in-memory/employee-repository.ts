@@ -1,4 +1,5 @@
 import { Company } from '@/domain/entities/company'
+import { Department } from '@/domain/entities/department'
 import { Employee } from '@/domain/entities/employee'
 import { Manager } from '@/domain/entities/manager'
 import { EmployeeRepository } from '@/domain/repositories/employee-repository'
@@ -31,10 +32,14 @@ export class InMemoryEmployeeRepository extends EmployeeRepository {
             cnpj: '99999999999999',
             manager,
         })
+        const department = Department.create({
+            name: 'Departamento de TI',
+            company,
+        })
 
         this.save(
             Employee.create({
-                department: 'Departamento de TI',
+                department,
                 phone: '5562993765721',
                 company,
             })
