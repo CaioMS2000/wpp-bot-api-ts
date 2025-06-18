@@ -140,6 +140,9 @@ export class EmployeeMessageHandler extends MessageHandler {
                     ])
                 )
                 break
+            case 'department_queue_list':
+                logger.print('Department queue list')
+                break
         }
     }
 

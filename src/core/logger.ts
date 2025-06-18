@@ -19,30 +19,59 @@ export enum LogLevel {
 
 type Loggable = string | Record<string, unknown> | Error | unknown
 
-const colorReset = '\x1b[0m'
-const color = '\x1b[36m'
+const Colors = {
+    Blue: '\x1b[34m',
+    BrightBlue: '\x1b[94m',
+    BrightGreen: '\x1b[92m',
+    BrightRed: '\x1b[91m',
+    BrightYellow: '\x1b[93m',
+    Cyan: '\x1b[36m',
+    DarkGray: '\x1b[38;5;240m',
+    DustyRed: '\x1b[38;5;167m',
+    Gray: '\x1b[90m',
+    Green: '\x1b[32m',
+    Lavender: '\x1b[38;5;183m',
+    Magenta: '\x1b[35m',
+    PaleYellow: '\x1b[38;5;229m',
+    Red: '\x1b[31m',
+    Reset: '\x1b[0m',
+    SoftBlue: '\x1b[38;5;111m',
+    SoftGreen: '\x1b[38;5;108m',
+    SoftOrange: '\x1b[38;5;215m',
+    WarmGray: '\x1b[38;5;246m',
+    White: '\x1b[37m',
+    Yellow: '\x1b[33m',
+}
+const LevelColors = {
+    [LogLevel.INFO]: Colors.Blue,
+    [LogLevel.WARN]: Colors.BrightYellow,
+    [LogLevel.ERROR]: Colors.BrightRed,
+    [LogLevel.DEBUG]: Colors.Magenta,
+}
 
 export class Logger {
     private readonly timezone: string = 'America/Sao_Paulo'
     private readonly logFormat = 'HH:mm:ss.SSS - YYYY-MM-DD'
 
     print(...data: any[]) {
-        const callerFile = this.getCallerFile()
+        const { filePath, line, column } = this.getCallerInfo()
+        const fileReference = `${filePath}:${line}:${column}`
         const timestamp = this.getTimestamp()
 
-        console.log(`${color}[${timestamp}] ${callerFile}${colorReset}`)
+        console.log(
+            `${Colors.WarmGray}[${timestamp}] [${fileReference}]#==========${Colors.Reset}`
+        )
         console.log(...data)
-        console.log(`${color}==========${colorReset}\n`)
+        console.log(`${Colors.WarmGray}==========#${Colors.Reset}\n`)
     }
 
     private getTimestamp(): string {
         return dayjs().tz(this.timezone).format(this.logFormat)
     }
 
-    private getCallerFile(): string {
+    private getCallerInfo() {
         const error = new Error()
         const stackLines = error.stack?.split('\n') || []
-
         const callerLine = stackLines.find(
             line =>
                 line.includes('at ') &&
@@ -50,27 +79,38 @@ export class Logger {
                 !line.includes('logger.ts')
         )
 
-        if (!callerLine) return 'unknown'
+        if (!callerLine) return { filePath: 'unknown', line: 0, column: 0 }
 
-        const match = callerLine.match(/(?:\()?(.*?)(?::\d+:\d+)?(?:\))?$/)
-        const path = match?.[1] || 'unknown'
+        const match = callerLine.match(/\((.*):(\d+):(\d+)\)/)
 
-        return path.split('/').slice(-2).join('/')
+        if (!match) return { filePath: 'unknown', line: 0, column: 0 }
+
+        return {
+            filePath: match[1],
+            line: Number.parseInt(match[2]),
+            column: Number.parseInt(match[3]),
+        }
     }
 
     private formatMessage(level: LogLevel, message: string): string {
-        const callerFile = this.getCallerFile()
-        return `[${this.getTimestamp()}] ${level} [${callerFile}] - ${message}`
+        const { filePath, line, column } = this.getCallerInfo()
+        const fileReference = `${filePath}:${line}:${column}`
+        const levelColor = LevelColors[level]
+        const timestamp = `${Colors.BrightGreen}${this.getTimestamp()}${Colors.Reset}`
+        const levelText = `${levelColor}${level}${Colors.Reset}`
+        const fileText = `${Colors.SoftBlue}[${fileReference}] #==========\n${Colors.Reset}`
+
+        return `${timestamp} ${levelText} ${fileText}${message}\n${Colors.SoftBlue}==========#${Colors.Reset}`
     }
 
     private formatObject(data: unknown): string {
         if (data instanceof Error) {
-            return `${data.message}\n${data.stack}`
+            return `${Colors.Red}${data.message}${Colors.Reset}\n${Colors.Gray}${data.stack}${Colors.Reset}`
         }
         try {
-            return JSON.stringify(data, null, 2)
+            return `${Colors.Magenta}${JSON.stringify(data, null, 2)}${Colors.Reset}`
         } catch {
-            return String(data)
+            return `${Colors.Yellow}${String(data)}${Colors.Reset}`
         }
     }
 
@@ -87,7 +127,7 @@ export class Logger {
         const formattedMessage =
             typeof data === 'string'
                 ? this.formatMessage(level, data)
-                : this.formatObject(data)
+                : `${this.formatMessage(level, '')}\n${this.formatObject(data)}`
 
         const logger = {
             [LogLevel.INFO]: console.log,
