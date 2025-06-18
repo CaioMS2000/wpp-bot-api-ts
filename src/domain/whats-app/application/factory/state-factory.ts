@@ -21,6 +21,7 @@ import { DepartmentQueueStateCreator } from '../creator/department-queue-state-c
 import { AIChatStateCreator } from '../creator/ai-chat-state-creator'
 import { DepartmentChatStateCreator } from '../creator/department-chat-state-creator'
 import { ListDepartmentQueueStateCreator } from '../creator/list-department-client-queue-state-creator'
+import { logger } from '@/core/logger'
 
 export type StateName =
     | 'initial_menu'
@@ -55,28 +56,8 @@ export class StateFactory {
             throw new Error(`Unknown state name: ${name}`)
         }
 
+        logger.print('State creator:\n', creator)
+
         return creator.create(conversation, data)
-    }
-
-    private static isFAQCategory(category: unknown): category is FAQCategory {
-        return (
-            typeof category === 'object' &&
-            category !== null &&
-            'name' in category &&
-            'items' in category &&
-            typeof category.name === 'string' &&
-            Array.isArray(category.items) &&
-            category.items.every(isFAQItem)
-        )
-    }
-
-    private static isCategoryTuple(data: unknown): data is [string, FAQItem[]] {
-        return (
-            Array.isArray(data) &&
-            data.length === 2 &&
-            typeof data[0] === 'string' &&
-            Array.isArray(data[1]) &&
-            data[1].every(isFAQItem)
-        )
     }
 }

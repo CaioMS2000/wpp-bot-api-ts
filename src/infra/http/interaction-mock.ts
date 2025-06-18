@@ -16,7 +16,7 @@ async function sendMessage(message: string, phone: string) {
 
         const data = await response.json()
 
-        logger.print('\n\nrequest response:\n', data)
+        // logger.print('\n\nrequest response:\n', data)
 
         return data
     } catch (error) {
@@ -74,4 +74,6 @@ export async function interactionMock() {
     await employeeSendMessage('vendas')
 
     await employeeSendMessage('Menu principal')
+
+    await employeeSendMessage('4')
 }

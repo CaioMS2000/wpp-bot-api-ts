@@ -75,8 +75,8 @@ export class InitialMenuState extends ConversationState {
 
     private handleEmployeeMessage(messageContent: string) {
         if (messageContent === '4') {
+            logger.print('employee quer ver a fila')
+            return StateTransition.toDepartmentListQueue()
         }
-
-        return undefined
     }
 }
