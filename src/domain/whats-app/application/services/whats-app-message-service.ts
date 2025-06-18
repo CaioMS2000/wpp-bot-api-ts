@@ -34,9 +34,9 @@ export class WhatsAppMessageService {
         try {
             // console.clear()
             logger.info(
-                `\n\n\n\n\n\n\nProcessing new message from ${fromPhone}`
+                `Processing new message from ${fromPhone}\nMessage content: ${messageContent}`,
+                { pre: '\n\n\n\n\n' }
             )
-            logger.debug(`Message content: ${messageContent}`)
 
             const { type, company, client, employee } =
                 await this.resolveSenderContextUseCase.execute(

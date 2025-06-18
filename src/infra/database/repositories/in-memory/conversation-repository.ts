@@ -10,22 +10,32 @@ dayjs.extend(localizedFormat)
 dayjs.locale('pt-br')
 import { Conversation } from '@/domain/entities/conversation'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
+import { logger } from '@/core/logger'
 
 export class InMemoryConversationRepository extends ConversationRepository {
     private data: Record<string, Conversation> = {}
 
     async save(conversation: Conversation): Promise<void> {
-        const identifier = `${conversation.user.id}-${conversation.agent}-${dayjs(conversation.startedAt).format('hh:mm-DD-MM-YYYY')}`
-
-        this.data[identifier] = conversation
+        this.data[conversation.id] = conversation
+        logger.print(
+            `InMemoryConversationRepository - save - now we have total of: ${Object.values(this.data).length} conversations`,
+            this.data
+        )
     }
 
     async findActiveByClientPhone(
         clientPhone: string
     ): Promise<Nullable<Conversation>> {
-        const conversations = Object.values(this.data).filter(
-            conversation =>
+        const conversations = Object.values(this.data).filter(conversation => {
+            logger.print(`this one exixts: ${conversation}`)
+            return (
                 conversation.user.phone === clientPhone && !conversation.endedAt
+            )
+        })
+
+        logger.print(
+            `InMemoryConversationRepository - findActiveByClientPhone: ${clientPhone}\nConversations found: ${conversations.length}`,
+            conversations
         )
 
         return conversations.length > 0 ? conversations[0] : null

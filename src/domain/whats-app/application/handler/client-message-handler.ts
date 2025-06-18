@@ -54,8 +54,9 @@ export class ClientMessageHandler extends MessageHandler {
             )
         }
 
-        logger.info(`Processing message from client: ${user.phone}`)
-        logger.debug(`Message content: ${messageContent}`)
+        logger.info(
+            `Processing message from client: ${user.phone}\nMessage content: ${messageContent}`
+        )
 
         const messages: string[] = []
         const conversation = await this.getOrCreateConversation(company, user)

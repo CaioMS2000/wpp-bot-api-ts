@@ -42,6 +42,7 @@ export class InMemoryEmployeeRepository extends EmployeeRepository {
                 department,
                 phone: '5562993765721',
                 company,
+                name: 'João Silva',
             })
         )
     }

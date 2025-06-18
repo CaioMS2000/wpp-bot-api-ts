@@ -18,7 +18,15 @@ export enum LogLevel {
 }
 
 type Loggable = string | Record<string, unknown> | Error | unknown
+type LogMetadata = {
+    pre?: Nullable<string>
+    post?: Nullable<string>
+}
 
+const deafultLogMetadata: LogMetadata = {
+    pre: null,
+    post: null,
+}
 const Colors = {
     Blue: '\x1b[34m',
     BrightBlue: '\x1b[94m',
@@ -121,10 +129,15 @@ export class Logger {
         return true
     }
 
-    private log(level: LogLevel, data: Loggable, error?: Error): void {
+    private log(
+        level: LogLevel,
+        data: Loggable,
+        error?: Error,
+        logMetadata: LogMetadata = deafultLogMetadata
+    ): void {
         if (!this.shouldLog(level)) return
 
-        const formattedMessage =
+        let formattedMessage =
             typeof data === 'string'
                 ? this.formatMessage(level, data)
                 : `${this.formatMessage(level, '')}\n${this.formatObject(data)}`
@@ -136,6 +149,13 @@ export class Logger {
             [LogLevel.DEBUG]: console.debug,
         }[level]
 
+        if (logMetadata.pre) {
+            formattedMessage = `${logMetadata.pre}${formattedMessage}`
+        }
+        if (logMetadata.post) {
+            formattedMessage = `${formattedMessage}${logMetadata.post}`
+        }
+
         logger(formattedMessage)
 
         if (error && level !== LogLevel.ERROR) {
@@ -145,20 +165,20 @@ export class Logger {
         }
     }
 
-    info(data: Loggable): void {
-        this.log(LogLevel.INFO, data)
+    info(data: Loggable, logMetadata: LogMetadata = deafultLogMetadata): void {
+        this.log(LogLevel.INFO, data, undefined, logMetadata)
     }
 
-    warn(data: Loggable): void {
-        this.log(LogLevel.WARN, data)
+    warn(data: Loggable, logMetadata: LogMetadata = deafultLogMetadata): void {
+        this.log(LogLevel.WARN, data, undefined, logMetadata)
+    }
+
+    debug(data: Loggable, logMetadata: LogMetadata = deafultLogMetadata): void {
+        this.log(LogLevel.DEBUG, data, undefined, logMetadata)
     }
 
     error(data: Loggable, error?: Error): void {
         this.log(LogLevel.ERROR, data, error)
-    }
-
-    debug(data: Loggable): void {
-        this.log(LogLevel.DEBUG, data)
     }
 }
 

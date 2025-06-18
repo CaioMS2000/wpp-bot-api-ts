@@ -61,7 +61,7 @@ export async function interactionMock() {
 
     // await new Promise(resolve => setTimeout(resolve, 1000 * 1))
 
-    await clientSendMessage('alguma mensagem')
+    // await clientSendMessage('alguma mensagem')
 
     // await new Promise(resolve => setTimeout(resolve, 1000 * 1))
 

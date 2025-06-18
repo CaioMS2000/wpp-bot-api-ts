@@ -3,6 +3,7 @@ import { Company } from './company'
 import { Department } from './department'
 
 export type EmployeeProps = {
+    name: string
     phone: string
     company: Company
     department: Nullable<Department>
@@ -10,12 +11,12 @@ export type EmployeeProps = {
 
 export type CreateEmployeeInput = RequireOnly<
     EmployeeProps,
-    'phone' | 'company'
+    'phone' | 'company' | 'name'
 >
 
 export class Employee extends Entity<EmployeeProps> {
     static create(props: CreateEmployeeInput, id?: string) {
-        const defaults: Omit<EmployeeProps, 'phone' | 'company'> = {
+        const defaults: Omit<EmployeeProps, 'phone' | 'company' | 'name'> = {
             department: null,
         }
         const employee = new Employee({ ...defaults, ...props }, id)
