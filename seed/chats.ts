@@ -18,7 +18,7 @@ export async function seedClientsAndChats(prisma: Prisma.TransactionClient) {
             clientId: client.id,
             companyId: company.id,
             userType: 'CLIENT',
-            currentState: 'InitialState',
+            currentState: 'initial_menu',
         },
     })
 

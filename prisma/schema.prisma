@@ -91,6 +91,17 @@ enum AgentType {
   EMPLOYEE
   AI
 }
+enum StateName {
+  initial_menu
+  ai_chat
+  faq_categories
+  faq_items
+  department_selection
+  department_queue
+  department_chat
+  department_queue_list
+  chat_with_client
+}
 
 model Conversation {
   id           String    @id @default(uuid())
@@ -100,7 +111,7 @@ model Conversation {
   agentType    AgentType?
   agentId      String?
   companyId    String
-  currentState String
+  currentState StateName
   stateData    Json?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
