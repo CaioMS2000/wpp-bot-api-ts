@@ -1,6 +1,6 @@
-import { prisma } from '@/lib/prisma'
 import { Manager } from '@/domain/entities/manager'
 import { ManagerRepository } from '@/domain/repositories/manager-repository'
+import { prisma } from '@/lib/prisma'
 import { ManagerMapper } from '../../mapper/manager-mapper'
 
 export class PrismaManagerRepository extends ManagerRepository {

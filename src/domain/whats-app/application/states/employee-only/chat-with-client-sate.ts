@@ -1,7 +1,7 @@
 import { Client } from '@/domain/entities/client'
+import { Conversation } from '@/domain/entities/conversation'
 import { ConversationState } from '../conversation-state'
 import { StateTransition } from '../state-transition'
-import { Conversation } from '@/domain/entities/conversation'
 
 export class ChatWithClientState extends ConversationState {
     constructor(

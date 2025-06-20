@@ -1,8 +1,8 @@
 import { Company } from '@/domain/entities/company'
 import { Manager } from '@/domain/entities/manager'
 import {
-    Manager as PrismaManager,
     Company as PrismaCompany,
+    Manager as PrismaManager,
 } from 'ROOT/prisma/generated'
 
 export class ManagerMapper {

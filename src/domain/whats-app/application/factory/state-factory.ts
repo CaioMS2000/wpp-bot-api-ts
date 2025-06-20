@@ -15,11 +15,11 @@ import { DepartmentChatState } from '../states/client-only/department-chat-state
 import { DepartmentQueueState } from '../states/client-only/department-queue-state'
 import { DepartmentSelectionState } from '../states/client-only/department-selection-state'
 import { ConversationState } from '../states/conversation-state'
+import { ChatWithClientState } from '../states/employee-only/chat-with-client-sate'
 import { ListDepartmentQueueState } from '../states/employee-only/list-department-client-queue-state'
 import { FAQCategoriesState } from '../states/faq-categories-state'
 import { FAQItemsState } from '../states/faq-items-state'
 import { InitialMenuState } from '../states/initial-menu-state'
-import { ChatWithClientState } from '../states/employee-only/chat-with-client-sate'
 
 export type StateName =
     | 'initial_menu'

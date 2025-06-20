@@ -1,8 +1,8 @@
+import { Company } from '@/domain/entities/company'
+import { FAQCategory, FAQItem } from '@/domain/entities/faq'
 import { FAQRepository } from '@/domain/repositories/faq-repository'
 import { prisma } from '@/lib/prisma'
 import { FAQMapper } from '../../mapper/faq-mapper'
-import { FAQCategory, FAQItem } from '@/domain/entities/faq'
-import { Company } from '@/domain/entities/company'
 
 export class PrismaFAQRepository extends FAQRepository {
     async save(

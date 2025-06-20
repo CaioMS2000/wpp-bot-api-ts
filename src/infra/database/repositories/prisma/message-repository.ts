@@ -1,6 +1,6 @@
-import { prisma } from '@/lib/prisma'
 import { Message } from '@/domain/entities/message'
 import { MessageRepository } from '@/domain/repositories/message-repository'
+import { prisma } from '@/lib/prisma'
 import { MessageMapper } from '../../mapper/message-mapper'
 
 export class PrismaMessageRepository extends MessageRepository {

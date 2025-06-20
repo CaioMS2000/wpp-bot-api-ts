@@ -14,8 +14,8 @@ import { StateTransition } from '../states/state-transition'
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
 import { FindConversationByUserPhoneUseCase } from '../use-cases/find-conversation-by-user-phone-use-case'
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
-import { MessageHandler } from './message-handler'
 import { TransferEmployeeToClientConversationUseCase } from '../use-cases/transfer-employee-to-client-conversation-use-case'
+import { MessageHandler } from './message-handler'
 
 export class EmployeeMessageHandler extends MessageHandler {
     constructor(

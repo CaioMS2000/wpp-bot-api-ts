@@ -12,9 +12,9 @@ import {
     Employee as PrismaEmployee,
     Manager as PrismaManager,
 } from 'ROOT/prisma/generated'
+import { ClientMapper } from './client-mapper'
 import { CompanyMapper } from './company-mapper'
 import { EmployeeMapper } from './employee-mapper'
-import { ClientMapper } from './client-mapper'
 
 export class ConversationMapper {
     static toEntity(

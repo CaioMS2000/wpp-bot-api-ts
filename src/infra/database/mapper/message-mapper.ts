@@ -1,16 +1,16 @@
+import { Conversation } from '@/domain/entities/conversation'
 import { Message } from '@/domain/entities/message'
 import {
-    Message as PrismaMessage,
     Client as PrismaClient,
-    Employee as PrismaEmployee,
-    Conversation as PrismaConversation,
     Company as PrismaCompany,
+    Conversation as PrismaConversation,
+    Employee as PrismaEmployee,
     Manager as PrismaManager,
+    Message as PrismaMessage,
 } from 'ROOT/prisma/generated'
 import { ClientMapper } from './client-mapper'
-import { EmployeeMapper } from './employee-mapper'
-import { Conversation } from '@/domain/entities/conversation'
 import { CompanyMapper } from './company-mapper'
+import { EmployeeMapper } from './employee-mapper'
 
 const fromPrismaToDomain = (
     from: 'CLIENT' | 'EMPLOYEE' | 'AI'

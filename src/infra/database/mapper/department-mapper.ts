@@ -1,13 +1,13 @@
 import { Department } from '@/domain/entities/department'
 import {
-    Department as PrismaDepartment,
-    Company as PrismaCompany,
-    Manager as PrismaManager,
     Client as PrismaClient,
+    Company as PrismaCompany,
+    Department as PrismaDepartment,
     Employee as PrismaEmployee,
+    Manager as PrismaManager,
 } from 'ROOT/prisma/generated'
-import { CompanyMapper } from './company-mapper'
 import { ClientMapper } from './client-mapper'
+import { CompanyMapper } from './company-mapper'
 import { EmployeeMapper } from './employee-mapper'
 
 export class DepartmentMapper {

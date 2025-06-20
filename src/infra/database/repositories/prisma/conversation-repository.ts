@@ -1,13 +1,13 @@
-import { prisma } from '@/lib/prisma'
-import { Conversation } from '@/domain/entities/conversation'
-import { ConversationRepository } from '@/domain/repositories/conversation-repository'
-import { ConversationMapper } from '../../mapper/conversation-mapper'
 import { Client } from '@/domain/entities/client'
+import { Conversation } from '@/domain/entities/conversation'
 import { Employee } from '@/domain/entities/employee'
+import { ConversationRepository } from '@/domain/repositories/conversation-repository'
+import { prisma } from '@/lib/prisma'
 import {
-    Manager as PrismaManager,
     Company as PrismaCompany,
+    Manager as PrismaManager,
 } from 'ROOT/prisma/generated'
+import { ConversationMapper } from '../../mapper/conversation-mapper'
 
 export class PrismaConversationRepository extends ConversationRepository {
     async save(conversation: Conversation): Promise<void> {
