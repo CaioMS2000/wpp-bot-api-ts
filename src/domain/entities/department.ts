@@ -5,6 +5,7 @@ import type { Employee } from './employee'
 
 export type DepartmentProps = {
     name: string
+    description: string
     company: Company
     queue: Client[]
     employee: Employee[]
@@ -18,6 +19,7 @@ export class Department extends Entity<DepartmentProps> {
         const defaults: Omit<DepartmentProps, 'name' | 'company'> = {
             queue: [],
             employee: [],
+            description: '',
         }
         const department = new Department({ ...defaults, ...props }, id)
         return department

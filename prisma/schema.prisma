@@ -104,7 +104,7 @@ model Conversation {
   stateData    Json?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-  startedAt    DateTime
+  startedAt    DateTime @default(now())
   endedAt    DateTime?
   lastStateChange    DateTime?
   aiServiceThreadId   String?
@@ -137,6 +137,7 @@ model Message {
 model Department {
   id        String     @id @default(uuid())
   name      String     @unique
+  description      String? @default("")
   companyId String
   company   Company    @relation(fields: [companyId], references: [id])
   employees Employee[]
