@@ -5,12 +5,11 @@ import { MessageHandlerFactory } from '@/domain/whats-app/application/factory/me
 import { RepositoryFactory } from '@/domain/whats-app/application/factory/repository-factory'
 import { UseCaseFactory } from '@/domain/whats-app/application/factory/use-case-factory'
 import { WhatsAppMessageService } from '@/domain/whats-app/application/services/whats-app-message-service'
-import { InMemoryRepositoryFactory } from './in-memory-repository-factory'
 
 const currentOutputPort: OutputPort = new FileOutputPort()
 // const currentOutputPort: OutputPort = new ConsoleOutputPort()
 
-export class InMemoryWhatsAppMessageServiceFactory {
+export class PrismaWhatsAppMessageServiceFactory {
     constructor(
         private useCaseFactory: UseCaseFactory,
         private repositoryFactory: RepositoryFactory

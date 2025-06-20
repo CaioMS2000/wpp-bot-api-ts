@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Manager {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password      String
+  phone     String?  @unique
+  company   Company?
+}
+
+model Company {
+  id            String         @id @default(uuid())
+  name          String
+  email          String?
+  website          String?
+  description          String?
+  cnpj          String         @unique
+  phone         String         @unique
+  clients       Client[]
+  conversations Conversation[]
+  departments   Department[]
+  employees     Employee[]
+  faqs          FAQCategory[]
+  managerId     String @unique
+  manager       Manager        @relation(fields: [managerId], references: [id])
+}
+
+model Client {
+  id            String         @id @default(uuid())
+  name          String
+  phone         String         @unique
+  companyId     String
+  company       Company        @relation(fields: [companyId], references: [id])
+  conversations Conversation[]
+  department    Department[]   @relation("queue")
+  messages      Message[]
+}
+
+model Employee {
+  id            String         @id @default(uuid())
+  name          String
+  phone         String         @unique
+  companyId     String
+  departmentId  String?
+  company       Company        @relation(fields: [companyId], references: [id])
+  department    Department?    @relation(fields: [departmentId], references: [id])
+  messages      Message[]
+  conversations Conversation[] @relation("employee")
+  agentConversations Conversation[] @relation("agent")
+}
+
+enum UserType {
+  CLIENT
+  EMPLOYEE
+}
+
+enum AgentType {
+  EMPLOYEE
+  AI
+}
+
+model Conversation {
+  id           String    @id @default(uuid())
+  clientId     String?
+  employeeId   String?
+  userType     UserType
+  agentType    AgentType?
+  agentId      String?
+  companyId    String
+  currentState String
+  stateData    Json?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  startedAt    DateTime
+  endedAt    DateTime?
+  lastStateChange    DateTime?
+  aiServiceThreadId   String?
+  aiServiceThreadResume   String?
+  client       Client?   @relation(fields: [clientId], references: [id])
+  company      Company   @relation(fields: [companyId], references: [id])
+  employee     Employee? @relation("employee", fields: [employeeId], references: [id])
+  agent     Employee? @relation("agent", fields: [agentId], references: [id])
+  messages     Message[]
+}
+enum FromType {
+  CLIENT
+  EMPLOYEE
+  AI
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  content        String
+  from           FromType
+  timestamp      DateTime     @default(now())
+  conversationId String
+  clientId       String?
+  employeeId     String?
+  client         Client?      @relation(fields: [clientId], references: [id])
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  employee       Employee?    @relation(fields: [employeeId], references: [id])
+}
+
+model Department {
+  id        String     @id @default(uuid())
+  name      String     @unique
+  companyId String
+  company   Company    @relation(fields: [companyId], references: [id])
+  employees Employee[]
+  queue     Client[]   @relation("queue")
+}
+
+model FAQCategory {
+  id        String    @id @default(uuid())
+  name     String    @unique
+  companyId String
+  company   Company   @relation(fields: [companyId], references: [id])
+  items     FAQItem[]
+
+  @@unique([companyId, name])
+}
+
+model FAQItem {
+  id         String      @id @default(uuid())
+  question   String
+  answer     String
+  categoryId String
+  category   FAQCategory @relation(fields: [categoryId], references: [id])
+}

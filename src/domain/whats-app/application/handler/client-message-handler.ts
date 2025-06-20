@@ -132,7 +132,9 @@ export class ClientMessageHandler extends MessageHandler {
                 break
             case 'faq_categories':
                 const faqCategories =
-                    await this.listFAQCategoriesUseCase.execute()
+                    await this.listFAQCategoriesUseCase.execute(
+                        conversation.company
+                    )
 
                 conversation.transitionToState(
                     StateFactory.create(
@@ -150,6 +152,7 @@ export class ClientMessageHandler extends MessageHandler {
 
                 const faqItems =
                     await this.listFAQCategorieItemsUseCase.execute(
+                        conversation.company,
                         transition.data
                     )
 

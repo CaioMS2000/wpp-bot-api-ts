@@ -34,4 +34,8 @@ export class Department extends Entity<DepartmentProps> {
     get employee() {
         return this.props.employee
     }
+
+    get company() {
+        return this.props.company
+    }
 }

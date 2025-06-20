@@ -3,8 +3,8 @@ import { logger } from '@/core/logger'
 import { RepositoryFactory } from '@/domain/whats-app/application/factory/repository-factory'
 import { UseCaseFactory } from '@/domain/whats-app/application/factory/use-case-factory'
 import { emptyJsonFile, findProjectRoot } from '@/utils/files'
-import { InMemoryRepositoryFactory } from '../factory/in-memory/in-memory-repository-factory'
-import { InMemoryWhatsAppMessageServiceFactory } from '../factory/in-memory/in-memory-whats-app-message-service-factory'
+import { PrismaWhatsAppMessageServiceFactory } from '../factory/prisma/prisma-whats-app-message-service-factory'
+import { PrismaRepositoryFactory } from '../factory/prisma/prisma-repository-factory'
 import { app } from './app'
 import { interactionMock } from './interaction-mock'
 import { receiveMessage } from './routes/message/receive-message'
@@ -14,10 +14,10 @@ const responseFilePath = path.join(projectRoot, 'response.json')
 
 emptyJsonFile(responseFilePath)
 
-const repositoryFactory: RepositoryFactory = new InMemoryRepositoryFactory()
+const repositoryFactory: RepositoryFactory = new PrismaRepositoryFactory()
 const useCaseFactory = new UseCaseFactory(repositoryFactory)
 const inMemoryWhatsAppMessageServiceFactory =
-    new InMemoryWhatsAppMessageServiceFactory(useCaseFactory, repositoryFactory)
+    new PrismaWhatsAppMessageServiceFactory(useCaseFactory, repositoryFactory)
 const whatsAppMessageService =
     inMemoryWhatsAppMessageServiceFactory.createService()
 

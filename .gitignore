@@ -58,3 +58,5 @@ response.json
 ddd.md
 temp.md
 watch.py
+/prisma/generated
+/prisma/migrations

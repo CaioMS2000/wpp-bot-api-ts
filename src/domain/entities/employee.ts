@@ -23,6 +23,10 @@ export class Employee extends Entity<EmployeeProps> {
         return employee
     }
 
+    get name() {
+        return this.props.name
+    }
+
     get phone() {
         return this.props.phone
     }
@@ -33,5 +37,9 @@ export class Employee extends Entity<EmployeeProps> {
 
     get company() {
         return this.props.company
+    }
+
+    set department(department: Nullable<Department>) {
+        this.props.department = department
     }
 }

@@ -119,7 +119,9 @@ export class EmployeeMessageHandler extends MessageHandler {
                 )
                 break
             case 'faq_categories':
-                const faqCategories = await this.faqRepository.findCategories()
+                const faqCategories = await this.faqRepository.findCategories(
+                    conversation.company
+                )
                 conversation.transitionToState(
                     StateFactory.create(
                         'faq_categories',
@@ -135,6 +137,7 @@ export class EmployeeMessageHandler extends MessageHandler {
                 }
 
                 const faqItems = await this.faqRepository.findItemsByCategory(
+                    conversation.company,
                     transition.data
                 )
 
