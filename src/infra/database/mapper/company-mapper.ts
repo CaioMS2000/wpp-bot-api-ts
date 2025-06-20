@@ -1,15 +1,19 @@
-import { Company } from '@/domain/entities/company'
+import { Company, BusinessHours, WeekDay } from '@/domain/entities/company'
 import {
     Company as PrismaCompany,
     Manager as PrismaManager,
+    BusinessHour as PrismaBusinessHour,
 } from 'ROOT/prisma/generated'
 import { ManagerMapper } from './manager-mapper'
 
 export class CompanyMapper {
     static toEntity(
-        model: PrismaCompany & { manager: PrismaManager }
+        model: PrismaCompany & {
+            manager: PrismaManager
+            businessHours?: PrismaBusinessHour[]
+        }
     ): Company {
-        return Company.create(
+        const entity = Company.create(
             {
                 cnpj: model.cnpj,
                 name: model.name,
@@ -17,11 +21,23 @@ export class CompanyMapper {
                 email: model.email,
                 website: model.website,
                 description: model.description,
-                // manager: raw.manager,
+                businessHours: model.businessHours?.reduce(
+                    (acc, bh) => {
+                        acc[bh.day] = {
+                            openTime: bh.openTime as `${number}:${number}`,
+                            closeTime: bh.closeTime as `${number}:${number}`,
+                            isActive: bh.isActive,
+                        }
+                        return acc
+                    },
+                    {} as Partial<Record<WeekDay, Omit<BusinessHours, 'day'>>>
+                ),
                 manager: ManagerMapper.toEntity(model.manager),
             },
             model.id
         )
+
+        return entity
     }
 
     static toModel(company: Company): PrismaCompany {
@@ -35,5 +51,15 @@ export class CompanyMapper {
             description: company.description,
             managerId: company.manager.id,
         }
+    }
+
+    static businessHoursToModels(company: Company) {
+        return company.businessHours.map(hour => ({
+            day: hour.day,
+            openTime: hour.openTime,
+            closeTime: hour.closeTime,
+            isActive: hour.isActive,
+            companyId: company.id,
+        }))
     }
 }

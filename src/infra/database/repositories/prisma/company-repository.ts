@@ -1,8 +1,7 @@
 import { Company } from '@/domain/entities/company'
-import { Manager } from '@/domain/entities/manager'
 import { CompanyRepository } from '@/domain/repositories/company-repository'
 import { prisma } from '@/lib/prisma'
-import { ManagerMapper } from '../../mapper/manager-mapper'
+import { CompanyMapper } from '../../mapper/company-mapper'
 
 export class PrismaCompanyRepository extends CompanyRepository {
     async save(company: Company): Promise<void> {
@@ -12,52 +11,58 @@ export class PrismaCompanyRepository extends CompanyRepository {
                 name: company.name,
                 phone: company.phone,
                 cnpj: company.cnpj,
+                email: company.email,
+                website: company.website,
+                description: company.description,
+                managerId: company.manager.id,
             },
             create: {
                 id: company.id,
                 name: company.name,
                 phone: company.phone,
                 cnpj: company.cnpj,
+                email: company.email,
+                website: company.website,
+                description: company.description,
                 managerId: company.manager.id,
             },
+        })
+
+        // Remove horários antigos e recria com os atuais
+        await prisma.businessHour.deleteMany({
+            where: { companyId: company.id },
+        })
+
+        await prisma.businessHour.createMany({
+            data: CompanyMapper.businessHoursToModels(company),
         })
     }
 
     async findByPhone(phone: string): Promise<Nullable<Company>> {
         const model = await prisma.company.findUnique({
             where: { phone },
-            include: { manager: true },
+            include: {
+                manager: true,
+                businessHours: true,
+            },
         })
 
         if (!model) return null
 
-        return Company.create(
-            {
-                name: model.name,
-                phone: model.phone,
-                cnpj: model.cnpj,
-                manager: ManagerMapper.toEntity(model.manager),
-            },
-            model.id
-        )
+        return CompanyMapper.toEntity(model)
     }
 
     async findByCNPJ(cnpj: string): Promise<Nullable<Company>> {
         const model = await prisma.company.findUnique({
             where: { cnpj },
-            include: { manager: true },
+            include: {
+                manager: true,
+                businessHours: true,
+            },
         })
 
         if (!model) return null
 
-        return Company.create(
-            {
-                name: model.name,
-                phone: model.phone,
-                cnpj: model.cnpj,
-                manager: ManagerMapper.toEntity(model.manager),
-            },
-            model.id
-        )
+        return CompanyMapper.toEntity(model)
     }
 }
