@@ -21,6 +21,7 @@ import {
     Conversation as PrismaConversation,
     Employee as PrismaEmployee,
     Manager as PrismaManager,
+    Department as PrismaDepartment,
     StateName as PrismaStateName,
 } from 'ROOT/prisma/generated'
 import { clientValidatorSchema } from '../validators/stateDataJSONValidators/clientValidator'
@@ -48,11 +49,12 @@ export class ConversationMapper {
     static toEntity(
         model: PrismaConversation & {
             client: PrismaClient | null
-            employee: PrismaEmployee | null
+            employee:
+                | PrismaEmployee
+                | (PrismaEmployee & { department: PrismaDepartment })
+                | null
             company: PrismaCompany & { manager: PrismaManager }
-        },
-        existingDepartments: Department[],
-        existingClients: Client[]
+        }
     ): Conversation {
         const companyModel = model.company
         let entity: NotDefined<Conversation> = undefined
@@ -77,12 +79,15 @@ export class ConversationMapper {
             model.employee
         ) {
             const employeeModel = model.employee
+            const departmentModel =
+                'department' in employeeModel ? employeeModel.department : null
             entity = Conversation.create(
                 {
                     user: EmployeeMapper.toEntity(
                         employeeModel,
                         model.company,
-                        model.company.manager
+                        model.company.manager,
+                        departmentModel
                     ),
                     company: CompanyMapper.toEntity(companyModel),
                 },

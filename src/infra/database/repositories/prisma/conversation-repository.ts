@@ -385,6 +385,7 @@ export class PrismaConversationRepository extends ConversationRepository {
             where: {
                 client: {
                     phone,
+                    companyId: company.id,
                 },
                 endedAt: null,
             },
@@ -396,50 +397,7 @@ export class PrismaConversationRepository extends ConversationRepository {
             },
         })
 
-        const prismaDepartments = await prisma.department.findMany({
-            where: {
-                company: {
-                    cnpj: company.cnpj,
-                },
-            },
-            include: {
-                company: {
-                    include: {
-                        manager: true,
-                    },
-                },
-                queue: true,
-                employees: true,
-            },
-        })
-        const prismaClients = await prisma.client.findMany({
-            where: {
-                company: {
-                    cnpj: company.cnpj,
-                },
-            },
-            include: {
-                company: {
-                    include: {
-                        manager: true,
-                    },
-                },
-            },
-        })
-
-        const result = model
-            ? ConversationMapper.toEntity(
-                  model,
-                  prismaDepartments.map(DepartmentMapper.toEntity),
-                  prismaClients.map(client =>
-                      ClientMapper.toEntity(
-                          client,
-                          client.company,
-                          client.company.manager
-                      )
-                  )
-              )
-            : null
+        const result = model ? ConversationMapper.toEntity(model) : null
 
         if (result && model) {
             const restoredSate = await this.restoreSate(result, model)
@@ -458,63 +416,35 @@ export class PrismaConversationRepository extends ConversationRepository {
     ): Promise<Nullable<Conversation>> {
         const model = await prisma.conversation.findFirst({
             where: {
-                agent: {
+                employee: {
                     phone,
+                    companyId: company.id,
                 },
                 endedAt: null,
             },
             include: {
-                client: { include: { company: true } },
+                client: true,
                 agent: true,
-                employee: true,
+                employee: { include: { company: true, department: true } },
                 company: { include: { manager: true } },
             },
         })
 
-        const prismaDepartments = await prisma.department.findMany({
-            where: {
-                company: {
-                    cnpj: company.cnpj,
-                },
-            },
-            include: {
-                company: {
-                    include: {
-                        manager: true,
-                    },
-                },
-                queue: true,
-                employees: true,
-            },
-        })
-        const prismaClients = await prisma.client.findMany({
-            where: {
-                company: {
-                    cnpj: company.cnpj,
-                },
-            },
-            include: {
-                company: {
-                    include: {
-                        manager: true,
-                    },
-                },
-            },
-        })
+        logger.print(
+            '[PrismaConversationRepository.findActiveByEmployeePhone] model\n',
+            model
+        )
+        const result = model ? ConversationMapper.toEntity(model) : null
 
-        return model
-            ? ConversationMapper.toEntity(
-                  model,
-                  prismaDepartments.map(DepartmentMapper.toEntity),
-                  prismaClients.map(client =>
-                      ClientMapper.toEntity(
-                          client,
-                          client.company,
-                          client.company.manager
-                      )
-                  )
-              )
-            : null
+        if (result && model) {
+            const restoredSate = await this.restoreSate(result, model)
+
+            if (restoredSate) {
+                result.currentState = restoredSate
+            }
+        }
+
+        return result
     }
 
     async findActiveByClientPhoneOrThrow(

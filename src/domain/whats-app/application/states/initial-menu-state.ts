@@ -74,6 +74,10 @@ export class InitialMenuState extends ConversationState {
     }
 
     private handleEmployeeMessage(messageContent: string) {
+        if (messageContent === '3') {
+            return StateTransition.toFAQCategories()
+        }
+
         if (messageContent === '4') {
             return StateTransition.toDepartmentListQueue()
         }

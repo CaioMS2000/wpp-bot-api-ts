@@ -99,6 +99,10 @@ export class StateFactory {
                 return new DepartmentChatState(conversation, data)
             }
             case 'department_queue_list': {
+                logger.print(
+                    '[StateFactory.create] department_queue_list\n',
+                    conversation
+                )
                 if (isEmployee(conversation.user)) {
                     if (!isDepartment(conversation.user.department)) {
                         logger.error(

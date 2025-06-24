@@ -29,41 +29,41 @@ async function clientSendMessage(message: string, secs = 1) {
 }
 
 async function employeeSendMessage(message: string, secs = 1) {
-    await sendMessage(message, '5562993765721')
+    await sendMessage(message, '556292476996')
 }
 
 export async function interactionMock() {
-    await clientSendMessage('oi')
+    // await clientSendMessage('oi')
 
-    await clientSendMessage('3')
+    // await clientSendMessage('3')
 
-    await clientSendMessage('suporte') // não vai mudar o estado pois não é uma das opções
+    // await clientSendMessage('suporte') // não vai mudar o estado pois não é uma das opções
 
-    await clientSendMessage('Geração de Energia')
+    // await clientSendMessage('Geração de Energia')
 
-    await clientSendMessage('Menu principal')
+    // await clientSendMessage('Menu principal')
 
-    await clientSendMessage('2')
+    // await clientSendMessage('2')
 
-    await clientSendMessage('Menu principal')
+    // await clientSendMessage('Menu principal')
 
-    await clientSendMessage('2') // esse "vai e vem" é só pra testar se ele consegue transitar corretamente
+    // await clientSendMessage('2') // esse "vai e vem" é só pra testar se ele consegue transitar corretamente
 
-    await clientSendMessage('Tecnologia da Informação')
+    // await clientSendMessage('Tecnologia da Informação')
 
     // await clientSendMessage('alguma mensagem')
 
-    // console.log('\n\n\n\n\n\n\n')
-    // console.log('==========')
+    console.log('\n\n\n\n\n\n\n')
+    console.log('==========')
     // await employeeSendMessage('alguma mensagem')
 
     // await employeeSendMessage('3')
 
-    // await employeeSendMessage('vendas')
+    // await employeeSendMessage('Mercado Livre de Energia')
 
     // await employeeSendMessage('Menu principal')
 
-    // await employeeSendMessage('4')
+    await employeeSendMessage('4')
 
     // await employeeSendMessage('5')
 }

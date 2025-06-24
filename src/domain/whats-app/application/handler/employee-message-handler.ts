@@ -23,7 +23,7 @@ export class EmployeeMessageHandler extends MessageHandler {
         private messageRepository: MessageRepository,
         private conversationRepository: ConversationRepository,
         private faqRepository: FAQRepository,
-        private findConversationByUserPhoneUseCase: FindConversationByEmployeePhoneUseCase,
+        private findConversationByEmployeePhoneUseCase: FindConversationByEmployeePhoneUseCase,
         private createConversationUseCase: CreateConversationUseCase,
         private listActiveDepartmentsUseCase: ListActiveDepartmentsUseCase,
         private transferEmployeeToClientConversationUseCase: TransferEmployeeToClientConversationUseCase
@@ -62,9 +62,15 @@ export class EmployeeMessageHandler extends MessageHandler {
             await this.handleTransition(conversation, result)
         }
 
+        logger.debug(
+            `Conversation state after possible transition: ${conversation.currentState.constructor.name}`
+        )
+
         if (conversation.currentState.entryMessage) {
             messages.push(conversation.currentState.entryMessage)
         }
+
+        await this.conversationRepository.save(conversation)
 
         if (conversation.currentState.shouldAutoTransition()) {
             logger.debug('Auto transition triggered')
@@ -75,6 +81,8 @@ export class EmployeeMessageHandler extends MessageHandler {
                 if (conversation.currentState.entryMessage) {
                     messages.push(conversation.currentState.entryMessage)
                 }
+
+                await this.conversationRepository.save(conversation)
             }
         }
 
@@ -149,6 +157,8 @@ export class EmployeeMessageHandler extends MessageHandler {
                 )
                 break
             case 'department_queue_list':
+                logger.print('transition\n', transition)
+                logger.print('conversation\n', conversation)
                 conversation.transitionToState(
                     StateFactory.create('department_queue_list', conversation)
                 )
@@ -172,12 +182,16 @@ export class EmployeeMessageHandler extends MessageHandler {
         //     await this.listActiveDepartmentsUseCase.execute()
 
         // switch (transition.targetState) {
+        //     case 'department_queue': {
+        //         const department = this.findDepartment(availableDepartments, transition.data)
+        //         break
+        //     }
         // }
     }
 
     private async getOrCreateConversation(company: Company, user: Employee) {
         let conversation =
-            await this.findConversationByUserPhoneUseCase.execute(
+            await this.findConversationByEmployeePhoneUseCase.execute(
                 company,
                 user.phone
             )
@@ -193,15 +207,15 @@ export class EmployeeMessageHandler extends MessageHandler {
         return conversation
     }
 
-    // private findDepartment(
-    //     departments: Department[],
-    //     name: string
-    // ): Department {
-    //     const department = departments.find(dept => dept.name === name)
-    //     if (!department) {
-    //         logger.error(`Department not found: ${name}`)
-    //         throw new Error('Department not found')
-    //     }
-    //     return department
-    // }
+    private findDepartment(
+        departments: Department[],
+        name: string
+    ): Department {
+        const department = departments.find(dept => dept.name === name)
+        if (!department) {
+            logger.error(`Department not found: ${name}`)
+            throw new Error('Department not found')
+        }
+        return department
+    }
 }
