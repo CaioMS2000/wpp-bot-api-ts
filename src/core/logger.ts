@@ -1,3 +1,4 @@
+import util from 'node:util'
 import { env } from '@/env'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
@@ -62,6 +63,12 @@ export class Logger {
     private readonly logFormat = 'HH:mm:ss.SSS - YYYY-MM-DD'
 
     print(...data: any[]) {
+        const x = data.map(item => {
+            if (typeof item === 'object') {
+                return this.formatObject(item)
+            }
+            return item
+        })
         const { filePath, line, column } = this.getCallerInfo()
         const fileReference = `${filePath}:${line}:${column}`
         const timestamp = this.getTimestamp()
@@ -69,7 +76,7 @@ export class Logger {
         console.log(
             `${Colors.WarmGray}[${timestamp}] [${fileReference}]#==========${Colors.Reset}`
         )
-        console.log(...data)
+        console.log(...x)
         console.log(`${Colors.WarmGray}==========#${Colors.Reset}\n`)
     }
 
@@ -116,7 +123,11 @@ export class Logger {
             return `${Colors.Red}${data.message}${Colors.Reset}\n${Colors.Gray}${data.stack}${Colors.Reset}`
         }
         try {
-            return `${Colors.Magenta}${JSON.stringify(data, null, 2)}${Colors.Reset}`
+            return `${Colors.Magenta}${util.inspect(data, {
+                depth: null,
+                colors: true,
+                maxArrayLength: null,
+            })}${Colors.Reset}`
         } catch {
             return `${Colors.Yellow}${String(data)}${Colors.Reset}`
         }

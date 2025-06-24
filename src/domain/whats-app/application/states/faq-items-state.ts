@@ -4,7 +4,12 @@ import { MenuOption } from '../../@types'
 import { ConversationState } from './conversation-state'
 import { StateTransition } from './state-transition'
 
-export class FAQItemsState extends ConversationState {
+type FAQItemsStateProps = {
+    categoryName: string
+    items: FAQItem[]
+}
+
+export class FAQItemsState extends ConversationState<FAQItemsStateProps> {
     private menuOptions: MenuOption[]
 
     constructor(
@@ -12,7 +17,7 @@ export class FAQItemsState extends ConversationState {
         private categoryName: string,
         private items: FAQItem[]
     ) {
-        super(conversation)
+        super(conversation, { categoryName, items })
 
         this.menuOptions = items.map((item, index) => ({
             key: (index + 1).toString(),

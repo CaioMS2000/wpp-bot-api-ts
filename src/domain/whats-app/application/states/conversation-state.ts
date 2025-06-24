@@ -2,8 +2,15 @@ import { Conversation } from '@/domain/entities/conversation'
 import { MenuOption } from '../../@types'
 import { StateTransition } from './state-transition'
 
-export abstract class ConversationState {
-    constructor(protected conversation: Conversation) {}
+export abstract class ConversationState<T = unknown> {
+    constructor(
+        protected conversation: Conversation,
+        protected props: T = null as unknown as T
+    ) {}
+
+    get data() {
+        return this.props
+    }
 
     abstract handleMessage(messageContent: string): StateTransition
     abstract entryMessage: Nullable<string>

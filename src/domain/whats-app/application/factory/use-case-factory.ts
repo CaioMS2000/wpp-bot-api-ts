@@ -1,5 +1,6 @@
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
-import { FindConversationByUserPhoneUseCase } from '../use-cases/find-conversation-by-user-phone-use-case'
+import { FindConversationByClientPhoneUseCase } from '../use-cases/find-conversation-by-client-phone-use-case'
+import { FindConversationByEmployeePhoneUseCase } from '../use-cases/find-conversation-by-employee-phone-use-case'
 import { FindEmployeeByPhoneUseCase } from '../use-cases/find-employee-by-phone-use-case'
 import { FindOrCreateClientUseCase } from '../use-cases/find-or-create-client-use-case'
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
@@ -42,8 +43,8 @@ export class UseCaseFactory {
         )
     }
 
-    getFindConversationByUserPhoneUseCase(): FindConversationByUserPhoneUseCase {
-        return new FindConversationByUserPhoneUseCase(
+    getFindConversationByEmployeePhoneUseCase(): FindConversationByEmployeePhoneUseCase {
+        return new FindConversationByEmployeePhoneUseCase(
             this.repositoryFactory.createConversationRepository()
         )
     }
@@ -64,6 +65,12 @@ export class UseCaseFactory {
 
     getTransferEmployeeToClientConversationUseCase(): TransferEmployeeToClientConversationUseCase {
         return new TransferEmployeeToClientConversationUseCase(
+            this.repositoryFactory.createConversationRepository()
+        )
+    }
+
+    getFindConversationByClientPhoneUseCase(): FindConversationByClientPhoneUseCase {
+        return new FindConversationByClientPhoneUseCase(
             this.repositoryFactory.createConversationRepository()
         )
     }

@@ -40,4 +40,8 @@ export class Department extends Entity<DepartmentProps> {
     get company() {
         return this.props.company
     }
+
+    get description() {
+        return this.props.description
+    }
 }

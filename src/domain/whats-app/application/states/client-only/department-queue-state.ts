@@ -3,12 +3,17 @@ import { Department } from '@/domain/entities/department'
 import { ConversationState } from '../conversation-state'
 import { StateTransition } from '../state-transition'
 
-export class DepartmentQueueState extends ConversationState {
-    constructor(
-        conversation: Conversation,
-        private department: Department
-    ) {
-        super(conversation)
+type DepartmentQueueStateProps = {
+    department: Department
+}
+
+export class DepartmentQueueState extends ConversationState<DepartmentQueueStateProps> {
+    constructor(conversation: Conversation, department: Department) {
+        super(conversation, { department })
+    }
+
+    get department() {
+        return this.props.department
     }
 
     handleMessage(messageContent: string): StateTransition {

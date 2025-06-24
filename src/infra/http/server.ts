@@ -9,6 +9,8 @@ import { app } from './app'
 import { interactionMock } from './interaction-mock'
 import { receiveMessage } from './routes/message/receive-message'
 
+console.clear()
+
 const projectRoot = findProjectRoot(__dirname)
 const responseFilePath = path.join(projectRoot, 'response.json')
 
@@ -26,7 +28,6 @@ app.register(receiveMessage, { whatsAppMessageService })
 async function main() {
     const serverAddress = await app.listen({ port: 3000 })
 
-    console.clear()
     logger.info(`Server running on -> ${serverAddress}`)
 
     await interactionMock()

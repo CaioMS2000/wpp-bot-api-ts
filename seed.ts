@@ -7,6 +7,7 @@ import { seedEmployees } from './seed/employees'
 import { seedClientsAndChats } from './seed/chats'
 
 async function main() {
+    console.clear()
     await prisma.$transaction(async tx => {
         await seedCompanyAndManager(tx)
         await seedBusinessHours(tx)

@@ -4,14 +4,13 @@ import { MenuOption } from '../../@types'
 import { ConversationState } from './conversation-state'
 import { StateTransition } from './state-transition'
 
-export class FAQCategoriesState extends ConversationState {
+type FAQCategoriesStateProps = { categories: FAQCategory[] }
+
+export class FAQCategoriesState extends ConversationState<FAQCategoriesStateProps> {
     private menuOptions: MenuOption[]
 
-    constructor(
-        conversation: Conversation,
-        private categories: FAQCategory[]
-    ) {
-        super(conversation)
+    constructor(conversation: Conversation, categories: FAQCategory[]) {
+        super(conversation, { categories })
 
         this.menuOptions = categories
             .map((category, index) => ({
@@ -28,6 +27,10 @@ export class FAQCategoriesState extends ConversationState {
                     forEmployee: true,
                 },
             ])
+    }
+
+    get categories() {
+        return this.props.categories
     }
 
     handleMessage(messageContent: string): StateTransition {

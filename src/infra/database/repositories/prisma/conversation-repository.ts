@@ -1,14 +1,11 @@
+// import { NullableJsonNullValueInput, InputJsonValue } from 'ROOT/prisma/generated'
+import { Prisma } from 'ROOT/prisma/generated'
 import { Client } from '@/domain/entities/client'
 import { Conversation } from '@/domain/entities/conversation'
 import { Employee } from '@/domain/entities/employee'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
 import { prisma } from '@/lib/prisma'
-import {
-    Company as PrismaCompany,
-    Conversation as PrismaConversation,
-    Manager as PrismaManager,
-    StateName as PrismaStateName,
-} from 'ROOT/prisma/generated'
+import { StateName as PrismaStateName } from 'ROOT/prisma/generated'
 import { ConversationMapper } from '../../mapper/conversation-mapper'
 import { InitialMenuState } from '@/domain/whats-app/application/states/initial-menu-state'
 import { AIChatState } from '@/domain/whats-app/application/states/ai-chat-state'
@@ -19,17 +16,22 @@ import { DepartmentQueueState } from '@/domain/whats-app/application/states/clie
 import { DepartmentChatState } from '@/domain/whats-app/application/states/client-only/department-chat-state'
 import { ListDepartmentQueueState } from '@/domain/whats-app/application/states/employee-only/list-department-client-queue-state'
 import { ChatWithClientState } from '@/domain/whats-app/application/states/employee-only/chat-with-client-sate'
+import { Company } from '@/domain/entities/company'
+import { DepartmentMapper } from '../../mapper/department-mapper'
+import { ClientMapper } from '../../mapper/client-mapper'
+import { logger } from '@/core/logger'
+import { FAQItem } from '@/domain/entities/faq'
 
 const stateMap = {
-    [PrismaStateName.initial_menu]: InitialMenuState,
-    [PrismaStateName.ai_chat]: AIChatState,
-    [PrismaStateName.faq_categories]: FAQCategoriesState,
-    [PrismaStateName.faq_items]: FAQItemsState,
-    [PrismaStateName.department_selection]: DepartmentSelectionState,
-    [PrismaStateName.department_queue]: DepartmentQueueState,
-    [PrismaStateName.department_chat]: DepartmentChatState,
-    [PrismaStateName.department_queue_list]: ListDepartmentQueueState,
-    [PrismaStateName.chat_with_client]: ChatWithClientState,
+    [InitialMenuState.name]: PrismaStateName.initial_menu,
+    [AIChatState.name]: PrismaStateName.ai_chat,
+    [FAQCategoriesState.name]: PrismaStateName.faq_categories,
+    [FAQItemsState.name]: PrismaStateName.faq_items,
+    [DepartmentSelectionState.name]: PrismaStateName.department_selection,
+    [DepartmentQueueState.name]: PrismaStateName.department_queue,
+    [DepartmentChatState.name]: PrismaStateName.department_chat,
+    [ListDepartmentQueueState.name]: PrismaStateName.department_queue_list,
+    [ChatWithClientState.name]: PrismaStateName.chat_with_client,
 } as const
 
 type UserReferenceType =
@@ -47,11 +49,95 @@ type UserReferenceType =
 type AgentType = Nullable<'AI' | 'EMPLOYEE'>
 
 export class PrismaConversationRepository extends ConversationRepository {
-    private async create(
+    private serializeStateData(
+        conversation: Conversation
+    ): NotDefined<Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue> {
+        if (conversation.currentState instanceof InitialMenuState) {
+            // sem dados
+        } else if (conversation.currentState instanceof AIChatState) {
+            // sem dados
+        } else if (conversation.currentState instanceof FAQCategoriesState) {
+            const { categories } = conversation.currentState.data
+            const data = categories.reduce(
+                (acc, cat) => {
+                    acc[cat.name] = cat.items
+                    return acc
+                },
+                {} as Record<string, FAQItem[]>
+            )
+
+            logger.print('FAQCategoriesState - serialized state data', data)
+
+            return data
+        } else if (conversation.currentState instanceof FAQItemsState) {
+            const { categoryName, items } = conversation.currentState.data
+            const data = { [categoryName]: items }
+
+            logger.print('FAQItemsState - serialized state data', data)
+
+            return data
+        } else if (
+            conversation.currentState instanceof DepartmentSelectionState
+        ) {
+            const { departments } = conversation.currentState.data
+            const data = { departments: departments.map(dept => dept.name) }
+
+            logger.print(
+                'DepartmentSelectionState - serialized state data',
+                data
+            )
+
+            return data
+        } else if (conversation.currentState instanceof DepartmentQueueState) {
+            const { department } = conversation.currentState.data
+            const data = { name: department.name }
+
+            logger.print('DepartmentQueueState - serialized state data', data)
+
+            return data
+        } else if (conversation.currentState instanceof DepartmentChatState) {
+            const { department } = conversation.currentState.data
+            const data = { name: department.name }
+
+            logger.print('DepartmentChatState - serialized state data', data)
+
+            return data
+        } else if (
+            conversation.currentState instanceof ListDepartmentQueueState
+        ) {
+            const { department } = conversation.currentState.data
+            const data = { name: department.name }
+
+            logger.print(
+                'ListDepartmentQueueState - serialized state data',
+                data
+            )
+
+            return data
+        } else if (conversation.currentState instanceof ChatWithClientState) {
+            const { client } = conversation.currentState.data
+            const data = { phone: client.phone }
+
+            logger.print('ChatWithClientState - serialized state data', data)
+
+            return data
+        }
+
+        return undefined
+        // throw new Error('Invalid state')
+    }
+
+    private async createConversation(
         conversation: Conversation,
-        userReference: UserReferenceType,
-        stateName: PrismaStateName
+        userReference: UserReferenceType
     ) {
+        const stateName = stateMap[conversation.currentState.constructor.name]
+        const stateData = conversation.currentState.data
+
+        logger.debug(
+            `Creating conversation stateName:${stateName} | stateData:${stateData}`
+        )
+
         await prisma.conversation.create({
             data: {
                 id: conversation.id,
@@ -62,56 +148,38 @@ export class PrismaConversationRepository extends ConversationRepository {
                 aiServiceThreadId: conversation.aiServiceThreadId,
                 aiServiceThreadResume: conversation.aiServiceThreadResume,
                 currentState: stateName,
+                stateData: this.serializeStateData(conversation),
                 ...userReference,
             },
         })
     }
-    private async createConversation(
-        conversation: Conversation,
-        userReference: UserReferenceType,
-        agentType: AgentType
-    ) {
-        let stateName: Nullable<PrismaStateName> = null
-        let stateData: unknown = null
-
-        if (conversation.currentState instanceof InitialMenuState) {
-            stateName = PrismaStateName.initial_menu
-        } else if (conversation.currentState instanceof AIChatState) {
-            stateName = PrismaStateName.ai_chat
-        } else if (conversation.currentState instanceof FAQCategoriesState) {
-            stateName = PrismaStateName.faq_categories
-            stateData = conversation.currentState.categories
-        } else if (conversation.currentState instanceof FAQItemsState) {
-            stateName = PrismaStateName.faq_items
-        } else if (
-            conversation.currentState instanceof DepartmentSelectionState
-        ) {
-            stateName = PrismaStateName.department_selection
-        } else if (conversation.currentState instanceof DepartmentQueueState) {
-            stateName = PrismaStateName.department_queue
-        } else if (conversation.currentState instanceof DepartmentChatState) {
-            stateName = PrismaStateName.department_chat
-        } else if (
-            conversation.currentState instanceof ListDepartmentQueueState
-        ) {
-            stateName = PrismaStateName.department_queue_list
-        } else if (conversation.currentState instanceof ChatWithClientState) {
-            stateName = PrismaStateName.chat_with_client
-        }
-
-        if (!stateName) {
-            throw new Error('Conversation state not found')
-        }
-
-        await this.create(conversation, userReference, stateName)
-    }
 
     private async updateConversation(
-        prismaConversation: PrismaConversation,
         conversation: Conversation,
-        userReference: UserReferenceType,
-        agentType: AgentType
-    ) {}
+        userReference: UserReferenceType
+    ) {
+        const stateName = stateMap[conversation.currentState.constructor.name]
+        const stateData = conversation.currentState.data
+
+        logger.debug(
+            `Updating conversation stateName: ${stateName} | stateData: ${JSON.stringify(stateData, null, 2)}`
+        )
+
+        await prisma.conversation.update({
+            where: { id: conversation.id },
+            data: {
+                startedAt: conversation.startedAt,
+                endedAt: conversation.endedAt,
+                lastStateChange: conversation.lastStateChange,
+                companyId: conversation.company.id,
+                aiServiceThreadId: conversation.aiServiceThreadId,
+                aiServiceThreadResume: conversation.aiServiceThreadResume,
+                currentState: stateName,
+                stateData: this.serializeStateData(conversation),
+                ...userReference,
+            },
+        })
+    }
 
     async save(conversation: Conversation): Promise<void> {
         const user: Client | Employee = conversation.user
@@ -149,22 +217,17 @@ export class PrismaConversationRepository extends ConversationRepository {
         })
 
         if (existingConversation) {
-            await this.updateConversation(
-                existingConversation,
+            return await this.updateConversation(
                 conversation,
-                userReferenceObject,
-                agentType
-            )
-        } else {
-            await this.createConversation(
-                conversation,
-                userReferenceObject,
-                agentType
+                userReferenceObject
             )
         }
+
+        return await this.createConversation(conversation, userReferenceObject)
     }
 
     async findActiveByClientPhone(
+        company: Company,
         phone: string
     ): Promise<Nullable<Conversation>> {
         const model = await prisma.conversation.findFirst({
@@ -182,10 +245,54 @@ export class PrismaConversationRepository extends ConversationRepository {
             },
         })
 
-        return model ? ConversationMapper.toEntity(model) : null
+        const prismaDepartments = await prisma.department.findMany({
+            where: {
+                company: {
+                    cnpj: company.cnpj,
+                },
+            },
+            include: {
+                company: {
+                    include: {
+                        manager: true,
+                    },
+                },
+                queue: true,
+                employees: true,
+            },
+        })
+        const prismaClients = await prisma.client.findMany({
+            where: {
+                company: {
+                    cnpj: company.cnpj,
+                },
+            },
+            include: {
+                company: {
+                    include: {
+                        manager: true,
+                    },
+                },
+            },
+        })
+
+        return model
+            ? ConversationMapper.toEntity(
+                  model,
+                  prismaDepartments.map(DepartmentMapper.toEntity),
+                  prismaClients.map(client =>
+                      ClientMapper.toEntity(
+                          client,
+                          client.company,
+                          client.company.manager
+                      )
+                  )
+              )
+            : null
     }
 
     async findActiveByEmployeePhone(
+        company: Company,
         phone: string
     ): Promise<Nullable<Conversation>> {
         const model = await prisma.conversation.findFirst({
@@ -203,11 +310,57 @@ export class PrismaConversationRepository extends ConversationRepository {
             },
         })
 
-        return model ? ConversationMapper.toEntity(model) : null
+        const prismaDepartments = await prisma.department.findMany({
+            where: {
+                company: {
+                    cnpj: company.cnpj,
+                },
+            },
+            include: {
+                company: {
+                    include: {
+                        manager: true,
+                    },
+                },
+                queue: true,
+                employees: true,
+            },
+        })
+        const prismaClients = await prisma.client.findMany({
+            where: {
+                company: {
+                    cnpj: company.cnpj,
+                },
+            },
+            include: {
+                company: {
+                    include: {
+                        manager: true,
+                    },
+                },
+            },
+        })
+
+        return model
+            ? ConversationMapper.toEntity(
+                  model,
+                  prismaDepartments.map(DepartmentMapper.toEntity),
+                  prismaClients.map(client =>
+                      ClientMapper.toEntity(
+                          client,
+                          client.company,
+                          client.company.manager
+                      )
+                  )
+              )
+            : null
     }
 
-    async findActiveByClientPhoneOrThrow(phone: string): Promise<Conversation> {
-        const conversation = await this.findActiveByClientPhone(phone)
+    async findActiveByClientPhoneOrThrow(
+        company: Company,
+        phone: string
+    ): Promise<Conversation> {
+        const conversation = await this.findActiveByClientPhone(company, phone)
 
         if (!conversation) {
             throw new Error('No active conversation found for client phone')

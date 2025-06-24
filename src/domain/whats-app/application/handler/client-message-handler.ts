@@ -21,7 +21,8 @@ import { FAQItemsState } from '../states/faq-items-state'
 import { InitialMenuState } from '../states/initial-menu-state'
 import { StateTransition } from '../states/state-transition'
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
-import { FindConversationByUserPhoneUseCase } from '../use-cases/find-conversation-by-user-phone-use-case'
+import { FindConversationByClientPhoneUseCase } from '../use-cases/find-conversation-by-client-phone-use-case'
+import { FindConversationByEmployeePhoneUseCase } from '../use-cases/find-conversation-by-employee-phone-use-case'
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
 import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
 import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
@@ -37,7 +38,7 @@ export class ClientMessageHandler extends MessageHandler {
         private listFAQCategoriesUseCase: ListFAQCategoriesUseCase,
         private listFAQCategorieItemsUseCase: ListFAQCategorieItemsUseCase,
         private createConversationUseCase: CreateConversationUseCase,
-        private findConversationByUserPhoneUseCase: FindConversationByUserPhoneUseCase
+        private findConversationByClientPhoneUseCase: FindConversationByClientPhoneUseCase
     ) {
         super()
     }
@@ -74,9 +75,15 @@ export class ClientMessageHandler extends MessageHandler {
             await this.handleTransition(conversation, result)
         }
 
+        logger.debug(
+            `Conversation state after possible transition: ${conversation.currentState.constructor.name}`
+        )
+
         if (conversation.currentState.entryMessage) {
             messages.push(conversation.currentState.entryMessage)
         }
+
+        await this.conversationRepository.save(conversation)
 
         if (conversation.currentState.shouldAutoTransition()) {
             logger.debug('Auto transition triggered')
@@ -84,9 +91,15 @@ export class ClientMessageHandler extends MessageHandler {
             if (autoTransition && autoTransition.type === 'transition') {
                 await this.handleTransition(conversation, autoTransition)
 
+                logger.debug(
+                    `Conversation state after auto trigged transition: ${conversation.currentState.constructor.name}`
+                )
+
                 if (conversation.currentState.entryMessage) {
                     messages.push(conversation.currentState.entryMessage)
                 }
+
+                await this.conversationRepository.save(conversation)
             }
         }
 
@@ -231,7 +244,10 @@ export class ClientMessageHandler extends MessageHandler {
 
     private async getOrCreateConversation(company: Company, user: Client) {
         let conversation =
-            await this.findConversationByUserPhoneUseCase.execute(user.phone)
+            await this.findConversationByClientPhoneUseCase.execute(
+                company,
+                user.phone
+            )
 
         if (!conversation) {
             logger.info(`Creating new conversation for client: ${user.phone}`)

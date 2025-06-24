@@ -66,14 +66,14 @@ export async function seedClientsAndChats(prisma: Prisma.TransactionClient) {
         },
     ]
 
-    for (const msg of messages) {
-        await prisma.message.create({
-            data: {
-                conversationId: conversation.id,
-                content: msg.text,
-                from: msg.origin === 'CLIENT' ? 'CLIENT' : 'AI',
-                ...(msg.origin === 'CLIENT' ? { clientId: client.id } : {}),
-            },
-        })
-    }
+    // for (const msg of messages) {
+    //     await prisma.message.create({
+    //         data: {
+    //             conversationId: conversation.id,
+    //             content: msg.text,
+    //             from: msg.origin === 'CLIENT' ? 'CLIENT' : 'AI',
+    //             ...(msg.origin === 'CLIENT' ? { clientId: client.id } : {}),
+    //         },
+    //     })
+    // }
 }

@@ -12,7 +12,7 @@ import { MessageRepository } from '@/domain/repositories/message-repository'
 import { StateFactory } from '../factory/state-factory'
 import { StateTransition } from '../states/state-transition'
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
-import { FindConversationByUserPhoneUseCase } from '../use-cases/find-conversation-by-user-phone-use-case'
+import { FindConversationByEmployeePhoneUseCase } from '../use-cases/find-conversation-by-employee-phone-use-case'
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
 import { TransferEmployeeToClientConversationUseCase } from '../use-cases/transfer-employee-to-client-conversation-use-case'
 import { MessageHandler } from './message-handler'
@@ -23,7 +23,7 @@ export class EmployeeMessageHandler extends MessageHandler {
         private messageRepository: MessageRepository,
         private conversationRepository: ConversationRepository,
         private faqRepository: FAQRepository,
-        private findConversationByUserPhoneUseCase: FindConversationByUserPhoneUseCase,
+        private findConversationByUserPhoneUseCase: FindConversationByEmployeePhoneUseCase,
         private createConversationUseCase: CreateConversationUseCase,
         private listActiveDepartmentsUseCase: ListActiveDepartmentsUseCase,
         private transferEmployeeToClientConversationUseCase: TransferEmployeeToClientConversationUseCase
@@ -177,7 +177,10 @@ export class EmployeeMessageHandler extends MessageHandler {
 
     private async getOrCreateConversation(company: Company, user: Employee) {
         let conversation =
-            await this.findConversationByUserPhoneUseCase.execute(user.phone)
+            await this.findConversationByUserPhoneUseCase.execute(
+                company,
+                user.phone
+            )
 
         if (!conversation) {
             logger.info(`Creating new conversation for employee: ${user.phone}`)

@@ -24,46 +24,30 @@ async function sendMessage(message: string, phone: string) {
     }
 }
 
-async function clientSendMessage(message: string) {
+async function clientSendMessage(message: string, secs = 1) {
     await sendMessage(message, '5562993765723')
 }
 
-async function employeeSendMessage(message: string) {
+async function employeeSendMessage(message: string, secs = 1) {
     await sendMessage(message, '5562993765721')
 }
 
 export async function interactionMock() {
     await clientSendMessage('oi')
 
-    // await new Promise(resolve => setTimeout(resolve, 1000 * 1))
-
     await clientSendMessage('3')
-
-    // await new Promise(resolve => setTimeout(resolve, 1000 * 1))
 
     await clientSendMessage('suporte')
 
-    // await new Promise(resolve => setTimeout(resolve, 1000 * 2))
+    // await clientSendMessage('Menu principal')
 
-    await clientSendMessage('Menu principal')
+    // await clientSendMessage('2')
 
-    // await new Promise(resolve => setTimeout(resolve, 1000 * 1))
+    // await clientSendMessage('Menu principal')
 
-    await clientSendMessage('2')
-
-    // await new Promise(resolve => setTimeout(resolve, 1000 * 2))
-
-    await clientSendMessage('Menu principal')
-
-    // await new Promise(resolve => setTimeout(resolve, 1000 * 1))
-
-    await clientSendMessage('Departamento de TI')
-
-    // await new Promise(resolve => setTimeout(resolve, 1000 * 1))
+    // await clientSendMessage('Departamento de TI')
 
     // await clientSendMessage('alguma mensagem')
-
-    // await new Promise(resolve => setTimeout(resolve, 1000 * 1))
 
     // console.log('\n\n\n\n\n\n\n')
     // console.log('==========')

@@ -3,15 +3,20 @@ import { Conversation } from '@/domain/entities/conversation'
 import { ConversationState } from '../conversation-state'
 import { StateTransition } from '../state-transition'
 
-export class ChatWithClientState extends ConversationState {
-    constructor(
-        conversation: Conversation,
-        private client: Client
-    ) {
-        super(conversation)
+type ChatWithClientStateProps = {
+    client: Client
+}
+
+export class ChatWithClientState extends ConversationState<ChatWithClientStateProps> {
+    constructor(conversation: Conversation, client: Client) {
+        super(conversation, { client })
     }
     handleMessage(messageContent: string): StateTransition {
         throw new Error('Method not implemented.')
+    }
+
+    get client() {
+        return this.props.client
     }
 
     get entryMessage() {

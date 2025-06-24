@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/infra/http/server.ts",
+    "seed": "tsx seed.ts",
     "lint": "biome check .",
     "lint:hard": "biome check --write --unsafe ./src",
     "format": "biome format --write .",

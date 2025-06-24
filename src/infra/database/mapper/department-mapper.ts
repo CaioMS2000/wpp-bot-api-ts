@@ -50,6 +50,7 @@ export class DepartmentMapper {
         return {
             id: department.id,
             name: department.name,
+            description: department.description,
             companyId: department.company.id,
         }
     }

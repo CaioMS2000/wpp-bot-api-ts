@@ -22,6 +22,7 @@ export class TransferEmployeeToClientConversationUseCase {
 
             const clientConversation =
                 await this.conversationRepository.findActiveByClientPhoneOrThrow(
+                    conversation.company,
                     client.phone
                 )
 

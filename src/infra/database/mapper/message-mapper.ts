@@ -85,7 +85,7 @@ export class MessageMapper {
         return {
             id: message.id,
             conversationId: message.conversation.id,
-            from: fromDomainToPrisma(message.from), // 👈 AQUI
+            from: fromDomainToPrisma(message.from),
             timestamp: message.timestamp,
             content: message.content,
             clientId: message.from === 'client' ? message.sender.id : null,

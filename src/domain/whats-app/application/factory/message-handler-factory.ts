@@ -9,7 +9,8 @@ import { ClientMessageHandler } from '../handler/client-message-handler'
 import { EmployeeMessageHandler } from '../handler/employee-message-handler'
 import { MessageHandler } from '../handler/message-handler'
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
-import { FindConversationByUserPhoneUseCase } from '../use-cases/find-conversation-by-user-phone-use-case'
+import { FindConversationByClientPhoneUseCase } from '../use-cases/find-conversation-by-client-phone-use-case'
+import { FindConversationByEmployeePhoneUseCase } from '../use-cases/find-conversation-by-employee-phone-use-case'
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
 import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
 import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
@@ -26,7 +27,8 @@ export class MessageHandlerFactory {
         private listFAQCategoriesUseCase: ListFAQCategoriesUseCase,
         private listFAQCategorieItemsUseCase: ListFAQCategorieItemsUseCase,
         private createConversationUseCase: CreateConversationUseCase,
-        private findConversationByUserPhoneUseCase: FindConversationByUserPhoneUseCase,
+        private findConversationByClientPhoneUseCase: FindConversationByClientPhoneUseCase,
+        private findConversationByEmployeePhoneUseCase: FindConversationByEmployeePhoneUseCase,
         private transferEmployeeToClientConversationUseCase: TransferEmployeeToClientConversationUseCase
     ) {}
 
@@ -40,7 +42,7 @@ export class MessageHandlerFactory {
             this.listFAQCategoriesUseCase,
             this.listFAQCategorieItemsUseCase,
             this.createConversationUseCase,
-            this.findConversationByUserPhoneUseCase
+            this.findConversationByClientPhoneUseCase
         )
     }
 
@@ -50,7 +52,7 @@ export class MessageHandlerFactory {
             this.messageRepository,
             this.conversationRepository,
             this.faqRepository,
-            this.findConversationByUserPhoneUseCase,
+            this.findConversationByEmployeePhoneUseCase,
             this.createConversationUseCase,
             this.listActiveDepartmentsUseCase,
             this.transferEmployeeToClientConversationUseCase

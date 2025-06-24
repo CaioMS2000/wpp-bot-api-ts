@@ -5,14 +5,15 @@ import { MenuOption } from '../../../@types'
 import { ConversationState } from '../conversation-state'
 import { StateTransition } from '../state-transition'
 
-export class DepartmentSelectionState extends ConversationState {
+type DepartmentSelectionStateProps = {
+    departments: Department[]
+}
+
+export class DepartmentSelectionState extends ConversationState<DepartmentSelectionStateProps> {
     private menuOptions: MenuOption[]
 
-    constructor(
-        conversation: Conversation,
-        private departments: Department[]
-    ) {
-        super(conversation)
+    constructor(conversation: Conversation, departments: Department[]) {
+        super(conversation, { departments })
 
         this.menuOptions = departments
             .map((dept, index) => ({
@@ -29,6 +30,10 @@ export class DepartmentSelectionState extends ConversationState {
                     forEmployee: true,
                 },
             ])
+    }
+
+    get departments() {
+        return this.props.departments
     }
 
     handleMessage(messageContent: string): StateTransition {
