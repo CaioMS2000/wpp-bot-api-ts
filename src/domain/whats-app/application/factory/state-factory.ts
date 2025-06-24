@@ -99,12 +99,8 @@ export class StateFactory {
                 return new DepartmentChatState(conversation, data)
             }
             case 'department_queue_list': {
-                logger.print(
-                    '[StateFactory.create] department_queue_list\n',
-                    conversation
-                )
                 if (isEmployee(conversation.user)) {
-                    if (!isDepartment(conversation.user.department)) {
+                    if (!isDepartment(data)) {
                         logger.error(
                             data,
                             new Error('Data must be a Department object')
@@ -112,10 +108,7 @@ export class StateFactory {
                         throw new Error('Data must be a Department object')
                     }
 
-                    return new ListDepartmentQueueState(
-                        conversation,
-                        conversation.user.department
-                    )
+                    return new ListDepartmentQueueState(conversation, data)
                 }
 
                 throw new Error(

@@ -15,6 +15,7 @@ import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departmen
 import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
 import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
 import { TransferEmployeeToClientConversationUseCase } from '../use-cases/transfer-employee-to-client-conversation-use-case'
+import { InsertClientIntoDepartmentQueue } from '../use-cases/insert-client-into-department-queue'
 
 export class MessageHandlerFactory {
     constructor(
@@ -29,7 +30,8 @@ export class MessageHandlerFactory {
         private createConversationUseCase: CreateConversationUseCase,
         private findConversationByClientPhoneUseCase: FindConversationByClientPhoneUseCase,
         private findConversationByEmployeePhoneUseCase: FindConversationByEmployeePhoneUseCase,
-        private transferEmployeeToClientConversationUseCase: TransferEmployeeToClientConversationUseCase
+        private transferEmployeeToClientConversationUseCase: TransferEmployeeToClientConversationUseCase,
+        private insertClientIntoDepartmentQueue: InsertClientIntoDepartmentQueue
     ) {}
 
     createClientMessageHandler(): MessageHandler {
@@ -42,7 +44,8 @@ export class MessageHandlerFactory {
             this.listFAQCategoriesUseCase,
             this.listFAQCategorieItemsUseCase,
             this.createConversationUseCase,
-            this.findConversationByClientPhoneUseCase
+            this.findConversationByClientPhoneUseCase,
+            this.insertClientIntoDepartmentQueue
         )
     }
 

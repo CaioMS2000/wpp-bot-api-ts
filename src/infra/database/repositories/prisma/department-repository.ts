@@ -1,7 +1,9 @@
 import { Department } from '@/domain/entities/department'
+import { Client } from '@/domain/entities/client'
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { prisma } from '@/lib/prisma'
 import { DepartmentMapper } from '../../mapper/department-mapper'
+import { Company } from '@/domain/entities/company'
 
 export class PrismaDepartmentRepository extends DepartmentRepository {
     async save(department: Department): Promise<void> {
@@ -33,8 +35,11 @@ export class PrismaDepartmentRepository extends DepartmentRepository {
         })
     }
 
-    async findAllActive(): Promise<Department[]> {
+    async findAllActive(company: Company): Promise<Department[]> {
         const models = await prisma.department.findMany({
+            where: {
+                companyId: company.id,
+            },
             include: {
                 company: { include: { manager: true } },
                 queue: true,
@@ -43,5 +48,33 @@ export class PrismaDepartmentRepository extends DepartmentRepository {
         })
 
         return models.map(DepartmentMapper.toEntity)
+    }
+
+    async insertClientIntoQueue(
+        department: Department,
+        client: Client
+    ): Promise<void> {
+        await prisma.department.update({
+            where: { id: department.id },
+            data: {
+                queue: {
+                    connect: { id: client.id },
+                },
+            },
+        })
+    }
+
+    async removeClientFromQueue(
+        department: Department,
+        client: Client
+    ): Promise<void> {
+        await prisma.department.update({
+            where: { id: department.id },
+            data: {
+                queue: {
+                    disconnect: { id: client.id },
+                },
+            },
+        })
     }
 }

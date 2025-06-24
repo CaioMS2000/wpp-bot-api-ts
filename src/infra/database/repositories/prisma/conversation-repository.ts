@@ -392,7 +392,9 @@ export class PrismaConversationRepository extends ConversationRepository {
             include: {
                 client: { include: { company: true } },
                 agent: true,
-                employee: true,
+                employee: {
+                    include: { department: { include: { queue: true } } },
+                },
                 company: { include: { manager: true } },
             },
         })

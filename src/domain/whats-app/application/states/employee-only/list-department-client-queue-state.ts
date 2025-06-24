@@ -2,6 +2,7 @@ import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
 import { ConversationState } from '../conversation-state'
 import { StateTransition } from '../state-transition'
+import { logger } from '@/core/logger'
 
 type ListDepartmentQueueStateProps = {
     department: Department
@@ -23,6 +24,10 @@ export class ListDepartmentQueueState extends ConversationState<ListDepartmentQu
     }
 
     get entryMessage() {
+        logger.print(
+            '[ListDepartmentQueueState.entryMessage] department\n',
+            this.department
+        )
         if (this.department.queue.length === 0) {
             return 'Fila vazia'
         }

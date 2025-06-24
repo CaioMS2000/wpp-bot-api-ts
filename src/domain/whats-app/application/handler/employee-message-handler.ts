@@ -16,6 +16,7 @@ import { FindConversationByEmployeePhoneUseCase } from '../use-cases/find-conver
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
 import { TransferEmployeeToClientConversationUseCase } from '../use-cases/transfer-employee-to-client-conversation-use-case'
 import { MessageHandler } from './message-handler'
+import { DepartmentRepository } from '@/domain/repositories/department-repository'
 
 export class EmployeeMessageHandler extends MessageHandler {
     constructor(
@@ -23,6 +24,7 @@ export class EmployeeMessageHandler extends MessageHandler {
         private messageRepository: MessageRepository,
         private conversationRepository: ConversationRepository,
         private faqRepository: FAQRepository,
+        private departmentRepository: DepartmentRepository,
         private findConversationByEmployeePhoneUseCase: FindConversationByEmployeePhoneUseCase,
         private createConversationUseCase: CreateConversationUseCase,
         private listActiveDepartmentsUseCase: ListActiveDepartmentsUseCase,
@@ -159,8 +161,18 @@ export class EmployeeMessageHandler extends MessageHandler {
             case 'department_queue_list':
                 logger.print('transition\n', transition)
                 logger.print('conversation\n', conversation)
+
+                const department =
+                    await this.departmentRepository.findAllActive(
+                        conversation.company
+                    )
+
                 conversation.transitionToState(
-                    StateFactory.create('department_queue_list', conversation)
+                    StateFactory.create(
+                        'department_queue_list',
+                        conversation,
+                        department
+                    )
                 )
                 break
             case 'chat_with_client':

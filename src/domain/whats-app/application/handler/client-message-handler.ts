@@ -27,6 +27,7 @@ import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departmen
 import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
 import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
 import { MessageHandler } from './message-handler'
+import { InsertClientIntoDepartmentQueue } from '../use-cases/insert-client-into-department-queue'
 
 export class ClientMessageHandler extends MessageHandler {
     constructor(
@@ -38,7 +39,8 @@ export class ClientMessageHandler extends MessageHandler {
         private listFAQCategoriesUseCase: ListFAQCategoriesUseCase,
         private listFAQCategorieItemsUseCase: ListFAQCategorieItemsUseCase,
         private createConversationUseCase: CreateConversationUseCase,
-        private findConversationByClientPhoneUseCase: FindConversationByClientPhoneUseCase
+        private findConversationByClientPhoneUseCase: FindConversationByClientPhoneUseCase,
+        private insertClientIntoDepartmentQueue: InsertClientIntoDepartmentQueue
     ) {
         super()
     }
@@ -209,6 +211,7 @@ export class ClientMessageHandler extends MessageHandler {
                         department
                     )
                 )
+
                 break
             }
             case 'department_queue': {
@@ -224,6 +227,11 @@ export class ClientMessageHandler extends MessageHandler {
 
                 conversation.transitionToState(
                     new DepartmentQueueState(conversation, department)
+                )
+
+                await this.insertClientIntoDepartmentQueue.execute(
+                    department,
+                    conversation.user
                 )
                 break
             }
