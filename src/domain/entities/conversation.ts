@@ -129,8 +129,11 @@ export class Conversation extends Entity<ConversationProps> {
         return this.props.company
     }
 
-    // set agent(agent: Employee | 'AI' | null) {
     set agent(agent: typeof this.props.agent) {
         this.props.agent = agent
+    }
+
+    set currentState(state: ConversationState) {
+        this.props.currentState = state
     }
 }

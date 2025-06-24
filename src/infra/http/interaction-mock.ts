@@ -37,15 +37,19 @@ export async function interactionMock() {
 
     await clientSendMessage('3')
 
-    await clientSendMessage('suporte')
+    await clientSendMessage('suporte') // não vai mudar o estado pois não é uma das opções
 
-    // await clientSendMessage('Menu principal')
+    await clientSendMessage('Geração de Energia')
 
-    // await clientSendMessage('2')
+    await clientSendMessage('Menu principal')
 
-    // await clientSendMessage('Menu principal')
+    await clientSendMessage('2')
 
-    // await clientSendMessage('Departamento de TI')
+    await clientSendMessage('Menu principal')
+
+    await clientSendMessage('2') // esse "vai e vem" é só pra testar se ele consegue transitar corretamente
+
+    await clientSendMessage('Tecnologia da Informação')
 
     // await clientSendMessage('alguma mensagem')
 

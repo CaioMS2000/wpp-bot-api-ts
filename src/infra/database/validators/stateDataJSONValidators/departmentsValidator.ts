@@ -1,4 +1,5 @@
 import { z } from 'zod'
-import { departmentSchema } from '../schema/department'
 
-export const departmentsValidatorSchema = z.array(departmentSchema)
+export const departmentsValidatorSchema = z.object({
+    departments: z.array(z.string()),
+})

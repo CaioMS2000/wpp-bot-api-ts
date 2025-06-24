@@ -37,12 +37,15 @@ export class DepartmentSelectionState extends ConversationState<DepartmentSelect
     }
 
     handleMessage(messageContent: string): StateTransition {
+        if (messageContent === 'Menu principal') {
+            return StateTransition.toInitialMenu()
+        }
+
         const correspondingDepartment = this.departments.find(
             dept => dept.name === messageContent
         )
 
-        logger.print('correspondingDepartment')
-        logger.print(correspondingDepartment)
+        logger.print('correspondingDepartment', correspondingDepartment)
 
         if (correspondingDepartment) {
             // return StateTransition.toDepartmentChat(messageContent)

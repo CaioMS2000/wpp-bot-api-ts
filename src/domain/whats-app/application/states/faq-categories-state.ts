@@ -3,6 +3,7 @@ import { FAQCategory } from '@/domain/entities/faq'
 import { MenuOption } from '../../@types'
 import { ConversationState } from './conversation-state'
 import { StateTransition } from './state-transition'
+import { logger } from '@/core/logger'
 
 type FAQCategoriesStateProps = { categories: FAQCategory[] }
 
@@ -43,6 +44,9 @@ export class FAQCategoriesState extends ConversationState<FAQCategoriesStateProp
         )
 
         if (!correspondingCategory) {
+            logger.debug(
+                `[FAQCategoriesState] no corresponding category for: ${messageContent}`
+            )
             return StateTransition.stayInCurrent()
         }
 

@@ -1,4 +1,7 @@
 import { z } from 'zod'
-import { faqCategorySchema } from '../schema/faqCategory'
+import { faqItemSchema } from '../schema/faqItem'
 
-export const faqCategoriesStateDataValidatorSchema = z.array(faqCategorySchema)
+export const faqCategoriesStateDataValidatorSchema = z.record(
+    z.string(),
+    z.array(faqItemSchema)
+)

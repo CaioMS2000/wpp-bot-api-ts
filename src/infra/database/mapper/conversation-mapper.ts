@@ -91,12 +91,12 @@ export class ConversationMapper {
         }
 
         if (entity) {
-            logger.print(
-                '[ConversationMapper] state in switch case\nstate and state data\n',
-                model.currentState,
-                '\n',
-                model.stateData
-            )
+            // logger.print(
+            //     '[ConversationMapper] state in switch case\nstate and state data\n',
+            //     model.currentState,
+            //     '\n',
+            //     model.stateData
+            // )
             // let stateClass: NotDefined<ConversationState> = stateMap[model.currentState]
             let stateClass: NotDefined<ConversationState> = undefined
 
