@@ -16,19 +16,22 @@ import { CreateConversationUseCase } from '../use-cases/create-conversation-use-
 import { FindConversationByEmployeePhoneUseCase } from '../use-cases/find-conversation-by-employee-phone-use-case'
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
 import { TransferEmployeeToClientConversationUseCase } from '../use-cases/transfer-employee-to-client-conversation-use-case'
-import { MessageHandler } from './message-handler'
+import {
+    MessageHandler,
+    MessageHandlerConfig,
+    messageHandlerDefaultConfig,
+} from './message-handler'
 
 export class EmployeeMessageHandler extends MessageHandler {
     constructor(
-        private outputPort: OutputPort,
         private messageRepository: MessageRepository,
         private conversationRepository: ConversationRepository,
         private faqRepository: FAQRepository,
-        private departmentRepository: DepartmentRepository,
         private findConversationByEmployeePhoneUseCase: FindConversationByEmployeePhoneUseCase,
         private createConversationUseCase: CreateConversationUseCase,
         private listActiveDepartmentsUseCase: ListActiveDepartmentsUseCase,
-        private transferEmployeeToClientConversationUseCase: TransferEmployeeToClientConversationUseCase
+        private transferEmployeeToClientConversationUseCase: TransferEmployeeToClientConversationUseCase,
+        private messageHandlerConfig: MessageHandlerConfig = messageHandlerDefaultConfig
     ) {
         super()
     }
@@ -88,11 +91,7 @@ export class EmployeeMessageHandler extends MessageHandler {
             }
         }
 
-        this.outputPort.handle({
-            input: messageContent,
-            output: { to: conversation.user.phone, messages },
-        })
-
+        this.finish(conversation, messageContent, messages)
         logger.info('Message processing completed successfully')
     }
 
@@ -244,5 +243,21 @@ export class EmployeeMessageHandler extends MessageHandler {
             throw new Error('Department not found')
         }
         return department
+    }
+
+    private async finish(
+        conversation: Conversation,
+        messageContent: string,
+        responseMessages: string[]
+    ) {
+        if (this.messageHandlerConfig.outputPort) {
+            this.messageHandlerConfig.outputPort.handle({
+                input: messageContent,
+                output: {
+                    to: conversation.user.phone,
+                    messages: responseMessages,
+                },
+            })
+        }
     }
 }

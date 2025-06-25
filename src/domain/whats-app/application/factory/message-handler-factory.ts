@@ -37,39 +37,28 @@ export class MessageHandlerFactory {
 
     createClientMessageHandler(): MessageHandler {
         return new ClientMessageHandler(
-            this.outputPort,
             this.messageRepository,
-            this.employeeRepository,
             this.conversationRepository,
             this.listActiveDepartmentsUseCase,
             this.listFAQCategoriesUseCase,
             this.listFAQCategorieItemsUseCase,
             this.createConversationUseCase,
             this.findConversationByClientPhoneUseCase,
-            this.insertClientIntoDepartmentQueue
+            this.insertClientIntoDepartmentQueue,
+            { outputPort: this.outputPort }
         )
     }
 
     createEmployeeMessageHandler(): MessageHandler {
         return new EmployeeMessageHandler(
-            this.outputPort,
             this.messageRepository,
             this.conversationRepository,
             this.faqRepository,
-            this.departmentRepository,
             this.findConversationByEmployeePhoneUseCase,
             this.createConversationUseCase,
             this.listActiveDepartmentsUseCase,
-            this.transferEmployeeToClientConversationUseCase
+            this.transferEmployeeToClientConversationUseCase,
+            { outputPort: this.outputPort }
         )
-        // outputPort
-        // messageRepository
-        // conversationRepository
-        // faqRepository
-        // departmentRepository
-        // findConversationByEmployeePhoneUseCase
-        // createConversationUseCase
-        // listActiveDepartmentsUseCase
-        // transferEmployeeToClientConversationUseCase
     }
 }
