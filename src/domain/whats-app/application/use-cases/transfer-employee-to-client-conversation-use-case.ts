@@ -2,6 +2,7 @@ import { Conversation } from '@/domain/entities/conversation'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { isEmployee } from '@/utils/entity'
+import { StateFactory } from '../factory/state-factory'
 
 export class TransferEmployeeToClientConversationUseCase {
     constructor(
@@ -38,6 +39,13 @@ export class TransferEmployeeToClientConversationUseCase {
                 )
 
             clientConversation.upsertAgent(employee)
+            clientConversation.transitionToState(
+                StateFactory.create(
+                    'department_chat',
+                    clientConversation,
+                    department
+                )
+            )
             await this.conversationRepository.save(clientConversation)
 
             return client
