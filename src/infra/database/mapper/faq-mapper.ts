@@ -1,4 +1,4 @@
-import { FAQ, FAQCategory, FAQItem } from '@/domain/entities/faq'
+import { FAQ, FAQCategory } from '@/domain/entities/faq'
 import {
     FAQCategory as PrismaFAQCategory,
     FAQItem as PrismaFAQItem,

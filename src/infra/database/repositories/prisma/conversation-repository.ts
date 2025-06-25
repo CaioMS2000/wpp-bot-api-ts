@@ -24,11 +24,11 @@ import {
 import { ClientMapper } from '../../mapper/client-mapper'
 import { ConversationMapper } from '../../mapper/conversation-mapper'
 import { DepartmentMapper } from '../../mapper/department-mapper'
+import { clientValidatorSchema } from '../../validators/stateDataJSONValidators/clientValidator'
+import { departmentValidatorSchema } from '../../validators/stateDataJSONValidators/departmentValidator'
+import { departmentsValidatorSchema } from '../../validators/stateDataJSONValidators/departmentsValidator'
 import { faqCategoriesStateDataValidatorSchema } from '../../validators/stateDataJSONValidators/faqCategoriesValidator'
 import { faqCategoryValidatorSchema } from '../../validators/stateDataJSONValidators/faqCategoryValidator'
-import { departmentsValidatorSchema } from '../../validators/stateDataJSONValidators/departmentsValidator'
-import { departmentValidatorSchema } from '../../validators/stateDataJSONValidators/departmentValidator'
-import { clientValidatorSchema } from '../../validators/stateDataJSONValidators/clientValidator'
 
 const stateMap = {
     [InitialMenuState.name]: PrismaStateName.initial_menu,

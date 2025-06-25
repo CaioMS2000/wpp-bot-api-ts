@@ -6,28 +6,20 @@ import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
 import { Employee } from '@/domain/entities/employee'
 import { Message } from '@/domain/entities/message'
-import { ClientRepository } from '@/domain/repositories/client-repository'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
-import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { EmployeeRepository } from '@/domain/repositories/employee-repository'
-import { FAQRepository } from '@/domain/repositories/faq-repository'
 import { MessageRepository } from '@/domain/repositories/message-repository'
 import { StateFactory } from '../factory/state-factory'
-import { DepartmentChatState } from '../states/client-only/department-chat-state'
 import { DepartmentQueueState } from '../states/client-only/department-queue-state'
-import { DepartmentSelectionState } from '../states/client-only/department-selection-state'
-import { FAQCategoriesState } from '../states/faq-categories-state'
-import { FAQItemsState } from '../states/faq-items-state'
 import { InitialMenuState } from '../states/initial-menu-state'
 import { StateTransition } from '../states/state-transition'
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
 import { FindConversationByClientPhoneUseCase } from '../use-cases/find-conversation-by-client-phone-use-case'
-import { FindConversationByEmployeePhoneUseCase } from '../use-cases/find-conversation-by-employee-phone-use-case'
+import { InsertClientIntoDepartmentQueue } from '../use-cases/insert-client-into-department-queue'
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
 import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
 import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
 import { MessageHandler } from './message-handler'
-import { InsertClientIntoDepartmentQueue } from '../use-cases/insert-client-into-department-queue'
 
 export class ClientMessageHandler extends MessageHandler {
     constructor(
@@ -181,7 +173,9 @@ export class ClientMessageHandler extends MessageHandler {
         }
 
         const availableDepartments =
-            await this.listActiveDepartmentsUseCase.execute()
+            await this.listActiveDepartmentsUseCase.execute(
+                conversation.company
+            )
 
         switch (transition.targetState) {
             case 'department_selection':

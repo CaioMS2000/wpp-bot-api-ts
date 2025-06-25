@@ -1,7 +1,4 @@
-import { Client } from '@/domain/entities/client'
-import { Company } from '@/domain/entities/company'
 import { Conversation } from '@/domain/entities/conversation'
-import { Employee } from '@/domain/entities/employee'
 import { AIChatState } from '@/domain/whats-app/application/states/ai-chat-state'
 import { DepartmentChatState } from '@/domain/whats-app/application/states/client-only/department-chat-state'
 import { DepartmentQueueState } from '@/domain/whats-app/application/states/client-only/department-queue-state'
@@ -13,22 +10,15 @@ import { FAQCategoriesState } from '@/domain/whats-app/application/states/faq-ca
 import { FAQItemsState } from '@/domain/whats-app/application/states/faq-items-state'
 import { InitialMenuState } from '@/domain/whats-app/application/states/initial-menu-state'
 
-import { logger } from '@/core/logger'
-import { Department } from '@/domain/entities/department'
 import {
     Client as PrismaClient,
     Company as PrismaCompany,
     Conversation as PrismaConversation,
+    Department as PrismaDepartment,
     Employee as PrismaEmployee,
     Manager as PrismaManager,
-    Department as PrismaDepartment,
     StateName as PrismaStateName,
 } from 'ROOT/prisma/generated'
-import { clientValidatorSchema } from '../validators/stateDataJSONValidators/clientValidator'
-import { departmentValidatorSchema } from '../validators/stateDataJSONValidators/departmentValidator'
-import { departmentsValidatorSchema } from '../validators/stateDataJSONValidators/departmentsValidator'
-import { faqCategoriesStateDataValidatorSchema } from '../validators/stateDataJSONValidators/faqCategoriesValidator'
-import { faqCategoryValidatorSchema } from '../validators/stateDataJSONValidators/faqCategoryValidator'
 import { ClientMapper } from './client-mapper'
 import { CompanyMapper } from './company-mapper'
 import { EmployeeMapper } from './employee-mapper'

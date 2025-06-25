@@ -1,13 +1,11 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-  "extends": [
-    "node_modules/@caioms/biomejs-config/biome.json"
-  ],
-  "linter": {
-    "rules": {
-      "correctness": {
-        "noSwitchDeclarations": "off"
-      }
+    "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+    "extends": ["node_modules/@caioms/biomejs-config/biome.json"],
+    "linter": {
+        "rules": {
+            "correctness": {
+                "noSwitchDeclarations": "off"
+            }
+        }
     }
-  }
 }

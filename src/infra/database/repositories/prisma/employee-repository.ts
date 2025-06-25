@@ -1,8 +1,8 @@
 import { Employee } from '@/domain/entities/employee'
 import { EmployeeRepository } from '@/domain/repositories/employee-repository'
 import { prisma } from '@/lib/prisma'
-import { EmployeeMapper } from '../../mapper/employee-mapper'
 import { Department as PrismaDepartment } from 'ROOT/prisma/generated'
+import { EmployeeMapper } from '../../mapper/employee-mapper'
 
 export class PrismaEmployeeRepository extends EmployeeRepository {
     async save(employee: Employee): Promise<void> {

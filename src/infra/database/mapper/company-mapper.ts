@@ -1,8 +1,8 @@
-import { Company, BusinessHours, WeekDay } from '@/domain/entities/company'
+import { BusinessHours, Company, WeekDay } from '@/domain/entities/company'
 import {
+    BusinessHour as PrismaBusinessHour,
     Company as PrismaCompany,
     Manager as PrismaManager,
-    BusinessHour as PrismaBusinessHour,
 } from 'ROOT/prisma/generated'
 import { ManagerMapper } from './manager-mapper'
 

@@ -1,9 +1,9 @@
-import { Department } from '@/domain/entities/department'
 import { Client } from '@/domain/entities/client'
+import { Company } from '@/domain/entities/company'
+import { Department } from '@/domain/entities/department'
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { prisma } from '@/lib/prisma'
 import { DepartmentMapper } from '../../mapper/department-mapper'
-import { Company } from '@/domain/entities/company'
 
 export class PrismaDepartmentRepository extends DepartmentRepository {
     async save(department: Department): Promise<void> {

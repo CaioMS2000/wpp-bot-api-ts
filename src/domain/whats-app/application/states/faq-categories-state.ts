@@ -1,9 +1,9 @@
+import { logger } from '@/core/logger'
 import { Conversation } from '@/domain/entities/conversation'
 import { FAQCategory } from '@/domain/entities/faq'
 import { MenuOption } from '../../@types'
 import { ConversationState } from './conversation-state'
 import { StateTransition } from './state-transition'
-import { logger } from '@/core/logger'
 
 type FAQCategoriesStateProps = { categories: FAQCategory[] }
 

@@ -7,6 +7,7 @@ import { Department } from '@/domain/entities/department'
 import { Employee } from '@/domain/entities/employee'
 import { Message } from '@/domain/entities/message'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
+import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { FAQRepository } from '@/domain/repositories/faq-repository'
 import { MessageRepository } from '@/domain/repositories/message-repository'
 import { StateFactory } from '../factory/state-factory'
@@ -16,7 +17,6 @@ import { FindConversationByEmployeePhoneUseCase } from '../use-cases/find-conver
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
 import { TransferEmployeeToClientConversationUseCase } from '../use-cases/transfer-employee-to-client-conversation-use-case'
 import { MessageHandler } from './message-handler'
-import { DepartmentRepository } from '@/domain/repositories/department-repository'
 
 export class EmployeeMessageHandler extends MessageHandler {
     constructor(
