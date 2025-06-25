@@ -33,6 +33,7 @@ export class PrismaWhatsAppMessageServiceFactory {
             faqRepository,
             messageRepository,
             employeeRepository,
+            departmentRepository,
             this.useCaseFactory.getListActiveDepartmentsUseCase(),
             this.useCaseFactory.getListFAQCategoriesUseCase(),
             this.useCaseFactory.getListFAQCategorieItemsUseCase(),

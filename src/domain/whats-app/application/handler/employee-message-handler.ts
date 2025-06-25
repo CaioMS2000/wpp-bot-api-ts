@@ -158,23 +158,6 @@ export class EmployeeMessageHandler extends MessageHandler {
                     ])
                 )
                 break
-            case 'department_queue_list':
-                logger.print('transition\n', transition)
-                logger.print('conversation\n', conversation)
-
-                const department =
-                    await this.departmentRepository.findAllActive(
-                        conversation.company
-                    )
-
-                conversation.transitionToState(
-                    StateFactory.create(
-                        'department_queue_list',
-                        conversation,
-                        department
-                    )
-                )
-                break
             case 'chat_with_client':
                 const client =
                     await this.transferEmployeeToClientConversationUseCase.execute(
@@ -190,15 +173,47 @@ export class EmployeeMessageHandler extends MessageHandler {
                 break
         }
 
-        // const availableDepartments =
-        //     await this.listActiveDepartmentsUseCase.execute()
+        const availableDepartments =
+            await this.listActiveDepartmentsUseCase.execute(
+                conversation.company
+            )
 
-        // switch (transition.targetState) {
-        //     case 'department_queue': {
-        //         const department = this.findDepartment(availableDepartments, transition.data)
-        //         break
-        //     }
-        // }
+        switch (transition.targetState) {
+            case 'department_queue_list':
+                if (conversation.user instanceof Client) {
+                    logger.error(
+                        'Invalid user type: Client in EmployeeMessageHandler.handleTransition'
+                    )
+                    throw new Error(
+                        'This handler is for employees but you passed a client'
+                    )
+                }
+
+                if (!conversation.user.department) {
+                    throw new Error('This employee has no department')
+                }
+
+                logger.print('transition\n', transition)
+                logger.print('conversation\n', conversation)
+
+                const department = this.findDepartment(
+                    availableDepartments,
+                    conversation.user.department.name
+                )
+
+                conversation.transitionToState(
+                    StateFactory.create(
+                        'department_queue_list',
+                        conversation,
+                        department
+                    )
+                )
+                break
+            //     case 'department_queue': {
+            //         const department = this.findDepartment(availableDepartments, transition.data)
+            //         break
+            //     }
+        }
     }
 
     private async getOrCreateConversation(company: Company, user: Employee) {

@@ -47,11 +47,11 @@ export async function interactionMock() {
 
     // await clientSendMessage('Menu principal')
 
-    await clientSendMessage('2') // esse "vai e vem" é só pra testar se ele consegue transitar corretamente
+    // await clientSendMessage('2') // esse "vai e vem" é só pra testar se ele consegue transitar corretamente
 
-    await clientSendMessage('Tecnologia da Informação')
+    // await clientSendMessage('Tecnologia da Informação')
 
-    await clientSendMessage('alguma mensagem')
+    // await clientSendMessage('alguma mensagem')
 
     console.log('\n\n\n\n\n\n\n')
     console.log('==========')

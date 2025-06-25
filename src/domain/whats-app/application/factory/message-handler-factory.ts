@@ -24,6 +24,7 @@ export class MessageHandlerFactory {
         private faqRepository: FAQRepository,
         private messageRepository: MessageRepository,
         private employeeRepository: EmployeeRepository,
+        private departmentRepository: DepartmentRepository,
         private listActiveDepartmentsUseCase: ListActiveDepartmentsUseCase,
         private listFAQCategoriesUseCase: ListFAQCategoriesUseCase,
         private listFAQCategorieItemsUseCase: ListFAQCategorieItemsUseCase,
@@ -55,10 +56,20 @@ export class MessageHandlerFactory {
             this.messageRepository,
             this.conversationRepository,
             this.faqRepository,
+            this.departmentRepository,
             this.findConversationByEmployeePhoneUseCase,
             this.createConversationUseCase,
             this.listActiveDepartmentsUseCase,
             this.transferEmployeeToClientConversationUseCase
         )
+        // outputPort
+        // messageRepository
+        // conversationRepository
+        // faqRepository
+        // departmentRepository
+        // findConversationByEmployeePhoneUseCase
+        // createConversationUseCase
+        // listActiveDepartmentsUseCase
+        // transferEmployeeToClientConversationUseCase
     }
 }
