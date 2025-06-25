@@ -4,6 +4,7 @@ import { Department } from '../entities/department'
 
 export abstract class DepartmentRepository {
     abstract save(department: Department): Promise<void>
+    abstract find(company: Company, id: string): Promise<Nullable<Department>>
     abstract findAllActive(company: Company): Promise<Department[]>
     abstract insertClientIntoQueue(
         department: Department,

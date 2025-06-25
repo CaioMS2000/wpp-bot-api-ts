@@ -18,6 +18,7 @@ import { prisma } from '@/lib/prisma'
 import { Prisma } from 'ROOT/prisma/generated'
 import {
     Conversation as PrismaConversation,
+    Employee as PrismaEmployee,
     StateName as PrismaStateName,
 } from 'ROOT/prisma/generated'
 import { ClientMapper } from '../../mapper/client-mapper'
@@ -310,6 +311,22 @@ export class PrismaConversationRepository extends ConversationRepository {
     ) {
         const stateName = stateMap[conversation.currentState.constructor.name]
         const serializedStateData = this.serializeStateData(conversation)
+        let possibleEmployeeAgent: Nullable<PrismaEmployee> = null
+        let agentId: Nullable<string> = null
+
+        if (
+            userReference.agentType === 'EMPLOYEE' &&
+            conversation.agent &&
+            conversation.agent !== 'AI'
+        ) {
+            possibleEmployeeAgent = await prisma.employee.findUniqueOrThrow({
+                where: {
+                    id: conversation.agent.id,
+                },
+            })
+
+            agentId = possibleEmployeeAgent.id
+        }
 
         logger.print(
             `Updating conversation stateName: ${stateName} | stateData: `,
@@ -327,6 +344,7 @@ export class PrismaConversationRepository extends ConversationRepository {
                 aiServiceThreadResume: conversation.aiServiceThreadResume,
                 currentState: stateName,
                 stateData: serializedStateData,
+                agentId,
                 ...userReference,
             },
         })

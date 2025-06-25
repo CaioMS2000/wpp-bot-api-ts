@@ -66,7 +66,8 @@ export class UseCaseFactory {
 
     getTransferEmployeeToClientConversationUseCase(): TransferEmployeeToClientConversationUseCase {
         return new TransferEmployeeToClientConversationUseCase(
-            this.repositoryFactory.createConversationRepository()
+            this.repositoryFactory.createConversationRepository(),
+            this.repositoryFactory.createDepartmentRepository()
         )
     }
 

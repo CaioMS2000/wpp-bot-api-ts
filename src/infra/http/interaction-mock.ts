@@ -63,7 +63,7 @@ export async function interactionMock() {
 
     // await employeeSendMessage('Menu principal')
 
-    await employeeSendMessage('4')
+    // await employeeSendMessage('4')
 
-    // await employeeSendMessage('5')
+    await employeeSendMessage('5')
 }
