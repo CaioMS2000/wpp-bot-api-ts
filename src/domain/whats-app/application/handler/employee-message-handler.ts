@@ -31,8 +31,12 @@ export class EmployeeMessageHandler extends MessageHandler {
         private createConversationUseCase: CreateConversationUseCase,
         private listActiveDepartmentsUseCase: ListActiveDepartmentsUseCase,
         private transferEmployeeToClientConversationUseCase: TransferEmployeeToClientConversationUseCase,
-        config: ConversationStateConfig = conversationStateDefaultConfig
+        private config: ConversationStateConfig = conversationStateDefaultConfig
     ) {
+        // logger.debug(
+        //     `[EmployeeMessageHandler.constructor] config: ${JSON.stringify(config)}`
+        // )
+        console.log('[EmployeeMessageHandler.constructor] config:\n', config)
         super()
     }
 
@@ -113,7 +117,8 @@ export class EmployeeMessageHandler extends MessageHandler {
         conversation: Conversation,
         transition: StateTransition
     ) {
-        logger.debug(`Handling transition to state: ${transition.targetState}`)
+        // logger.debug(`Handling transition to state: ${transition.targetState}`)
+        console.log('[handleTransition] this.config:\n', this.config)
 
         switch (transition.targetState) {
             case 'initial_menu':
@@ -160,7 +165,8 @@ export class EmployeeMessageHandler extends MessageHandler {
                     StateFactory.create(
                         'chat_with_client',
                         conversation,
-                        client
+                        client,
+                        this.config
                     )
                 )
                 break
@@ -216,7 +222,13 @@ export class EmployeeMessageHandler extends MessageHandler {
                 user.phone
             )
 
-        if (!conversation) {
+        if (conversation) {
+            if (this.config.outputPort) {
+                logger.debug("We need to set the outputPort. Let's use this\n:")
+                console.log(this.config.outputPort)
+                conversation.currentState.outputPort = this.config.outputPort
+            }
+        } else {
             logger.info(`Creating new conversation for employee: ${user.phone}`)
             conversation = await this.createConversationUseCase.execute({
                 user,

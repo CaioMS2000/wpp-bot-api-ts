@@ -20,6 +20,10 @@ export abstract class ConversationState<T = unknown> {
         return this.props
     }
 
+    set outputPort(outputPort: OutputPort) {
+        this.config.outputPort = outputPort
+    }
+
     abstract handleMessage(messageContent: string): StateTransition
 
     shouldAutoTransition(): boolean {

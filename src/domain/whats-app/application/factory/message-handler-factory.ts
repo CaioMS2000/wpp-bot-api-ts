@@ -16,6 +16,7 @@ import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departmen
 import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
 import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
 import { TransferEmployeeToClientConversationUseCase } from '../use-cases/transfer-employee-to-client-conversation-use-case'
+import { logger } from '@/core/logger'
 
 export class MessageHandlerFactory {
     constructor(
@@ -33,7 +34,15 @@ export class MessageHandlerFactory {
         private findConversationByEmployeePhoneUseCase: FindConversationByEmployeePhoneUseCase,
         private transferEmployeeToClientConversationUseCase: TransferEmployeeToClientConversationUseCase,
         private insertClientIntoDepartmentQueue: InsertClientIntoDepartmentQueue
-    ) {}
+    ) {
+        // logger.debug(
+        //     `[MessageHandlerFactory.constructor] outputPort: ${JSON.stringify(outputPort)}`
+        // )
+        console.log(
+            '[MessageHandlerFactory.constructor] outputPort:\n',
+            outputPort
+        )
+    }
 
     createClientMessageHandler(): MessageHandler {
         return new ClientMessageHandler(
@@ -50,6 +59,13 @@ export class MessageHandlerFactory {
     }
 
     createEmployeeMessageHandler(): MessageHandler {
+        // logger.debug(
+        //     `[MessageHandlerFactory.createEmployeeMessageHandler] outputPort: ${JSON.stringify(this.outputPort)}`
+        // )
+        console.log(
+            '[MessageHandlerFactory.createEmployeeMessageHandler] outputPort:\n',
+            this.outputPort
+        )
         return new EmployeeMessageHandler(
             this.messageRepository,
             this.conversationRepository,

@@ -6,6 +6,7 @@ import {
     conversationStateDefaultConfig,
 } from '../conversation-state'
 import { StateTransition } from '../state-transition'
+import { logger } from '@/core/logger'
 
 type ChatWithClientStateProps = {
     client: Client
@@ -17,10 +18,21 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
         client: Client,
         config: ConversationStateConfig = conversationStateDefaultConfig
     ) {
+        // logger.debug(`[ChatWithClientState.constructor] config: ${JSON.stringify(config)}`)
+        console.log('[ChatWithClientState.constructor] config:\n', config)
         super(conversation, { client }, config)
     }
     handleMessage(messageContent: string): StateTransition {
-        throw new Error('Method not implemented.')
+        logger.debug(
+            `[ChatWithClientState.handleMessage] message: ${messageContent}`
+        )
+        if (!this.config.outputPort) {
+            throw new Error('Output port not set')
+        }
+
+        this.config.outputPort.handle(this.client, messageContent)
+
+        return StateTransition.stayInCurrent()
     }
 
     get client() {
