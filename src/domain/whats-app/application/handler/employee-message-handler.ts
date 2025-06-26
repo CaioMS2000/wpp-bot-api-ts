@@ -33,10 +33,6 @@ export class EmployeeMessageHandler extends MessageHandler {
         private transferEmployeeToClientConversationUseCase: TransferEmployeeToClientConversationUseCase,
         private config: ConversationStateConfig = conversationStateDefaultConfig
     ) {
-        // logger.debug(
-        //     `[EmployeeMessageHandler.constructor] config: ${JSON.stringify(config)}`
-        // )
-        console.log('[EmployeeMessageHandler.constructor] config:\n', config)
         super()
     }
 
@@ -46,51 +42,37 @@ export class EmployeeMessageHandler extends MessageHandler {
         messageContent: string
     ): Promise<void> {
         if (user instanceof Client) {
-            logger.error('Invalid user type: Client in EmployeeMessageHandler')
             throw new Error(
                 'This handler is for employees but you passed a client'
             )
         }
-
-        logger.info(`Processing message from employee: ${user.phone}`)
-        logger.debug(`Message content: ${messageContent}`)
 
         const conversation = await this.getOrCreateConversation(company, user)
 
         await this.saveMessage(conversation, messageContent, 'employee', user)
         await this.conversationRepository.save(conversation)
 
-        logger.debug(
-            `Current conversation state: ${conversation.currentState.constructor.name}`
-        )
         const result = conversation.processMessage(messageContent)
+        conversation.currentState.onEnter()
 
         if (result.type === 'transition') {
-            logger.debug(`State transition triggered: ${result.targetState}`)
+            conversation.currentState.onExit()
             await this.handleTransition(conversation, result)
+            conversation.currentState.onEnter()
         }
-
-        logger.debug(
-            `Conversation state after possible transition: ${conversation.currentState.constructor.name}`
-        )
 
         await this.conversationRepository.save(conversation)
 
         if (conversation.currentState.shouldAutoTransition()) {
-            logger.debug('Auto transition triggered')
             const autoTransition = conversation.currentState.getAutoTransition()
             if (autoTransition && autoTransition.type === 'transition') {
+                conversation.currentState.onExit()
                 await this.handleTransition(conversation, autoTransition)
-
-                logger.debug(
-                    `Conversation state after auto trigged transition: ${conversation.currentState.constructor.name}`
-                )
+                conversation.currentState.onEnter()
 
                 await this.conversationRepository.save(conversation)
             }
         }
-
-        logger.info('Message processing completed successfully')
     }
 
     private async saveMessage(
@@ -99,7 +81,6 @@ export class EmployeeMessageHandler extends MessageHandler {
         from: 'client' | 'employee' | 'AI',
         sender: Client | Employee
     ): Promise<Message> {
-        logger.debug(`Saving message from ${from}`)
         const message = Message.create({
             conversation,
             timestamp: new Date(),
@@ -117,9 +98,6 @@ export class EmployeeMessageHandler extends MessageHandler {
         conversation: Conversation,
         transition: StateTransition
     ) {
-        // logger.debug(`Handling transition to state: ${transition.targetState}`)
-        console.log('[handleTransition] this.config:\n', this.config)
-
         switch (transition.targetState) {
             case 'initial_menu':
                 conversation.transitionToState(
@@ -140,7 +118,6 @@ export class EmployeeMessageHandler extends MessageHandler {
                 break
             case 'faq_items':
                 if (typeof transition.data !== 'string') {
-                    logger.error('Invalid transition data for FAQ items')
                     throw new Error('Invalid transition data')
                 }
 
@@ -180,9 +157,6 @@ export class EmployeeMessageHandler extends MessageHandler {
         switch (transition.targetState) {
             case 'department_queue_list':
                 if (conversation.user instanceof Client) {
-                    logger.error(
-                        'Invalid user type: Client in EmployeeMessageHandler.handleTransition'
-                    )
                     throw new Error(
                         'This handler is for employees but you passed a client'
                     )
@@ -191,9 +165,6 @@ export class EmployeeMessageHandler extends MessageHandler {
                 if (!conversation.user.department) {
                     throw new Error('This employee has no department')
                 }
-
-                logger.print('transition\n', transition)
-                logger.print('conversation\n', conversation)
 
                 const department = this.findDepartment(
                     availableDepartments,
@@ -224,12 +195,9 @@ export class EmployeeMessageHandler extends MessageHandler {
 
         if (conversation) {
             if (this.config.outputPort) {
-                logger.debug("We need to set the outputPort. Let's use this\n:")
-                console.log(this.config.outputPort)
                 conversation.currentState.outputPort = this.config.outputPort
             }
         } else {
-            logger.info(`Creating new conversation for employee: ${user.phone}`)
             conversation = await this.createConversationUseCase.execute({
                 user,
                 company,
@@ -245,7 +213,6 @@ export class EmployeeMessageHandler extends MessageHandler {
     ): Department {
         const department = departments.find(dept => dept.name === name)
         if (!department) {
-            logger.error(`Department not found: ${name}`)
             throw new Error('Department not found')
         }
         return department

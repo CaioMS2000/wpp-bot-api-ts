@@ -34,15 +34,7 @@ export class MessageHandlerFactory {
         private findConversationByEmployeePhoneUseCase: FindConversationByEmployeePhoneUseCase,
         private transferEmployeeToClientConversationUseCase: TransferEmployeeToClientConversationUseCase,
         private insertClientIntoDepartmentQueue: InsertClientIntoDepartmentQueue
-    ) {
-        // logger.debug(
-        //     `[MessageHandlerFactory.constructor] outputPort: ${JSON.stringify(outputPort)}`
-        // )
-        console.log(
-            '[MessageHandlerFactory.constructor] outputPort:\n',
-            outputPort
-        )
-    }
+    ) {}
 
     createClientMessageHandler(): MessageHandler {
         return new ClientMessageHandler(
@@ -59,13 +51,6 @@ export class MessageHandlerFactory {
     }
 
     createEmployeeMessageHandler(): MessageHandler {
-        // logger.debug(
-        //     `[MessageHandlerFactory.createEmployeeMessageHandler] outputPort: ${JSON.stringify(this.outputPort)}`
-        // )
-        console.log(
-            '[MessageHandlerFactory.createEmployeeMessageHandler] outputPort:\n',
-            this.outputPort
-        )
         return new EmployeeMessageHandler(
             this.messageRepository,
             this.conversationRepository,

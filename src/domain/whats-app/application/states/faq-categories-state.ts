@@ -53,9 +53,6 @@ export class FAQCategoriesState extends ConversationState<FAQCategoriesStateProp
         )
 
         if (!correspondingCategory) {
-            logger.debug(
-                `[FAQCategoriesState] no corresponding category for: ${messageContent}`
-            )
             return StateTransition.stayInCurrent()
         }
 

@@ -86,24 +86,15 @@ export class PrismaConversationRepository extends ConversationRepository {
             const { departments } = conversation.currentState.data
             const data = { departments: departments.map(dept => dept.name) }
 
-            logger.print(
-                'DepartmentSelectionState - serialized state data',
-                data
-            )
-
             return data
         } else if (conversation.currentState instanceof DepartmentQueueState) {
             const { department } = conversation.currentState.data
             const data = { name: department.name }
 
-            logger.print('DepartmentQueueState - serialized state data', data)
-
             return data
         } else if (conversation.currentState instanceof DepartmentChatState) {
             const { department } = conversation.currentState.data
             const data = { name: department.name }
-
-            logger.print('DepartmentChatState - serialized state data', data)
 
             return data
         } else if (
@@ -112,17 +103,10 @@ export class PrismaConversationRepository extends ConversationRepository {
             const { department } = conversation.currentState.data
             const data = { name: department.name }
 
-            logger.print(
-                'ListDepartmentQueueState - serialized state data',
-                data
-            )
-
             return data
         } else if (conversation.currentState instanceof ChatWithClientState) {
             const { client } = conversation.currentState.data
             const data = { phone: client.phone }
-
-            logger.print('ChatWithClientState - serialized state data', data)
 
             return data
         }
@@ -131,10 +115,6 @@ export class PrismaConversationRepository extends ConversationRepository {
     }
 
     private async restoreSate(entity: Conversation, model: PrismaConversation) {
-        logger.print(
-            `[restoreSate: ${model.currentState}] - data that will be used`,
-            model.stateData
-        )
         switch (model.currentState) {
             case PrismaStateName.initial_menu: {
                 const state = new InitialMenuState(entity)
@@ -157,8 +137,6 @@ export class PrismaConversationRepository extends ConversationRepository {
                     })
                 )
 
-                logger.print('FAQCategoriesState - restored state', state)
-
                 return state
             }
             case PrismaStateName.faq_items: {
@@ -166,8 +144,6 @@ export class PrismaConversationRepository extends ConversationRepository {
 
                 const [categoryName, items] = Object.entries(data)[0]
                 const state = new FAQItemsState(entity, categoryName, items)
-
-                logger.print('FAQItemsState - restored state', state)
 
                 return state
             }
@@ -195,8 +171,6 @@ export class PrismaConversationRepository extends ConversationRepository {
                     recoveredDepartments.map(DepartmentMapper.toEntity)
                 )
 
-                logger.print('DepartmentSelectionState - restored state', state)
-
                 return state
             }
             case PrismaStateName.department_queue: {
@@ -213,8 +187,6 @@ export class PrismaConversationRepository extends ConversationRepository {
                     entity,
                     DepartmentMapper.toEntity(department)
                 )
-
-                logger.print('DepartmentQueueState - restored state', state)
 
                 return state
             }
@@ -233,8 +205,6 @@ export class PrismaConversationRepository extends ConversationRepository {
                     DepartmentMapper.toEntity(department)
                 )
 
-                logger.print('DepartmentChatState - restored state', state)
-
                 return state
             }
             case PrismaStateName.department_queue_list: {
@@ -251,8 +221,6 @@ export class PrismaConversationRepository extends ConversationRepository {
                     entity,
                     DepartmentMapper.toEntity(department)
                 )
-
-                logger.print('ListDepartmentQueueState - restored state', state)
 
                 return state
             }
@@ -271,8 +239,6 @@ export class PrismaConversationRepository extends ConversationRepository {
                     )
                 )
 
-                logger.print('ChatWithClientState - restored state', state)
-
                 return state
             }
         }
@@ -284,10 +250,6 @@ export class PrismaConversationRepository extends ConversationRepository {
     ) {
         const stateName = stateMap[conversation.currentState.constructor.name]
         const stateData = conversation.currentState.data
-
-        logger.debug(
-            `Creating conversation stateName:${stateName} | stateData:${stateData}`
-        )
 
         await prisma.conversation.create({
             data: {
@@ -327,11 +289,6 @@ export class PrismaConversationRepository extends ConversationRepository {
 
             agentId = possibleEmployeeAgent.id
         }
-
-        logger.print(
-            `Updating conversation stateName: ${stateName} | stateData: `,
-            serializedStateData
-        )
 
         await prisma.conversation.update({
             where: { id: conversation.id },
@@ -450,10 +407,6 @@ export class PrismaConversationRepository extends ConversationRepository {
             },
         })
 
-        logger.print(
-            '[PrismaConversationRepository.findActiveByEmployeePhone] model\n',
-            model
-        )
         const result = model ? ConversationMapper.toEntity(model) : null
 
         if (result && model) {

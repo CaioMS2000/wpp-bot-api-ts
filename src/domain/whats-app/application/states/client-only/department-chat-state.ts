@@ -21,7 +21,19 @@ export class DepartmentChatState extends ConversationState<DepartmentChatStatePr
     }
 
     handleMessage(messageContent: string): StateTransition {
-        throw new Error('Method not implemented.')
+        if (!this.config.outputPort) {
+            throw new Error('Output port not set')
+        }
+
+        console.log('[DepartmentChatState] handleMessage', this.conversation)
+        if (this.conversation.agent && this.conversation.agent !== 'AI') {
+            this.config.outputPort.handle(
+                this.conversation.agent,
+                messageContent
+            )
+        }
+
+        return StateTransition.stayInCurrent()
     }
 
     onEnter() {

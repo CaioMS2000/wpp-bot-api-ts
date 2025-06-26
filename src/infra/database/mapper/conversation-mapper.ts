@@ -43,11 +43,14 @@ export class ConversationMapper {
                 | PrismaEmployee
                 | (PrismaEmployee & { department: PrismaDepartment })
                 | null
+            agent: PrismaEmployee | null
             company: PrismaCompany & { manager: PrismaManager }
         }
     ): Conversation {
         const companyModel = model.company
         let entity: NotDefined<Conversation> = undefined
+
+        console.log('ConversationMapper.toEntity: model\n', model)
 
         if (model.userType === 'CLIENT' && model.clientId && model.client) {
             const clientModel = model.client
@@ -63,6 +66,20 @@ export class ConversationMapper {
                 },
                 model.id
             )
+
+            if (
+                model.agentId &&
+                model.agent &&
+                model.agentType === 'EMPLOYEE'
+            ) {
+                entity.agent = EmployeeMapper.toEntity(
+                    model.agent,
+                    model.company,
+                    model.company.manager
+                )
+            } else if (model.agentType === 'AI') {
+                entity.agent = 'AI'
+            }
         } else if (
             model.userType === 'EMPLOYEE' &&
             model.employeeId &&

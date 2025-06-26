@@ -112,10 +112,6 @@ export class StateFactory {
             case 'department_queue_list': {
                 if (isEmployee(conversation.user)) {
                     if (!isDepartment(data)) {
-                        logger.error(
-                            data,
-                            new Error('Data must be a Department object')
-                        )
                         throw new Error('Data must be a Department object')
                     }
 

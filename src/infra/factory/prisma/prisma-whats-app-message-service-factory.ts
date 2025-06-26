@@ -29,16 +29,6 @@ export class PrismaWhatsAppMessageServiceFactory {
         const employeeRepository =
             this.repositoryFactory.createEmployeeRepository()
 
-        // logger.debug(`[PrismaWhatsAppMessageServiceFactory] currentOutputPort:\n${currentOutputPort}\n${JSON.stringify(Object.entries(currentOutputPort))}\n${JSON.stringify(currentOutputPort)}`)
-        console.log(
-            '[PrismaWhatsAppMessageServiceFactory] currentOutputPort:\n',
-            currentOutputPort
-        )
-        // logger.debug(`[PrismaWhatsAppMessageServiceFactory] outputPort:\n${outputPort}\n${JSON.stringify(Object.entries(outputPort))}\n${JSON.stringify(outputPort)}`)
-        console.log(
-            '[PrismaWhatsAppMessageServiceFactory] outputPort:\n',
-            outputPort
-        )
         const messageHandlerFactory = new MessageHandlerFactory(
             outputPort,
             conversationRepository,

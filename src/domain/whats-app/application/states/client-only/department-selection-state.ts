@@ -54,8 +54,6 @@ export class DepartmentSelectionState extends ConversationState<DepartmentSelect
             dept => dept.name === messageContent
         )
 
-        logger.print('correspondingDepartment', correspondingDepartment)
-
         if (correspondingDepartment) {
             // return StateTransition.toDepartmentChat(messageContent)
             return StateTransition.toDepartmentQueue(messageContent)

@@ -66,4 +66,6 @@ export async function interactionMock() {
     // await employeeSendMessage('4')
 
     await employeeSendMessage('5')
+
+    await clientSendMessage('alguma mensagem')
 }

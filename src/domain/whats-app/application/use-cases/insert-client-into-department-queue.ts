@@ -7,7 +7,6 @@ export class InsertClientIntoDepartmentQueue {
     constructor(private departmentRepository: DepartmentRepository) {}
 
     async execute(department: Department, client: Client) {
-        logger.print('Inserting client into department queue...')
         await this.departmentRepository.insertClientIntoQueue(
             department,
             client

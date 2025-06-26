@@ -18,8 +18,6 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
         client: Client,
         config: ConversationStateConfig = conversationStateDefaultConfig
     ) {
-        // logger.debug(`[ChatWithClientState.constructor] config: ${JSON.stringify(config)}`)
-        console.log('[ChatWithClientState.constructor] config:\n', config)
         super(conversation, { client }, config)
     }
     handleMessage(messageContent: string): StateTransition {

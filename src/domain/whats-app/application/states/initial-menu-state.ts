@@ -91,7 +91,6 @@ export class InitialMenuState extends ConversationState {
         }
 
         if (messageContent === '5') {
-            logger.print('employee quer atender proximo')
             return StateTransition.toChatWithClient()
         }
     }

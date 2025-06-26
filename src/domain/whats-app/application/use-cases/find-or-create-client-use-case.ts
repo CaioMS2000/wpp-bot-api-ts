@@ -7,11 +7,9 @@ export class FindOrCreateClientUseCase {
     constructor(private clientRepository: ClientRepository) {}
 
     async execute(company: Company, phone: string) {
-        logger.debug(`Looking for client with phone: ${phone}`)
         let client = await this.clientRepository.findByPhone(company, phone)
 
         if (!client) {
-            logger.info(`Creating new client for phone: ${phone}`)
             client = Client.create({
                 phone,
                 company,
