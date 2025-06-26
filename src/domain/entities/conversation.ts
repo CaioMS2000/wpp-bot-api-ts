@@ -1,12 +1,10 @@
 import { Entity } from '@/core/entities/entity'
 import { ConversationState } from '../whats-app/application/states/conversation-state'
 import { InitialMenuState } from '../whats-app/application/states/initial-menu-state'
-import { Client } from './client'
 import { Company } from './company'
 import { Employee } from './employee'
 import type { Message } from './message'
-
-type UserType = Client | Employee
+import { UserType } from '../whats-app/@types'
 
 export type ConversationProps = {
     company: Company

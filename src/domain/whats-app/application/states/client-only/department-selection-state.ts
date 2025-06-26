@@ -2,8 +2,13 @@ import { logger } from '@/core/logger'
 import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
 import { MenuOption } from '../../../@types'
-import { ConversationState } from '../conversation-state'
+import {
+    ConversationState,
+    ConversationStateConfig,
+    conversationStateDefaultConfig,
+} from '../conversation-state'
 import { StateTransition } from '../state-transition'
+import { formatMenuOptions } from '@/utils/menu'
 
 type DepartmentSelectionStateProps = {
     departments: Department[]
@@ -12,8 +17,12 @@ type DepartmentSelectionStateProps = {
 export class DepartmentSelectionState extends ConversationState<DepartmentSelectionStateProps> {
     private menuOptions: MenuOption[]
 
-    constructor(conversation: Conversation, departments: Department[]) {
-        super(conversation, { departments })
+    constructor(
+        conversation: Conversation,
+        departments: Department[],
+        config: ConversationStateConfig = conversationStateDefaultConfig
+    ) {
+        super(conversation, { departments }, config)
 
         this.menuOptions = departments
             .map((dept, index) => ({
@@ -55,7 +64,14 @@ export class DepartmentSelectionState extends ConversationState<DepartmentSelect
         return StateTransition.stayInCurrent()
     }
 
-    get entryMessage() {
-        return this.formatMenuOptions(this.menuOptions)
+    onEnter() {
+        if (!this.config.outputPort) {
+            throw new Error('Output port not set')
+        }
+
+        this.config.outputPort.handle(
+            this.conversation.user,
+            `${formatMenuOptions(this.menuOptions)}`
+        )
     }
 }

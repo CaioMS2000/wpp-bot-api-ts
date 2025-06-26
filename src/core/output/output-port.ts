@@ -1,9 +1,5 @@
-export type OutputPort = {
-    handle<T = any>(response: T): void | Promise<void>
-    // handle: <T = any>(response: T) => void | Promise<void>
-}
+import { UserType } from '@/domain/whats-app/@types'
 
-// export interface OutputPort {
-// handle<T = any>(response: T): void | Promise<void>
-// handle: <T = any>(response: T) => void | Promise<void>
-// }
+export type OutputPort = {
+    handle(toUser: UserType, message: string): void | Promise<void>
+}

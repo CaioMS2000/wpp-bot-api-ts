@@ -18,10 +18,11 @@ emptyJsonFile(responseFilePath)
 
 const repositoryFactory: RepositoryFactory = new PrismaRepositoryFactory()
 const useCaseFactory = new UseCaseFactory(repositoryFactory)
-const inMemoryWhatsAppMessageServiceFactory =
-    new PrismaWhatsAppMessageServiceFactory(useCaseFactory, repositoryFactory)
-const whatsAppMessageService =
-    inMemoryWhatsAppMessageServiceFactory.createService()
+const whatsAppMessageServiceFactory = new PrismaWhatsAppMessageServiceFactory(
+    useCaseFactory,
+    repositoryFactory
+)
+const whatsAppMessageService = whatsAppMessageServiceFactory.createService()
 
 app.register(receiveMessage, { whatsAppMessageService })
 

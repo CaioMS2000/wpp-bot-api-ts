@@ -3,6 +3,7 @@ import { isClient, isEmployee } from '@/utils/entity'
 import { MenuOption } from '../../@types'
 import { ConversationState } from './conversation-state'
 import { StateTransition } from './state-transition'
+import { formatMenuOptions } from '@/utils/menu'
 
 export class InitialMenuState extends ConversationState {
     private menuOptions: MenuOption[] = [
@@ -44,18 +45,25 @@ export class InitialMenuState extends ConversationState {
             res = this.handleEmployeeMessage(messageContent)
         }
 
-        return res ?? StateTransition.stayInCurrent(this.entryMessage)
+        return res ?? StateTransition.stayInCurrent()
     }
 
-    get entryMessage() {
-        return this.formatMenuOptions(
-            this.menuOptions.filter(opt => {
-                if (isClient(this.conversation.user)) {
-                    return opt.forClient
-                }
+    onEnter() {
+        if (!this.config.outputPort) {
+            throw new Error('Output port not set')
+        }
 
-                return opt.forEmployee
-            })
+        this.config.outputPort.handle(
+            this.conversation.user,
+            formatMenuOptions(
+                this.menuOptions.filter(opt => {
+                    if (isClient(this.conversation.user)) {
+                        return opt.forClient
+                    }
+
+                    return opt.forEmployee
+                })
+            )
         )
     }
 

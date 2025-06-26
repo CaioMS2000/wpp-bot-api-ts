@@ -19,11 +19,11 @@ import { InsertClientIntoDepartmentQueue } from '../use-cases/insert-client-into
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
 import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
 import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
+import { MessageHandler } from './message-handler'
 import {
-    MessageHandler,
-    MessageHandlerConfig,
-    messageHandlerDefaultConfig,
-} from './message-handler'
+    ConversationStateConfig,
+    conversationStateDefaultConfig,
+} from '../states/conversation-state'
 
 export class ClientMessageHandler extends MessageHandler {
     constructor(
@@ -35,7 +35,7 @@ export class ClientMessageHandler extends MessageHandler {
         private createConversationUseCase: CreateConversationUseCase,
         private findConversationByClientPhoneUseCase: FindConversationByClientPhoneUseCase,
         private insertClientIntoDepartmentQueue: InsertClientIntoDepartmentQueue,
-        private messageHandlerConfig: MessageHandlerConfig = messageHandlerDefaultConfig
+        config: ConversationStateConfig = conversationStateDefaultConfig
     ) {
         super()
     }
@@ -56,7 +56,6 @@ export class ClientMessageHandler extends MessageHandler {
             `Processing message from client: ${user.phone}\nMessage content: ${messageContent}`
         )
 
-        const messages: string[] = []
         const conversation = await this.getOrCreateConversation(company, user)
 
         await this.saveMessage(conversation, messageContent, 'client', user)
@@ -76,10 +75,6 @@ export class ClientMessageHandler extends MessageHandler {
             `Conversation state after possible transition: ${conversation.currentState.constructor.name}`
         )
 
-        if (conversation.currentState.entryMessage) {
-            messages.push(conversation.currentState.entryMessage)
-        }
-
         await this.conversationRepository.save(conversation)
 
         if (conversation.currentState.shouldAutoTransition()) {
@@ -92,15 +87,9 @@ export class ClientMessageHandler extends MessageHandler {
                     `Conversation state after auto trigged transition: ${conversation.currentState.constructor.name}`
                 )
 
-                if (conversation.currentState.entryMessage) {
-                    messages.push(conversation.currentState.entryMessage)
-                }
-
                 await this.conversationRepository.save(conversation)
             }
         }
-
-        this.finish(conversation, messageContent, messages)
 
         logger.info('Message processing completed successfully')
     }
@@ -260,21 +249,5 @@ export class ClientMessageHandler extends MessageHandler {
         }
 
         return conversation
-    }
-
-    private async finish(
-        conversation: Conversation,
-        messageContent: string,
-        responseMessages: string[]
-    ) {
-        if (this.messageHandlerConfig.outputPort) {
-            this.messageHandlerConfig.outputPort.handle({
-                input: messageContent,
-                output: {
-                    to: conversation.user.phone,
-                    messages: responseMessages,
-                },
-            })
-        }
     }
 }

@@ -14,7 +14,11 @@ import { AIChatState } from '../states/ai-chat-state'
 import { DepartmentChatState } from '../states/client-only/department-chat-state'
 import { DepartmentQueueState } from '../states/client-only/department-queue-state'
 import { DepartmentSelectionState } from '../states/client-only/department-selection-state'
-import { ConversationState } from '../states/conversation-state'
+import {
+    ConversationState,
+    ConversationStateConfig,
+    conversationStateDefaultConfig,
+} from '../states/conversation-state'
 import { ChatWithClientState } from '../states/employee-only/chat-with-client-sate'
 import { ListDepartmentQueueState } from '../states/employee-only/list-department-client-queue-state'
 import { FAQCategoriesState } from '../states/faq-categories-state'
@@ -36,11 +40,12 @@ export class StateFactory {
     static create(
         name: StateName,
         conversation: Conversation,
-        data?: unknown
+        data?: unknown,
+        config: ConversationStateConfig = conversationStateDefaultConfig
     ): ConversationState {
         switch (name) {
             case 'initial_menu':
-                return new InitialMenuState(conversation)
+                return new InitialMenuState(conversation, null, config)
 
             case 'faq_categories': {
                 if (!Array.isArray(data)) {
@@ -58,7 +63,8 @@ export class StateFactory {
 
                 return new FAQCategoriesState(
                     conversation,
-                    data as FAQCategory[]
+                    data as FAQCategory[],
+                    config
                 )
             }
 
@@ -71,7 +77,12 @@ export class StateFactory {
                 }
 
                 const [categoryName, items] = data
-                return new FAQItemsState(conversation, categoryName, items)
+                return new FAQItemsState(
+                    conversation,
+                    categoryName,
+                    items,
+                    config
+                )
             }
 
             case 'department_selection': {
@@ -81,7 +92,7 @@ export class StateFactory {
                     )
                 }
 
-                return new DepartmentSelectionState(conversation, data)
+                return new DepartmentSelectionState(conversation, data, config)
             }
 
             case 'department_queue': {
@@ -89,14 +100,14 @@ export class StateFactory {
                     throw new Error('Data must be a Department object')
                 }
 
-                return new DepartmentQueueState(conversation, data)
+                return new DepartmentQueueState(conversation, data, config)
             }
             case 'department_chat': {
                 if (!isDepartment(data)) {
                     throw new Error('Data must be a Department object')
                 }
 
-                return new DepartmentChatState(conversation, data)
+                return new DepartmentChatState(conversation, data, config)
             }
             case 'department_queue_list': {
                 if (isEmployee(conversation.user)) {
@@ -108,7 +119,11 @@ export class StateFactory {
                         throw new Error('Data must be a Department object')
                     }
 
-                    return new ListDepartmentQueueState(conversation, data)
+                    return new ListDepartmentQueueState(
+                        conversation,
+                        data,
+                        config
+                    )
                 }
 
                 throw new Error(
@@ -121,10 +136,10 @@ export class StateFactory {
                     throw new Error('Data must be a Client object')
                 }
 
-                return new ChatWithClientState(conversation, data)
+                return new ChatWithClientState(conversation, data, config)
 
             case 'ai_chat':
-                return new AIChatState(conversation)
+                return new AIChatState(conversation, config)
 
             default:
                 throw new Error(`Unknown state: ${name}`)

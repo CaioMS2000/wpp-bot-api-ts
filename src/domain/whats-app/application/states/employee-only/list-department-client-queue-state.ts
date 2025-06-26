@@ -1,7 +1,11 @@
 import { logger } from '@/core/logger'
 import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
-import { ConversationState } from '../conversation-state'
+import {
+    ConversationState,
+    ConversationStateConfig,
+    conversationStateDefaultConfig,
+} from '../conversation-state'
 import { StateTransition } from '../state-transition'
 
 type ListDepartmentQueueStateProps = {
@@ -9,8 +13,12 @@ type ListDepartmentQueueStateProps = {
 }
 
 export class ListDepartmentQueueState extends ConversationState<ListDepartmentQueueStateProps> {
-    constructor(conversation: Conversation, department: Department) {
-        super(conversation, { department })
+    constructor(
+        conversation: Conversation,
+        department: Department,
+        config: ConversationStateConfig = conversationStateDefaultConfig
+    ) {
+        super(conversation, { department }, config)
     }
 
     get department() {
@@ -23,18 +31,25 @@ export class ListDepartmentQueueState extends ConversationState<ListDepartmentQu
         )
     }
 
-    get entryMessage() {
+    onEnter() {
+        if (!this.config.outputPort) {
+            throw new Error('Output port not set')
+        }
+
         logger.print(
             '[ListDepartmentQueueState.entryMessage] department\n',
             this.department
         )
         if (this.department.queue.length === 0) {
-            return 'Fila vazia'
+            this.config.outputPort.handle(this.conversation.user, 'Fila vazia')
         }
 
-        return this.department.queue.reduce((acc, client) => {
-            return `${acc}${client.name} - ${client.phone}\n`
-        }, 'Fila:\n')
+        this.config.outputPort.handle(
+            this.conversation.user,
+            this.department.queue.reduce((acc, client) => {
+                return `${acc}${client.name} - ${client.phone}\n`
+            }, 'Fila:\n')
+        )
     }
 
     shouldAutoTransition(): boolean {

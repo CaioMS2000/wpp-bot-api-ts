@@ -45,7 +45,6 @@ export class PrismaWhatsAppMessageServiceFactory {
         )
 
         return new WhatsAppMessageService(
-            outputPort,
             departmentRepository,
             faqRepository,
             messageHandlerFactory,

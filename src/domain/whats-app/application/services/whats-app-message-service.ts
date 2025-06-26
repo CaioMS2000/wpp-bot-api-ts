@@ -1,5 +1,4 @@
 import { logger } from '@/core/logger'
-import { OutputPort } from '@/core/output/output-port'
 import { Client } from '@/domain/entities/client'
 import { Employee } from '@/domain/entities/employee'
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
@@ -13,7 +12,6 @@ export class WhatsAppMessageService {
     private messageHandlers: Record<string, MessageHandler>
 
     constructor(
-        private outputPort: OutputPort,
         public departmentRepository: DepartmentRepository,
         public faqRepository: FAQRepository,
         private messageHandlerFactory: MessageHandlerFactory,

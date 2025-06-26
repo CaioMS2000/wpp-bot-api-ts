@@ -1,6 +1,10 @@
 import { Client } from '@/domain/entities/client'
 import { Conversation } from '@/domain/entities/conversation'
-import { ConversationState } from '../conversation-state'
+import {
+    ConversationState,
+    ConversationStateConfig,
+    conversationStateDefaultConfig,
+} from '../conversation-state'
 import { StateTransition } from '../state-transition'
 
 type ChatWithClientStateProps = {
@@ -8,8 +12,12 @@ type ChatWithClientStateProps = {
 }
 
 export class ChatWithClientState extends ConversationState<ChatWithClientStateProps> {
-    constructor(conversation: Conversation, client: Client) {
-        super(conversation, { client })
+    constructor(
+        conversation: Conversation,
+        client: Client,
+        config: ConversationStateConfig = conversationStateDefaultConfig
+    ) {
+        super(conversation, { client }, config)
     }
     handleMessage(messageContent: string): StateTransition {
         throw new Error('Method not implemented.')
@@ -19,7 +27,14 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
         return this.props.client
     }
 
-    get entryMessage() {
-        return `Você está conversando com o cliente: ${this.client.name} - ${this.client.phone}`
+    onEnter() {
+        if (!this.config.outputPort) {
+            throw new Error('Output port not set')
+        }
+
+        this.config.outputPort.handle(
+            this.conversation.user,
+            `Você está conversando com o cliente: ${this.client.name} - ${this.client.phone}`
+        )
     }
 }

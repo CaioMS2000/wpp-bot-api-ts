@@ -16,11 +16,11 @@ import { CreateConversationUseCase } from '../use-cases/create-conversation-use-
 import { FindConversationByEmployeePhoneUseCase } from '../use-cases/find-conversation-by-employee-phone-use-case'
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
 import { TransferEmployeeToClientConversationUseCase } from '../use-cases/transfer-employee-to-client-conversation-use-case'
+import { MessageHandler } from './message-handler'
 import {
-    MessageHandler,
-    MessageHandlerConfig,
-    messageHandlerDefaultConfig,
-} from './message-handler'
+    ConversationStateConfig,
+    conversationStateDefaultConfig,
+} from '../states/conversation-state'
 
 export class EmployeeMessageHandler extends MessageHandler {
     constructor(
@@ -31,7 +31,7 @@ export class EmployeeMessageHandler extends MessageHandler {
         private createConversationUseCase: CreateConversationUseCase,
         private listActiveDepartmentsUseCase: ListActiveDepartmentsUseCase,
         private transferEmployeeToClientConversationUseCase: TransferEmployeeToClientConversationUseCase,
-        private messageHandlerConfig: MessageHandlerConfig = messageHandlerDefaultConfig
+        config: ConversationStateConfig = conversationStateDefaultConfig
     ) {
         super()
     }
@@ -51,7 +51,6 @@ export class EmployeeMessageHandler extends MessageHandler {
         logger.info(`Processing message from employee: ${user.phone}`)
         logger.debug(`Message content: ${messageContent}`)
 
-        const messages: string[] = []
         const conversation = await this.getOrCreateConversation(company, user)
 
         await this.saveMessage(conversation, messageContent, 'employee', user)
@@ -71,10 +70,6 @@ export class EmployeeMessageHandler extends MessageHandler {
             `Conversation state after possible transition: ${conversation.currentState.constructor.name}`
         )
 
-        if (conversation.currentState.entryMessage) {
-            messages.push(conversation.currentState.entryMessage)
-        }
-
         await this.conversationRepository.save(conversation)
 
         if (conversation.currentState.shouldAutoTransition()) {
@@ -83,15 +78,14 @@ export class EmployeeMessageHandler extends MessageHandler {
             if (autoTransition && autoTransition.type === 'transition') {
                 await this.handleTransition(conversation, autoTransition)
 
-                if (conversation.currentState.entryMessage) {
-                    messages.push(conversation.currentState.entryMessage)
-                }
+                logger.debug(
+                    `Conversation state after auto trigged transition: ${conversation.currentState.constructor.name}`
+                )
 
                 await this.conversationRepository.save(conversation)
             }
         }
 
-        this.finish(conversation, messageContent, messages)
         logger.info('Message processing completed successfully')
     }
 
@@ -243,21 +237,5 @@ export class EmployeeMessageHandler extends MessageHandler {
             throw new Error('Department not found')
         }
         return department
-    }
-
-    private async finish(
-        conversation: Conversation,
-        messageContent: string,
-        responseMessages: string[]
-    ) {
-        if (this.messageHandlerConfig.outputPort) {
-            this.messageHandlerConfig.outputPort.handle({
-                input: messageContent,
-                output: {
-                    to: conversation.user.phone,
-                    messages: responseMessages,
-                },
-            })
-        }
     }
 }
