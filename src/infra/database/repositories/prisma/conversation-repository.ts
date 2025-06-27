@@ -249,6 +249,7 @@ export class PrismaConversationRepository extends ConversationRepository {
         conversation: Conversation,
         userReference: UserReferenceType
     ) {
+        logger.debug(`Creating conversation ${conversation.id}`)
         const stateName = stateMap[conversation.currentState.constructor.name]
         const stateData = conversation.currentState.data
 
@@ -285,6 +286,7 @@ export class PrismaConversationRepository extends ConversationRepository {
         conversation: Conversation,
         userReference: UserReferenceType
     ) {
+        logger.debug(`Updating conversation ${conversation.id}`)
         const stateName = stateMap[conversation.currentState.constructor.name]
         const serializedStateData = this.serializeStateData(conversation)
         let possibleEmployeeAgent: Nullable<PrismaEmployee> = null
@@ -338,6 +340,7 @@ export class PrismaConversationRepository extends ConversationRepository {
     }
 
     async save(conversation: Conversation): Promise<void> {
+        logger.debug(`Saving conversation ${conversation.id}`)
         const user: Client | Employee = conversation.user
         let userReferenceObject: Nullable<UserReferenceType> = null
         let agentType: AgentType = null
@@ -373,11 +376,14 @@ export class PrismaConversationRepository extends ConversationRepository {
         })
 
         if (existingConversation) {
+            logger.debug(`Conversation ${conversation.id} exists, updating`)
             return await this.updateConversation(
                 conversation,
                 userReferenceObject
             )
         }
+
+        logger.debug(`Conversation ${conversation.id} does not exist, creating`)
 
         return await this.createConversation(conversation, userReferenceObject)
     }
@@ -386,6 +392,7 @@ export class PrismaConversationRepository extends ConversationRepository {
         company: Company,
         phone: string
     ): Promise<Nullable<Conversation>> {
+        logger.debug(`Finding active conversation for client ${phone}`)
         const model = await prisma.conversation.findFirst({
             where: {
                 client: {
@@ -420,6 +427,9 @@ export class PrismaConversationRepository extends ConversationRepository {
             }
         }
 
+        logger.debug(
+            result ? `Found conversation ${result.id}` : 'No conversation found'
+        )
         return result
     }
 
@@ -427,6 +437,7 @@ export class PrismaConversationRepository extends ConversationRepository {
         company: Company,
         phone: string
     ): Promise<Nullable<Conversation>> {
+        logger.debug(`Finding active conversation for employee ${phone}`)
         const model = await prisma.conversation.findFirst({
             where: {
                 employee: {
@@ -459,6 +470,9 @@ export class PrismaConversationRepository extends ConversationRepository {
             }
         }
 
+        logger.debug(
+            result ? `Found conversation ${result.id}` : 'No conversation found'
+        )
         return result
     }
 

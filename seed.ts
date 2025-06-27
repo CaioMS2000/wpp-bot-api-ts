@@ -5,6 +5,7 @@ import { seedFAQs } from './seed/faqs'
 import { seedDepartments } from './seed/departments'
 import { seedEmployees } from './seed/employees'
 import { seedClientsAndChats } from './seed/chats'
+import { logger } from '@/core/logger'
 
 async function main() {
     console.clear()
@@ -20,10 +21,10 @@ async function main() {
 
 main()
     .then(() => {
-        console.log('🌱 Seed concluído com sucesso')
+        logger.info('🌱 Seed concluído com sucesso')
     })
     .catch(e => {
-        console.error(e)
+        logger.error(e)
         process.exit(1)
     })
     .finally(async () => {

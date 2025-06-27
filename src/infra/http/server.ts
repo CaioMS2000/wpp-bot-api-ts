@@ -12,14 +12,17 @@ import { prisma } from '@/lib/prisma'
 import { clearDatabase } from 'ROOT/clear-database'
 
 console.clear()
+logger.info('Starting server setup')
 
 const projectRoot = findProjectRoot(__dirname)
 const responseFilePath = path.join(projectRoot, 'response.json')
 
 emptyJsonFile(responseFilePath)
+logger.debug('Response file initialized at ' + responseFilePath)
 
 async function main() {
     await prisma.$transaction(async tx => {
+        logger.debug('Clearing database collections')
         await clearDatabase(tx, ['message', 'conversation'])
     })
     const repositoryFactory: RepositoryFactory = new PrismaRepositoryFactory()
@@ -29,9 +32,11 @@ async function main() {
             useCaseFactory,
             repositoryFactory
         )
+    logger.debug('Creating WhatsApp message service')
     const whatsAppMessageService = whatsAppMessageServiceFactory.createService()
 
     app.register(receiveMessage, { whatsAppMessageService })
+    logger.debug('Routes registered')
     const serverAddress = await app.listen({ port: 3000 })
 
     logger.info(`Server running on -> ${serverAddress}`)

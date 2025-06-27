@@ -49,8 +49,14 @@ export class ClientMessageHandler extends MessageHandler {
             )
         }
         try {
+            logger.debug(
+                `Client handler processing message from ${user.phone}: ${messageContent}`
+            )
             const [conversationType, conversation] =
                 await this.getOrCreateConversation(company, user)
+            logger.debug(
+                `Using conversation type: ${conversationType} -> ${conversation.id}`
+            )
 
             const newMessage = await this.saveMessage(
                 conversation,
@@ -120,6 +126,7 @@ export class ClientMessageHandler extends MessageHandler {
         conversation: Conversation,
         transition: StateTransition
     ) {
+        logger.debug(`Transitioning to ${transition.targetState}`)
         switch (transition.targetState) {
             case 'initial_menu':
                 conversation.transitionToState(

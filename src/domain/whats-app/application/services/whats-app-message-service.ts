@@ -26,6 +26,9 @@ export class WhatsAppMessageService {
         messageContent: string
     ) {
         try {
+            logger.debug(
+                `Incoming message from ${fromPhone} to ${toPhone}: ${messageContent}`
+            )
             const { type, company, client, employee } =
                 await this.resolveSenderContextUseCase.execute(
                     fromPhone,
