@@ -53,6 +53,9 @@ export class EmployeeMessageHandler extends MessageHandler {
             )
             const [conversationType, conversation] =
                 await this.getOrCreateConversation(company, user)
+            logger.debug(
+                `Using conversation type: ${conversationType} -> ${conversation.id}`
+            )
 
             const newMessage = await this.saveMessage(
                 conversation,
@@ -124,6 +127,7 @@ export class EmployeeMessageHandler extends MessageHandler {
         conversation: Conversation,
         transition: StateTransition
     ) {
+        logger.debug(`Transitioning to ${transition.targetState}`)
         switch (transition.targetState) {
             case 'initial_menu':
                 conversation.transitionToState(
