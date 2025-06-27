@@ -1,3 +1,4 @@
+import { logger } from '@/core/logger'
 import { Client } from '@/domain/entities/client'
 import { Conversation } from '@/domain/entities/conversation'
 import {
@@ -6,7 +7,6 @@ import {
     conversationStateDefaultConfig,
 } from '../conversation-state'
 import { StateTransition } from '../state-transition'
-import { logger } from '@/core/logger'
 
 type ChatWithClientStateProps = {
     client: Client

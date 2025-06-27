@@ -1,3 +1,4 @@
+import { logger } from '@/core/logger'
 import { OutputPort } from '@/core/output/output-port'
 import { ClientRepository } from '@/domain/repositories/client-repository'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
@@ -16,7 +17,6 @@ import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departmen
 import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
 import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
 import { TransferEmployeeToClientConversationUseCase } from '../use-cases/transfer-employee-to-client-conversation-use-case'
-import { logger } from '@/core/logger'
 
 export class MessageHandlerFactory {
     constructor(

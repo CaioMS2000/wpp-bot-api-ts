@@ -1,10 +1,10 @@
 import { inspect } from 'node:util'
 import { logger } from '@/core/logger'
 import { isClient, isEmployee } from '@/utils/entity'
+import { formatMenuOptions } from '@/utils/menu'
 import { MenuOption } from '../../@types'
 import { ConversationState } from './conversation-state'
 import { StateTransition } from './state-transition'
-import { formatMenuOptions } from '@/utils/menu'
 
 export class InitialMenuState extends ConversationState {
     private menuOptions: MenuOption[] = [

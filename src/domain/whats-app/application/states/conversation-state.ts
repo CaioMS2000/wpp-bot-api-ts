@@ -1,7 +1,7 @@
+import { logger } from '@/core/logger'
+import { OutputPort } from '@/core/output/output-port'
 import { Conversation } from '@/domain/entities/conversation'
 import { StateTransition } from './state-transition'
-import { OutputPort } from '@/core/output/output-port'
-import { logger } from '@/core/logger'
 
 export type ConversationStateConfig = {
     outputPort?: Nullable<OutputPort>

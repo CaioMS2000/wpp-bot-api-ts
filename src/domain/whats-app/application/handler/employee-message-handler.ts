@@ -9,16 +9,16 @@ import { ConversationRepository } from '@/domain/repositories/conversation-repos
 import { FAQRepository } from '@/domain/repositories/faq-repository'
 import { MessageRepository } from '@/domain/repositories/message-repository'
 import { StateFactory } from '../factory/state-factory'
+import {
+    ConversationStateConfig,
+    conversationStateDefaultConfig,
+} from '../states/conversation-state'
 import { StateTransition } from '../states/state-transition'
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
 import { FindConversationByEmployeePhoneUseCase } from '../use-cases/find-conversation-by-employee-phone-use-case'
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
 import { TransferEmployeeToClientConversationUseCase } from '../use-cases/transfer-employee-to-client-conversation-use-case'
 import { MessageHandler } from './message-handler'
-import {
-    ConversationStateConfig,
-    conversationStateDefaultConfig,
-} from '../states/conversation-state'
 
 export class EmployeeMessageHandler extends MessageHandler {
     constructor(

@@ -1,6 +1,7 @@
 import { logger } from '@/core/logger'
 import { Conversation } from '@/domain/entities/conversation'
 import { FAQCategory } from '@/domain/entities/faq'
+import { formatMenuOptions } from '@/utils/menu'
 import { MenuOption } from '../../@types'
 import {
     ConversationState,
@@ -8,7 +9,6 @@ import {
     conversationStateDefaultConfig,
 } from './conversation-state'
 import { StateTransition } from './state-transition'
-import { formatMenuOptions } from '@/utils/menu'
 
 type FAQCategoriesStateProps = { categories: FAQCategory[] }
 

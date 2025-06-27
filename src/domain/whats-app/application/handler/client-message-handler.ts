@@ -9,6 +9,10 @@ import { ConversationRepository } from '@/domain/repositories/conversation-repos
 import { MessageRepository } from '@/domain/repositories/message-repository'
 import { StateFactory } from '../factory/state-factory'
 import { DepartmentQueueState } from '../states/client-only/department-queue-state'
+import {
+    ConversationStateConfig,
+    conversationStateDefaultConfig,
+} from '../states/conversation-state'
 import { InitialMenuState } from '../states/initial-menu-state'
 import { StateTransition } from '../states/state-transition'
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
@@ -18,10 +22,6 @@ import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departmen
 import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
 import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
 import { MessageHandler } from './message-handler'
-import {
-    ConversationStateConfig,
-    conversationStateDefaultConfig,
-} from '../states/conversation-state'
 
 export class ClientMessageHandler extends MessageHandler {
     constructor(
