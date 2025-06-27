@@ -18,16 +18,6 @@ export enum LogLevel {
     DEBUG = 'DEBUG',
 }
 
-type Loggable = string | Record<string, unknown> | Error | unknown
-type LogMetadata = {
-    pre?: Nullable<string>
-    post?: Nullable<string>
-}
-
-const deafultLogMetadata: LogMetadata = {
-    pre: null,
-    post: null,
-}
 const Colors = {
     Blue: '\x1b[34m',
     BrightBlue: '\x1b[94m',
@@ -51,6 +41,7 @@ const Colors = {
     White: '\x1b[37m',
     Yellow: '\x1b[33m',
 }
+
 const LevelColors = {
     [LogLevel.INFO]: Colors.Blue,
     [LogLevel.WARN]: Colors.BrightYellow,
@@ -59,25 +50,27 @@ const LevelColors = {
 }
 
 export class Logger {
-    private readonly timezone: string = 'America/Sao_Paulo'
+    private readonly timezone = 'America/Sao_Paulo'
     private readonly logFormat = 'HH:mm:ss.SSS - YYYY-MM-DD'
 
-    print(...data: any[]) {
-        const x = data.map(item => {
-            if (typeof item === 'object') {
-                return this.formatObject(item)
-            }
-            return item
-        })
-        const { filePath, line, column } = this.getCallerInfo()
-        const fileReference = `${filePath}:${line}:${column}`
-        const timestamp = this.getTimestamp()
+    info(...data: any[]) {
+        this.log(LogLevel.INFO, ...data)
+    }
 
-        console.log(
-            `${Colors.WarmGray}[${timestamp}] [${fileReference}]#==========${Colors.Reset}`
-        )
-        console.log(...x)
-        console.log(`${Colors.WarmGray}==========#${Colors.Reset}\n`)
+    warn(...data: any[]) {
+        this.log(LogLevel.WARN, ...data)
+    }
+
+    debug(...data: any[]) {
+        this.log(LogLevel.DEBUG, ...data)
+    }
+
+    error(...data: any[]) {
+        this.log(LogLevel.ERROR, ...data)
+    }
+
+    private shouldLog(level: LogLevel): boolean {
+        return !(level === LogLevel.DEBUG && env.MODE === 'production')
     }
 
     private getTimestamp(): string {
@@ -85,18 +78,14 @@ export class Logger {
     }
 
     private getCallerInfo() {
-        const error = new Error()
-        const stackLines = error.stack?.split('\n') || []
-        const callerLine = stackLines.find(
-            line =>
-                line.includes('at ') &&
-                !line.includes('Logger.') &&
-                !line.includes('logger.ts')
+        const stack = new Error().stack?.split('\n') || []
+        const line = stack.find(
+            l =>
+                l.includes('at ') &&
+                !l.includes('Logger.') &&
+                !l.includes('logger.ts')
         )
-
-        if (!callerLine) return { filePath: 'unknown', line: 0, column: 0 }
-
-        const match = callerLine.match(/\((.*):(\d+):(\d+)\)/)
+        const match = line?.match(/\((.*):(\d+):(\d+)\)/)
 
         if (!match) return { filePath: 'unknown', line: 0, column: 0 }
 
@@ -107,51 +96,19 @@ export class Logger {
         }
     }
 
-    private formatMessage(level: LogLevel, message: string): string {
-        const { filePath, line, column } = this.getCallerInfo()
-        const fileReference = `${filePath}:${line}:${column}`
-        const levelColor = LevelColors[level]
-        const timestamp = `${Colors.BrightGreen}${this.getTimestamp()}${Colors.Reset}`
-        const levelText = `${levelColor}${level}${Colors.Reset}`
-        const fileText = `${Colors.SoftBlue}[${fileReference}] #==========\n${Colors.Reset}`
-
-        return `${timestamp} ${levelText} ${fileText}${message}\n${Colors.SoftBlue}==========#${Colors.Reset}`
-    }
-
-    private formatObject(data: unknown): string {
+    private formatObject(data: any): string {
         if (data instanceof Error) {
             return `${Colors.Red}${data.message}${Colors.Reset}\n${Colors.Gray}${data.stack}${Colors.Reset}`
         }
-        try {
-            return `${Colors.Magenta}${util.inspect(data, {
-                depth: null,
-                colors: true,
-                maxArrayLength: null,
-            })}${Colors.Reset}`
-        } catch {
-            return `${Colors.Yellow}${String(data)}${Colors.Reset}`
-        }
+        return `${Colors.Magenta}${util.inspect(data, {
+            depth: null,
+            colors: true,
+            maxArrayLength: null,
+        })}${Colors.Reset}`
     }
 
-    private shouldLog(level: LogLevel): boolean {
-        if (level === LogLevel.DEBUG && env.MODE === 'production') {
-            return false
-        }
-        return true
-    }
-
-    private log(
-        level: LogLevel,
-        data: Loggable,
-        error?: Error,
-        logMetadata: LogMetadata = deafultLogMetadata
-    ): void {
+    private log(level: LogLevel, ...data: any[]) {
         if (!this.shouldLog(level)) return
-
-        let formattedMessage =
-            typeof data === 'string'
-                ? this.formatMessage(level, data)
-                : `${this.formatMessage(level, '')}\n${this.formatObject(data)}`
 
         const logger = {
             [LogLevel.INFO]: console.log,
@@ -160,36 +117,24 @@ export class Logger {
             [LogLevel.DEBUG]: console.debug,
         }[level]
 
-        if (logMetadata.pre) {
-            formattedMessage = `${logMetadata.pre}${formattedMessage}`
+        const { filePath, line, column } = this.getCallerInfo()
+        const fileRef = `${filePath}:${line}:${column}`
+        const timestamp = `${Colors.BrightGreen}${this.getTimestamp()}${Colors.Reset}`
+        const levelText = `${LevelColors[level]}${level}${Colors.Reset}`
+
+        logger(
+            `${Colors.WarmGray}[${timestamp}] ${levelText} ${Colors.SoftBlue}[${fileRef}]#==========${Colors.Reset}`
+        )
+
+        for (const item of data) {
+            if (typeof item === 'string') {
+                logger(item)
+            } else {
+                logger(this.formatObject(item))
+            }
         }
-        if (logMetadata.post) {
-            formattedMessage = `${formattedMessage}${logMetadata.post}`
-        }
 
-        logger(formattedMessage)
-
-        if (error && level !== LogLevel.ERROR) {
-            console.error(
-                this.formatMessage(LogLevel.ERROR, this.formatObject(error))
-            )
-        }
-    }
-
-    info(data: Loggable, logMetadata: LogMetadata = deafultLogMetadata): void {
-        this.log(LogLevel.INFO, data, undefined, logMetadata)
-    }
-
-    warn(data: Loggable, logMetadata: LogMetadata = deafultLogMetadata): void {
-        this.log(LogLevel.WARN, data, undefined, logMetadata)
-    }
-
-    debug(data: Loggable, logMetadata: LogMetadata = deafultLogMetadata): void {
-        this.log(LogLevel.DEBUG, data, undefined, logMetadata)
-    }
-
-    error(data: Loggable, error?: Error): void {
-        this.log(LogLevel.ERROR, data, error)
+        logger(`${Colors.SoftBlue}==========#${Colors.Reset}\n`)
     }
 }
 
