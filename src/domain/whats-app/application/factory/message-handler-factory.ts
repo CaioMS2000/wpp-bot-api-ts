@@ -37,10 +37,6 @@ export class MessageHandlerFactory {
     ) {}
 
     createClientMessageHandler(): MessageHandler {
-        console.log(
-            '[MessageHandlerFactory.createClientMessageHandler] outputPort:\n',
-            this.outputPort
-        )
         return new ClientMessageHandler(
             this.messageRepository,
             this.conversationRepository,

@@ -21,9 +21,6 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
         super(conversation, { client }, config)
     }
     handleMessage(messageContent: string): StateTransition {
-        logger.debug(
-            `[ChatWithClientState.handleMessage] message: ${messageContent}`
-        )
         if (!this.config.outputPort) {
             throw new Error('Output port not set')
         }

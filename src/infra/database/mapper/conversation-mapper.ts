@@ -56,8 +56,6 @@ export class ConversationMapper {
         const companyModel = model.company
         let entity: NotDefined<Conversation> = undefined
 
-        // console.log('ConversationMapper.toEntity: model\n', model)
-
         if (model.userType === 'CLIENT' && model.clientId && model.client) {
             const clientModel = model.client
 

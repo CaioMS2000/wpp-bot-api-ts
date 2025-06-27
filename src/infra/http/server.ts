@@ -20,16 +20,8 @@ emptyJsonFile(responseFilePath)
 
 async function main() {
     await prisma.$transaction(async tx => {
-        // await clearDatabase(tx, ['message', 'conversation'])
+        await clearDatabase(tx, ['message', 'conversation'])
     })
-    // const allModels = await prisma.conversation.findMany()
-    // console.log("All conversations:===#\n")
-    // console.log("{")
-    // console.log(allModels)
-    // console.log("}\n")
-    // allModels.forEach(model => console.log("\n",model))
-    // console.log("===#\n")
-    // console.log('Vamos começar o sistema!')
     const repositoryFactory: RepositoryFactory = new PrismaRepositoryFactory()
     const useCaseFactory = new UseCaseFactory(repositoryFactory)
     const whatsAppMessageServiceFactory =

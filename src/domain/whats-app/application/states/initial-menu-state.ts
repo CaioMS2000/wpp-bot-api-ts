@@ -75,22 +75,6 @@ export class InitialMenuState extends ConversationState {
             object.data.input = lastMessage.content
         }
 
-        // this.config.outputPort.handle(
-        //     this.conversation.user,
-        //     formatMenuOptions(
-        //         this.menuOptions.filter(opt => {
-        //             if (isClient(this.conversation.user)) {
-        //                 return opt.forClient
-        //             }
-
-        //             return opt.forEmployee
-        //         })
-        //     )
-        // )
-        console.log(
-            '[InitialMenuState] onEnter -> object\n',
-            inspect(object, { depth: null, colors: true })
-        )
         this.config.outputPort.handle(
             this.conversation.user,
             JSON.stringify(object, null)

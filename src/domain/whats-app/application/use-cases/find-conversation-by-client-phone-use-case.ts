@@ -5,10 +5,6 @@ export class FindConversationByClientPhoneUseCase {
     constructor(private conversationRepository: ConversationRepository) {}
 
     async execute(company: Company, phone: string) {
-        // console.log('[FindConversationByClientPhoneUseCase.execute]\n', {
-        //     company,
-        //     phone,
-        // })
         const conversation =
             await this.conversationRepository.findActiveByClientPhone(
                 company,

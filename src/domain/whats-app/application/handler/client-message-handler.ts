@@ -37,7 +37,6 @@ export class ClientMessageHandler extends MessageHandler {
         private insertClientIntoDepartmentQueue: InsertClientIntoDepartmentQueue,
         private config: ConversationStateConfig = conversationStateDefaultConfig
     ) {
-        console.log('[ClientMessageHandler.constructor] config:\n', config)
         super()
     }
 
@@ -64,10 +63,6 @@ export class ClientMessageHandler extends MessageHandler {
         conversation.messages.push(newMessage)
         await this.conversationRepository.save(conversation)
 
-        console.log(
-            "i'll run onEnter for: ",
-            conversation.currentState.constructor.name
-        )
         conversation.currentState.onEnter()
         const result = conversation.processMessage(messageContent)
 
@@ -116,10 +111,6 @@ export class ClientMessageHandler extends MessageHandler {
     ) {
         switch (transition.targetState) {
             case 'initial_menu':
-                console.log(
-                    "[ClientMessageHandler.handleTransition] case 'initial_menu' -> config:\n",
-                    this.config
-                )
                 conversation.transitionToState(
                     new InitialMenuState(conversation, this.config)
                 )
@@ -242,15 +233,12 @@ export class ClientMessageHandler extends MessageHandler {
                 company,
                 user.phone
             )
-        // console.log('findConversationByClientPhoneUseCase result:\n', conversation)
 
         if (conversation) {
             if (this.config.outputPort) {
-                console.log('We need to injet this:\n', this.config.outputPort)
                 conversation.currentState.outputPort = this.config.outputPort
             }
         } else {
-            console.log('creating conversation')
             conversation = await this.createConversationUseCase.execute({
                 user,
                 company,

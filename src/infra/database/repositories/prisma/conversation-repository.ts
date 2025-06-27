@@ -386,13 +386,6 @@ export class PrismaConversationRepository extends ConversationRepository {
         company: Company,
         phone: string
     ): Promise<Nullable<Conversation>> {
-        // const allModels = await prisma.conversation.findMany({where:{companyId: company.id}})
-        // console.log("All conversations:===#\n")
-        // console.log("{")
-        // console.log(allModels)
-        // console.log("}\n")
-        // allModels.forEach(model => console.log("\n",model))
-        // console.log("===#\n")
         const model = await prisma.conversation.findFirst({
             where: {
                 client: {

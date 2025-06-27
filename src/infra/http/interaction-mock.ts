@@ -1,5 +1,3 @@
-import { logger } from '@/core/logger'
-
 async function sendMessage(message: string, phone: string) {
     try {
         const response = await fetch('http://localhost:3000/message', {
@@ -15,8 +13,6 @@ async function sendMessage(message: string, phone: string) {
         })
 
         const data = await response.json()
-
-        // logger.print('\n\nrequest response:\n', data)
 
         return data
     } catch (error) {

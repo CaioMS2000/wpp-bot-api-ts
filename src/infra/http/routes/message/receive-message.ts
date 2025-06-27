@@ -28,12 +28,7 @@ export async function receiveMessage(
             // },
         },
         handler: async (req, reply) => {
-            // const { email, password, name } = req.body
-            // return reply.status(201).send({ email, password, name })
             const { whatsAppMessageService } = resources
-
-            // console.log('body')
-            // console.log(req.body)
 
             await whatsAppMessageService.processIncomingMessage(
                 req.body.from,

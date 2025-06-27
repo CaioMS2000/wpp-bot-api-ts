@@ -36,12 +36,6 @@ export class ListDepartmentQueueState extends ConversationState<ListDepartmentQu
             throw new Error('Output port not set')
         }
 
-        console.log('[ListDepartmentQueueState.onEnter] entrou')
-
-        logger.print(
-            '[ListDepartmentQueueState.onEnter] department\n',
-            this.department
-        )
         if (this.department.queue.length === 0) {
             this.config.outputPort.handle(this.conversation.user, 'Fila vazia')
         }
