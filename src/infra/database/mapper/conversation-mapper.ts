@@ -17,11 +17,13 @@ import {
     Department as PrismaDepartment,
     Employee as PrismaEmployee,
     Manager as PrismaManager,
+    Message as PrismaMessage,
     StateName as PrismaStateName,
 } from 'ROOT/prisma/generated'
 import { ClientMapper } from './client-mapper'
 import { CompanyMapper } from './company-mapper'
 import { EmployeeMapper } from './employee-mapper'
+import { MessageMapper } from './message-mapper'
 
 const stateMap = {
     [PrismaStateName.initial_menu]: InitialMenuState,
@@ -38,6 +40,10 @@ const stateMap = {
 export class ConversationMapper {
     static toEntity(
         model: PrismaConversation & {
+            messages: (PrismaMessage & {
+                client: PrismaClient | null
+                employee: PrismaEmployee | null
+            })[]
             client: PrismaClient | null
             employee:
                 | PrismaEmployee
@@ -50,7 +56,7 @@ export class ConversationMapper {
         const companyModel = model.company
         let entity: NotDefined<Conversation> = undefined
 
-        console.log('ConversationMapper.toEntity: model\n', model)
+        // console.log('ConversationMapper.toEntity: model\n', model)
 
         if (model.userType === 'CLIENT' && model.clientId && model.client) {
             const clientModel = model.client
@@ -63,6 +69,9 @@ export class ConversationMapper {
                         model.company.manager
                     ),
                     company: CompanyMapper.toEntity(companyModel),
+                    messages: model.messages.map(m =>
+                        MessageMapper.toEntity(m, model, model.company)
+                    ),
                 },
                 model.id
             )

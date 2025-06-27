@@ -37,6 +37,7 @@ export class ClientMessageHandler extends MessageHandler {
         private insertClientIntoDepartmentQueue: InsertClientIntoDepartmentQueue,
         private config: ConversationStateConfig = conversationStateDefaultConfig
     ) {
+        console.log('[ClientMessageHandler.constructor] config:\n', config)
         super()
     }
 
@@ -53,7 +54,14 @@ export class ClientMessageHandler extends MessageHandler {
 
         const conversation = await this.getOrCreateConversation(company, user)
 
-        await this.saveMessage(conversation, messageContent, 'client', user)
+        const newMessage = await this.saveMessage(
+            conversation,
+            messageContent,
+            'client',
+            user
+        )
+
+        conversation.messages.push(newMessage)
         await this.conversationRepository.save(conversation)
 
         console.log(
@@ -108,8 +116,12 @@ export class ClientMessageHandler extends MessageHandler {
     ) {
         switch (transition.targetState) {
             case 'initial_menu':
+                console.log(
+                    "[ClientMessageHandler.handleTransition] case 'initial_menu' -> config:\n",
+                    this.config
+                )
                 conversation.transitionToState(
-                    new InitialMenuState(conversation)
+                    new InitialMenuState(conversation, this.config)
                 )
                 break
             case 'faq_categories':
@@ -122,7 +134,8 @@ export class ClientMessageHandler extends MessageHandler {
                     StateFactory.create(
                         'faq_categories',
                         conversation,
-                        faqCategories
+                        faqCategories,
+                        this.config
                     )
                 )
                 break
@@ -138,10 +151,12 @@ export class ClientMessageHandler extends MessageHandler {
                     )
 
                 conversation.transitionToState(
-                    StateFactory.create('faq_items', conversation, [
-                        transition.data,
-                        faqItems,
-                    ])
+                    StateFactory.create(
+                        'faq_items',
+                        conversation,
+                        [transition.data, faqItems],
+                        this.config
+                    )
                 )
                 break
         }
@@ -157,7 +172,8 @@ export class ClientMessageHandler extends MessageHandler {
                     StateFactory.create(
                         'department_selection',
                         conversation,
-                        availableDepartments
+                        availableDepartments,
+                        this.config
                     )
                 )
                 break
@@ -175,7 +191,8 @@ export class ClientMessageHandler extends MessageHandler {
                     StateFactory.create(
                         'department_chat',
                         conversation,
-                        department
+                        department,
+                        this.config
                     )
                 )
 
@@ -192,7 +209,11 @@ export class ClientMessageHandler extends MessageHandler {
                 )
 
                 conversation.transitionToState(
-                    new DepartmentQueueState(conversation, department)
+                    new DepartmentQueueState(
+                        conversation,
+                        department,
+                        this.config
+                    )
                 )
 
                 await this.insertClientIntoDepartmentQueue.execute(
@@ -221,13 +242,15 @@ export class ClientMessageHandler extends MessageHandler {
                 company,
                 user.phone
             )
+        // console.log('findConversationByClientPhoneUseCase result:\n', conversation)
 
         if (conversation) {
             if (this.config.outputPort) {
-                console.log(this.config.outputPort)
+                console.log('We need to injet this:\n', this.config.outputPort)
                 conversation.currentState.outputPort = this.config.outputPort
             }
         } else {
+            console.log('creating conversation')
             conversation = await this.createConversationUseCase.execute({
                 user,
                 company,

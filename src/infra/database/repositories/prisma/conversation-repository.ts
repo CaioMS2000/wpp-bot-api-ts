@@ -29,6 +29,7 @@ import { departmentValidatorSchema } from '../../validators/stateDataJSONValidat
 import { departmentsValidatorSchema } from '../../validators/stateDataJSONValidators/departmentsValidator'
 import { faqCategoriesStateDataValidatorSchema } from '../../validators/stateDataJSONValidators/faqCategoriesValidator'
 import { faqCategoryValidatorSchema } from '../../validators/stateDataJSONValidators/faqCategoryValidator'
+import { fromDomainToPrisma } from '../../utils'
 
 const stateMap = {
     [InitialMenuState.name]: PrismaStateName.initial_menu,
@@ -262,6 +263,19 @@ export class PrismaConversationRepository extends ConversationRepository {
                 aiServiceThreadResume: conversation.aiServiceThreadResume,
                 currentState: stateName,
                 stateData: this.serializeStateData(conversation),
+                messages: {
+                    connectOrCreate: conversation.messages.map(message => {
+                        return {
+                            where: { id: message.id },
+                            create: {
+                                id: message.id,
+                                from: fromDomainToPrisma(message.from),
+                                content: message.content,
+                                // conversationId: conversation.id,
+                            },
+                        }
+                    }),
+                },
                 ...userReference,
             },
         })
@@ -302,6 +316,22 @@ export class PrismaConversationRepository extends ConversationRepository {
                 currentState: stateName,
                 stateData: serializedStateData,
                 agentId,
+                messages: {
+                    upsert: conversation.messages.map(message => {
+                        return {
+                            where: { id: message.id },
+                            create: {
+                                id: message.id,
+                                content: message.content,
+                                // conversationId: conversation.id,
+                                from: fromDomainToPrisma(message.from),
+                            },
+                            update: {
+                                // content: message.content,
+                            },
+                        }
+                    }),
+                },
                 ...userReference,
             },
         })
@@ -356,6 +386,13 @@ export class PrismaConversationRepository extends ConversationRepository {
         company: Company,
         phone: string
     ): Promise<Nullable<Conversation>> {
+        // const allModels = await prisma.conversation.findMany({where:{companyId: company.id}})
+        // console.log("All conversations:===#\n")
+        // console.log("{")
+        // console.log(allModels)
+        // console.log("}\n")
+        // allModels.forEach(model => console.log("\n",model))
+        // console.log("===#\n")
         const model = await prisma.conversation.findFirst({
             where: {
                 client: {
@@ -371,6 +408,12 @@ export class PrismaConversationRepository extends ConversationRepository {
                     include: { department: { include: { queue: true } } },
                 },
                 company: { include: { manager: true } },
+                messages: {
+                    include: {
+                        client: true,
+                        employee: true,
+                    },
+                },
             },
         })
 
@@ -404,6 +447,12 @@ export class PrismaConversationRepository extends ConversationRepository {
                 agent: true,
                 employee: { include: { company: true, department: true } },
                 company: { include: { manager: true } },
+                messages: {
+                    include: {
+                        client: true,
+                        employee: true,
+                    },
+                },
             },
         })
 

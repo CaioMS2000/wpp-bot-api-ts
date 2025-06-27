@@ -6,6 +6,7 @@
     "scripts": {
         "dev": "tsx watch src/infra/http/server.ts",
         "seed": "tsx seed.ts",
+        "clear-db": "tsx clear-database.ts",
         "exec": "tsx",
         "lint": "biome check .",
         "lint:hard": "biome check --write --unsafe ./src",

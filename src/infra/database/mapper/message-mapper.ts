@@ -11,59 +11,44 @@ import {
 import { ClientMapper } from './client-mapper'
 import { CompanyMapper } from './company-mapper'
 import { EmployeeMapper } from './employee-mapper'
-
-const fromPrismaToDomain = (
-    from: 'CLIENT' | 'EMPLOYEE' | 'AI'
-): 'client' | 'employee' | 'AI' => {
-    return from.toLowerCase() as 'client' | 'employee' | 'AI'
-}
-const fromDomainToPrisma = (
-    from: 'client' | 'employee' | 'AI'
-): 'CLIENT' | 'EMPLOYEE' | 'AI' => {
-    return from.toUpperCase() as 'CLIENT' | 'EMPLOYEE' | 'AI'
-}
+import { fromDomainToPrisma, fromPrismaToDomain } from '../utils'
 
 export class MessageMapper {
     static toEntity(
         model: PrismaMessage & {
-            conversation: PrismaConversation & {
-                company: PrismaCompany & { manager: PrismaManager }
-            }
             client: PrismaClient | null
             employee: PrismaEmployee | null
-        }
+        },
+        conversation: PrismaConversation,
+        company: PrismaCompany & { manager: PrismaManager }
     ): Message {
-        const company = CompanyMapper.toEntity(model.conversation.company)
+        const companyEntity = CompanyMapper.toEntity(company)
 
-        const conversation = Conversation.create(
+        const conversationEntity = Conversation.create(
             {
-                company,
+                company: companyEntity,
                 user: model.client
                     ? ClientMapper.toEntity(
                           model.client,
-                          model.conversation.company,
-                          model.conversation.company.manager
+                          company,
+                          company.manager
                       )
                     : EmployeeMapper.toEntity(
                           model.employee!,
-                          model.conversation.company,
-                          model.conversation.company.manager
+                          company,
+                          company.manager
                       ),
             },
-            model.conversation.id
+            conversation.id
         )
 
         const sender = model.client
-            ? ClientMapper.toEntity(
-                  model.client,
-                  model.conversation.company,
-                  model.conversation.company.manager
-              )
+            ? ClientMapper.toEntity(model.client, company, company.manager)
             : model.employee
               ? EmployeeMapper.toEntity(
                     model.employee,
-                    model.conversation.company,
-                    model.conversation.company.manager
+                    company,
+                    company.manager
                 )
               : (() => {
                     throw new Error('Message sender not found')
@@ -71,7 +56,7 @@ export class MessageMapper {
 
         return Message.create(
             {
-                conversation,
+                conversation: conversationEntity,
                 from: fromPrismaToDomain(model.from), // 👈 AQUI
                 timestamp: model.timestamp,
                 content: model.content,

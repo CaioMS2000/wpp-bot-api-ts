@@ -16,6 +16,6 @@
       "ROOT/*": ["./*"]
     }
   },
-  "include": ["src/**/*", "seed.ts", "seed/**/*"],
+  "include": ["src/**/*", "seed.ts", "seed/**/*", "clear-database.ts"],
   "exclude": ["node_modules", "prisma/generated"]
 }

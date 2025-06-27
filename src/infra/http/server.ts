@@ -8,6 +8,8 @@ import { PrismaWhatsAppMessageServiceFactory } from '../factory/prisma/prisma-wh
 import { app } from './app'
 import { interactionMock } from './interaction-mock'
 import { receiveMessage } from './routes/message/receive-message'
+import { prisma } from '@/lib/prisma'
+import { clearDatabase } from 'ROOT/clear-database'
 
 console.clear()
 
@@ -16,17 +18,28 @@ const responseFilePath = path.join(projectRoot, 'response.json')
 
 emptyJsonFile(responseFilePath)
 
-const repositoryFactory: RepositoryFactory = new PrismaRepositoryFactory()
-const useCaseFactory = new UseCaseFactory(repositoryFactory)
-const whatsAppMessageServiceFactory = new PrismaWhatsAppMessageServiceFactory(
-    useCaseFactory,
-    repositoryFactory
-)
-const whatsAppMessageService = whatsAppMessageServiceFactory.createService()
-
-app.register(receiveMessage, { whatsAppMessageService })
-
 async function main() {
+    await prisma.$transaction(async tx => {
+        // await clearDatabase(tx, ['message', 'conversation'])
+    })
+    // const allModels = await prisma.conversation.findMany()
+    // console.log("All conversations:===#\n")
+    // console.log("{")
+    // console.log(allModels)
+    // console.log("}\n")
+    // allModels.forEach(model => console.log("\n",model))
+    // console.log("===#\n")
+    // console.log('Vamos começar o sistema!')
+    const repositoryFactory: RepositoryFactory = new PrismaRepositoryFactory()
+    const useCaseFactory = new UseCaseFactory(repositoryFactory)
+    const whatsAppMessageServiceFactory =
+        new PrismaWhatsAppMessageServiceFactory(
+            useCaseFactory,
+            repositoryFactory
+        )
+    const whatsAppMessageService = whatsAppMessageServiceFactory.createService()
+
+    app.register(receiveMessage, { whatsAppMessageService })
     const serverAddress = await app.listen({ port: 3000 })
 
     logger.info(`Server running on -> ${serverAddress}`)

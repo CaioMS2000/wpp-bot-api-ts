@@ -1,3 +1,4 @@
+import { inspect } from 'node:util'
 import { logger } from '@/core/logger'
 import { isClient, isEmployee } from '@/utils/entity'
 import { MenuOption } from '../../@types'
@@ -53,17 +54,46 @@ export class InitialMenuState extends ConversationState {
             throw new Error('Output port not set')
         }
 
+        const object = {
+            data: {
+                output: formatMenuOptions(
+                    this.menuOptions.filter(opt => {
+                        if (isClient(this.conversation.user)) {
+                            return opt.forClient
+                        }
+
+                        return opt.forEmployee
+                    })
+                ),
+                input: null as any,
+            },
+        }
+        const lastMessage = this.conversation.messages.pop()
+
+        if (lastMessage) {
+            this.conversation.messages.push(lastMessage)
+            object.data.input = lastMessage.content
+        }
+
+        // this.config.outputPort.handle(
+        //     this.conversation.user,
+        //     formatMenuOptions(
+        //         this.menuOptions.filter(opt => {
+        //             if (isClient(this.conversation.user)) {
+        //                 return opt.forClient
+        //             }
+
+        //             return opt.forEmployee
+        //         })
+        //     )
+        // )
+        console.log(
+            '[InitialMenuState] onEnter -> object\n',
+            inspect(object, { depth: null, colors: true })
+        )
         this.config.outputPort.handle(
             this.conversation.user,
-            formatMenuOptions(
-                this.menuOptions.filter(opt => {
-                    if (isClient(this.conversation.user)) {
-                        return opt.forClient
-                    }
-
-                    return opt.forEmployee
-                })
-            )
+            JSON.stringify(object, null)
         )
     }
 

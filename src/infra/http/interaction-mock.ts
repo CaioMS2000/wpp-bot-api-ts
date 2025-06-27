@@ -33,39 +33,41 @@ async function employeeSendMessage(message: string, secs = 1) {
 }
 
 export async function interactionMock() {
-    // await clientSendMessage('oi')
+    await clientSendMessage('oi')
 
-    // await clientSendMessage('3')
+    await clientSendMessage('3')
 
-    // await clientSendMessage('suporte') // não vai mudar o estado pois não é uma das opções
+    await clientSendMessage('suporte') // não vai mudar o estado pois não é uma das opções
 
-    // await clientSendMessage('Geração de Energia')
+    await clientSendMessage('Geração de Energia')
 
-    // await clientSendMessage('Menu principal')
+    await clientSendMessage('Menu principal')
 
-    // await clientSendMessage('2')
+    await clientSendMessage('2')
 
-    // await clientSendMessage('Menu principal')
+    await clientSendMessage('Menu principal')
 
-    // await clientSendMessage('2') // esse "vai e vem" é só pra testar se ele consegue transitar corretamente
+    await clientSendMessage('2') // esse "vai e vem" é só pra testar se ele consegue transitar corretamente
 
-    // await clientSendMessage('Tecnologia da Informação')
+    await clientSendMessage('Tecnologia da Informação')
 
-    // await clientSendMessage('alguma mensagem')
+    await clientSendMessage('alguma mensagem')
 
     console.log('\n\n\n\n\n\n\n')
     console.log('==========')
-    // await employeeSendMessage('alguma mensagem')
+    await employeeSendMessage('alguma mensagem')
 
-    // await employeeSendMessage('3')
+    await employeeSendMessage('3')
 
-    // await employeeSendMessage('Mercado Livre de Energia')
+    await employeeSendMessage('Mercado Livre de Energia')
 
-    // await employeeSendMessage('Menu principal')
+    await employeeSendMessage('Menu principal')
 
-    // await employeeSendMessage('4')
+    await employeeSendMessage('4')
 
     await employeeSendMessage('5')
 
     await clientSendMessage('alguma mensagem')
+
+    await employeeSendMessage('recebi')
 }
