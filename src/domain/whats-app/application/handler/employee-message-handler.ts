@@ -45,6 +45,12 @@ export class EmployeeMessageHandler extends MessageHandler {
             )
         }
         try {
+            logger.info(
+                'Processing message:\n',
+                messageContent,
+                '\nemployee: ',
+                `${user.name}[${user.phone}]`
+            )
             const [conversationType, conversation] =
                 await this.getOrCreateConversation(company, user)
 
@@ -108,6 +114,8 @@ export class EmployeeMessageHandler extends MessageHandler {
         })
 
         await this.messageRepository.save(message)
+
+        logger.debug('Message saved')
 
         return message
     }
@@ -213,21 +221,27 @@ export class EmployeeMessageHandler extends MessageHandler {
                 company,
                 user.phone
             )
+        let conversationType: Nullable<
+            'new_conversation' | 'recovered_conversation'
+        > = null
 
         if (conversation) {
-            if (this.config.outputPort) {
-                conversation.currentState.outputPort = this.config.outputPort
-            }
-
-            return ['recovered_conversation', conversation]
+            conversationType = 'recovered_conversation'
+            logger.debug('Usign existing conversation')
+        } else {
+            conversation = await this.createConversationUseCase.execute({
+                user,
+                company,
+            })
+            conversationType = 'new_conversation'
+            logger.debug('Usign new conversation')
         }
 
-        conversation = await this.createConversationUseCase.execute({
-            user,
-            company,
-        })
+        if (this.config.outputPort) {
+            conversation.currentState.outputPort = this.config.outputPort
+        }
 
-        return ['new_conversation', conversation]
+        return [conversationType, conversation]
     }
 
     private findDepartment(

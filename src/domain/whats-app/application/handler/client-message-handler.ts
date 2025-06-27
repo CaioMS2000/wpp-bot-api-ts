@@ -247,20 +247,24 @@ export class ClientMessageHandler extends MessageHandler {
                 company,
                 user.phone
             )
+        let conversationType: Nullable<
+            'new_conversation' | 'recovered_conversation'
+        > = null
 
         if (conversation) {
-            if (this.config.outputPort) {
-                conversation.currentState.outputPort = this.config.outputPort
-            }
-
-            return ['recovered_conversation', conversation]
+            conversationType = 'recovered_conversation'
+        } else {
+            conversation = await this.createConversationUseCase.execute({
+                user,
+                company,
+            })
+            conversationType = 'new_conversation'
         }
 
-        conversation = await this.createConversationUseCase.execute({
-            user,
-            company,
-        })
+        if (this.config.outputPort) {
+            conversation.currentState.outputPort = this.config.outputPort
+        }
 
-        return ['new_conversation', conversation]
+        return [conversationType, conversation]
     }
 }
