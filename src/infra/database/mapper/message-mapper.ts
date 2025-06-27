@@ -67,7 +67,7 @@ export class MessageMapper {
     }
 
     static toModel(message: Message): PrismaMessage {
-        return {
+        const object = {
             id: message.id,
             conversationId: message.conversation.id,
             from: fromDomainToPrisma(message.from),
@@ -76,5 +76,7 @@ export class MessageMapper {
             clientId: message.from === 'client' ? message.sender.id : null,
             employeeId: message.from === 'employee' ? message.sender.id : null,
         }
+
+        return object
     }
 }

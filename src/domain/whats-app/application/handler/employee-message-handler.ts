@@ -1,5 +1,4 @@
 import { logger } from '@/core/logger'
-import { OutputPort } from '@/core/output/output-port'
 import { Client } from '@/domain/entities/client'
 import { Company } from '@/domain/entities/company'
 import { Conversation } from '@/domain/entities/conversation'
@@ -7,7 +6,6 @@ import { Department } from '@/domain/entities/department'
 import { Employee } from '@/domain/entities/employee'
 import { Message } from '@/domain/entities/message'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
-import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { FAQRepository } from '@/domain/repositories/faq-repository'
 import { MessageRepository } from '@/domain/repositories/message-repository'
 import { StateFactory } from '../factory/state-factory'
@@ -46,45 +44,65 @@ export class EmployeeMessageHandler extends MessageHandler {
                 'This handler is for employees but you passed a client'
             )
         }
+        try {
+            const [conversationType, conversation] =
+                await this.getOrCreateConversation(company, user)
 
-        const conversation = await this.getOrCreateConversation(company, user)
+            const newMessage = await this.saveMessage(
+                conversation,
+                messageContent,
+                user
+            )
 
-        await this.saveMessage(conversation, messageContent, 'employee', user)
-        await this.conversationRepository.save(conversation)
+            conversation.messages.push(newMessage)
+            await this.conversationRepository.save(conversation)
 
-        const result = conversation.processMessage(messageContent)
-        conversation.currentState.onEnter()
-
-        if (result.type === 'transition') {
-            conversation.currentState.onExit()
-            await this.handleTransition(conversation, result)
-            conversation.currentState.onEnter()
-        }
-
-        await this.conversationRepository.save(conversation)
-
-        if (conversation.currentState.shouldAutoTransition()) {
-            const autoTransition = conversation.currentState.getAutoTransition()
-            if (autoTransition && autoTransition.type === 'transition') {
-                conversation.currentState.onExit()
-                await this.handleTransition(conversation, autoTransition)
+            if (conversationType === 'new_conversation') {
                 conversation.currentState.onEnter()
-
-                await this.conversationRepository.save(conversation)
             }
+
+            const result = conversation.processMessage(messageContent)
+
+            if (result.type === 'transition') {
+                conversation.currentState.onExit()
+                await this.handleTransition(conversation, result)
+                conversation.currentState.onEnter()
+            }
+
+            await this.conversationRepository.save(conversation)
+
+            if (conversation.currentState.shouldAutoTransition()) {
+                const autoTransition =
+                    conversation.currentState.getAutoTransition()
+                if (autoTransition && autoTransition.type === 'transition') {
+                    conversation.currentState.onExit()
+                    await this.handleTransition(conversation, autoTransition)
+                    conversation.currentState.onEnter()
+
+                    await this.conversationRepository.save(conversation)
+                }
+            }
+        } catch (error) {
+            if (error instanceof Error) {
+                logger.error(`${error.message}`)
+                logger.debug(error.stack)
+            } else {
+                logger.debug(error)
+            }
+
+            throw error
         }
     }
 
     private async saveMessage(
         conversation: Conversation,
         content: string,
-        from: 'client' | 'employee' | 'AI',
-        sender: Client | Employee
+        sender: Employee
     ): Promise<Message> {
         const message = Message.create({
             conversation,
             timestamp: new Date(),
-            from,
+            from: 'employee',
             content,
             sender,
         })
@@ -186,7 +204,10 @@ export class EmployeeMessageHandler extends MessageHandler {
         }
     }
 
-    private async getOrCreateConversation(company: Company, user: Employee) {
+    private async getOrCreateConversation(
+        company: Company,
+        user: Employee
+    ): Promise<['new_conversation' | 'recovered_conversation', Conversation]> {
         let conversation =
             await this.findConversationByEmployeePhoneUseCase.execute(
                 company,
@@ -197,14 +218,16 @@ export class EmployeeMessageHandler extends MessageHandler {
             if (this.config.outputPort) {
                 conversation.currentState.outputPort = this.config.outputPort
             }
-        } else {
-            conversation = await this.createConversationUseCase.execute({
-                user,
-                company,
-            })
+
+            return ['recovered_conversation', conversation]
         }
 
-        return conversation
+        conversation = await this.createConversationUseCase.execute({
+            user,
+            company,
+        })
+
+        return ['new_conversation', conversation]
     }
 
     private findDepartment(

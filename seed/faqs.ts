@@ -27,9 +27,5 @@ export async function seedFAQs(prisma: Prisma.TransactionClient) {
             },
             include: { items: true },
         })
-
-        console.log(
-            `✅ Categoria "${createdCategory.name}" criada com ${createdCategory.items.length} perguntas`
-        )
     }
 }
