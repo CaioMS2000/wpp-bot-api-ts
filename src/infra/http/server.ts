@@ -10,6 +10,7 @@ import { PrismaWhatsAppMessageServiceFactory } from '../factory/prisma/prisma-wh
 import { app } from './app'
 import { interactionMock } from './interaction-mock'
 import { receiveMessage } from './routes/message/receive-message'
+import { webhook } from './routes/whats-app-webhook/token'
 
 console.clear()
 logger.info('Starting server setup')
@@ -36,12 +37,14 @@ async function main() {
     const whatsAppMessageService = whatsAppMessageServiceFactory.createService()
 
     app.register(receiveMessage, { whatsAppMessageService })
+    app.register(webhook)
+
     logger.debug('Routes registered')
-    const serverAddress = await app.listen({ port: 3000 })
+    const serverAddress = await app.listen({ port: 8000 })
 
     logger.info(`Server running on -> ${serverAddress}`)
 
-    await interactionMock()
+    // await interactionMock()
 }
 
 main()

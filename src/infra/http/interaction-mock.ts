@@ -2,7 +2,7 @@ import { logger } from '@/core/logger'
 
 async function sendMessage(message: string, phone: string) {
     try {
-        const response = await fetch('http://localhost:3000/message', {
+        const response = await fetch('http://localhost:8000/message', {
             method: 'POST',
             body: JSON.stringify({
                 from: phone,
