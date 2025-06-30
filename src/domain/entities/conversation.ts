@@ -5,6 +5,7 @@ import { InitialMenuState } from '../whats-app/application/states/initial-menu-s
 import { Company } from './company'
 import { Employee } from './employee'
 import type { Message } from './message'
+import { AggregateRoot } from '@/core/entities/aggregate-root'
 
 export type ConversationProps = {
     company: Company
@@ -25,7 +26,7 @@ export type CreateConversationInput = RequireOnly<
     'user' | 'company'
 >
 
-export class Conversation extends Entity<ConversationProps> {
+export class Conversation extends AggregateRoot<ConversationProps> {
     static create(props: CreateConversationInput, id?: string) {
         const temporaryState = null as unknown as ConversationState
         const state = props.currentState || temporaryState

@@ -14,9 +14,13 @@ export class Entity<T> {
     }
 
     public equals(other: Entity<T>): boolean {
-        if (other === this) return true
+        if (other === this) {
+            return true
+        }
 
-        if (other.id === this._id) return true
+        if (other.id === this._id) {
+            return true
+        }
 
         return false
     }
