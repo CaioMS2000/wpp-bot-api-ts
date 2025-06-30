@@ -11,6 +11,7 @@ import { app } from './app'
 import { interactionMock } from './interaction-mock'
 import { receiveMessage } from './routes/message/receive-message'
 import { webhook } from './routes/whats-app-webhook/token'
+import { whatsAppWebhook } from './routes/message/whats-app-webhook'
 
 console.clear()
 logger.info('Starting server setup')
@@ -36,8 +37,9 @@ async function main() {
     logger.debug('Creating WhatsApp message service')
     const whatsAppMessageService = whatsAppMessageServiceFactory.createService()
 
-    app.register(receiveMessage, { whatsAppMessageService })
     app.register(webhook)
+    // app.register(receiveMessage, { whatsAppMessageService })
+    app.register(whatsAppWebhook, { whatsAppMessageService })
 
     logger.debug('Routes registered')
     const serverAddress = await app.listen({ port: 8000 })

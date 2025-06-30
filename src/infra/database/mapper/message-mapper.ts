@@ -8,7 +8,10 @@ import {
     Manager as PrismaManager,
     Message as PrismaMessage,
 } from 'ROOT/prisma/generated'
-import { fromDomainToPrisma, fromPrismaToDomain } from '../utils'
+import {
+    fromDomainToPrisma,
+    fromPrismaToDomain,
+} from '../utils/enumTypeMapping'
 import { ClientMapper } from './client-mapper'
 import { CompanyMapper } from './company-mapper'
 import { EmployeeMapper } from './employee-mapper'

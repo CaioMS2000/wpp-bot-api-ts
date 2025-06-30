@@ -18,7 +18,7 @@ export enum LogLevel {
     DEBUG = 'DEBUG',
 }
 
-const Colors = {
+export const ConsoleFontColors = {
     Blue: '\x1b[34m',
     BrightBlue: '\x1b[94m',
     BrightGreen: '\x1b[92m',
@@ -43,10 +43,10 @@ const Colors = {
 }
 
 const LevelColors = {
-    [LogLevel.INFO]: Colors.Blue,
-    [LogLevel.WARN]: Colors.BrightYellow,
-    [LogLevel.ERROR]: Colors.BrightRed,
-    [LogLevel.DEBUG]: Colors.Magenta,
+    [LogLevel.INFO]: ConsoleFontColors.Blue,
+    [LogLevel.WARN]: ConsoleFontColors.BrightYellow,
+    [LogLevel.ERROR]: ConsoleFontColors.BrightRed,
+    [LogLevel.DEBUG]: ConsoleFontColors.Magenta,
 }
 
 export class Logger {
@@ -98,13 +98,13 @@ export class Logger {
 
     private formatObject(data: any): string {
         if (data instanceof Error) {
-            return `${Colors.Red}${data.message}${Colors.Reset}\n${Colors.Gray}${data.stack}${Colors.Reset}`
+            return `${ConsoleFontColors.Red}${data.message}${ConsoleFontColors.Reset}\n${ConsoleFontColors.Gray}${data.stack}${ConsoleFontColors.Reset}`
         }
-        return `${Colors.Magenta}${util.inspect(data, {
+        return `${ConsoleFontColors.Magenta}${util.inspect(data, {
             depth: null,
             colors: true,
             maxArrayLength: null,
-        })}${Colors.Reset}`
+        })}${ConsoleFontColors.Reset}`
     }
 
     private log(level: LogLevel, ...data: any[]) {
@@ -119,11 +119,11 @@ export class Logger {
 
         const { filePath, line, column } = this.getCallerInfo()
         const fileRef = `${filePath}:${line}:${column}`
-        const timestamp = `${Colors.BrightGreen}${this.getTimestamp()}${Colors.Reset}`
-        const levelText = `${LevelColors[level]}${level}${Colors.Reset}`
+        const timestamp = `${ConsoleFontColors.BrightGreen}${this.getTimestamp()}${ConsoleFontColors.Reset}`
+        const levelText = `${LevelColors[level]}${level}${ConsoleFontColors.Reset}`
 
         logger(
-            `${Colors.WarmGray}[${timestamp}] ${levelText} ${Colors.SoftBlue}[${fileRef}]#==========${Colors.Reset}`
+            `${ConsoleFontColors.WarmGray}[${timestamp}] ${levelText} ${ConsoleFontColors.SoftBlue}[${fileRef}]#==========${ConsoleFontColors.Reset}`
         )
 
         for (const item of data) {
@@ -134,7 +134,9 @@ export class Logger {
             }
         }
 
-        logger(`${Colors.SoftBlue}==========#${Colors.Reset}\n`)
+        logger(
+            `${ConsoleFontColors.SoftBlue}==========#${ConsoleFontColors.Reset}\n`
+        )
     }
 }
 
