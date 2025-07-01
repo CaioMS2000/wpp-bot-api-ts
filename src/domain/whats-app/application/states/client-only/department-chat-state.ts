@@ -26,10 +26,10 @@ export class DepartmentChatState extends ConversationState<DepartmentChatStatePr
         }
 
         if (this.conversation.agent && this.conversation.agent !== 'AI') {
-            this.config.outputPort.handle(
-                this.conversation.agent,
-                messageContent
-            )
+            this.config.outputPort.handle(this.conversation.agent, {
+                type: 'text',
+                content: messageContent,
+            })
         }
 
         return StateTransition.stayInCurrent()
@@ -40,9 +40,9 @@ export class DepartmentChatState extends ConversationState<DepartmentChatStatePr
             throw new Error('Output port not set')
         }
 
-        this.config.outputPort.handle(
-            this.conversation.user,
-            `You are now chatting with the department: ${this.department.name}`
-        )
+        this.config.outputPort.handle(this.conversation.user, {
+            type: 'text',
+            content: `You are now chatting with the department: ${this.department.name}`,
+        })
     }
 }

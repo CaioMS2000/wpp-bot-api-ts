@@ -17,7 +17,7 @@ console.clear()
 logger.info('Starting server setup')
 
 const projectRoot = findProjectRoot(__dirname)
-const responseFilePath = path.join(projectRoot, 'response.json')
+const responseFilePath = path.join(projectRoot, 'request-logs.json')
 
 emptyJsonFile(responseFilePath)
 logger.debug(`Response file initialized at ${responseFilePath}`)

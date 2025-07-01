@@ -6,6 +6,7 @@ import { MessageHandlerFactory } from '@/domain/whats-app/application/factory/me
 import { RepositoryFactory } from '@/domain/whats-app/application/factory/repository-factory'
 import { UseCaseFactory } from '@/domain/whats-app/application/factory/use-case-factory'
 import { WhatsAppMessageService } from '@/domain/whats-app/application/services/whats-app-message-service'
+import { WhatsAppOutputPort } from '@/infra/http/output/whats-app-output-port'
 
 const currentOutputPort: OutputPort = new FileOutputPort()
 // const currentOutputPort: OutputPort = new ConsoleOutputPort()
@@ -17,7 +18,8 @@ export class PrismaWhatsAppMessageServiceFactory {
     ) {}
     createService() {
         // const outputPort = currentOutputPort
-        const outputPort = new FileOutputPort()
+        // const outputPort = new FileOutputPort()
+        const outputPort = new WhatsAppOutputPort()
         const conversationRepository =
             this.repositoryFactory.createConversationRepository()
         const departmentRepository =

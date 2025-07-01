@@ -5,6 +5,7 @@ import { formatMenuOptions } from '@/utils/menu'
 import { MenuOption } from '../../@types'
 import { ConversationState } from './conversation-state'
 import { StateTransition } from './state-transition'
+import { OutputMessage } from '@/core/output/output-port'
 
 export class InitialMenuState extends ConversationState {
     private menuOptions: MenuOption[] = [
@@ -54,31 +55,27 @@ export class InitialMenuState extends ConversationState {
             throw new Error('Output port not set')
         }
 
-        const object = {
-            data: {
-                output: formatMenuOptions(
-                    this.menuOptions.filter(opt => {
-                        if (isClient(this.conversation.user)) {
-                            return opt.forClient
-                        }
+        const availableOptions = this.menuOptions.filter(opt => {
+            if (isClient(this.conversation.user)) return opt.forClient
+            return opt.forEmployee
+        })
 
-                        return opt.forEmployee
-                    })
-                ),
-                input: null as any,
-            },
-        }
-        const lastMessage = this.conversation.messages.pop()
+        const listOutput: OutputMessage = {
+            type: 'list',
+            text: 'Escolha uma das opções abaixo:',
+            buttonText: 'Menu',
+            sections: [
+                {
+                    title: 'Menu principal',
+                    rows: availableOptions.map(opt => ({
+                        id: opt.key,
+                        title: opt.label,
+                    })),
+                },
+            ],
+        } as const
 
-        if (lastMessage) {
-            this.conversation.messages.push(lastMessage)
-            object.data.input = lastMessage.content
-        }
-
-        this.config.outputPort.handle(
-            this.conversation.user,
-            JSON.stringify(object, null)
-        )
+        this.config.outputPort.handle(this.conversation.user, listOutput)
     }
 
     private handleClientMessage(messageContent: string) {

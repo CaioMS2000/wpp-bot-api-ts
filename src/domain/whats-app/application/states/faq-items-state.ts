@@ -8,6 +8,7 @@ import {
     conversationStateDefaultConfig,
 } from './conversation-state'
 import { StateTransition } from './state-transition'
+import { OutputMessage } from '@/core/output/output-port'
 
 type FAQItemsStateProps = {
     categoryName: string
@@ -50,9 +51,21 @@ export class FAQItemsState extends ConversationState<FAQItemsStateProps> {
             throw new Error('Output port not set')
         }
 
-        this.config.outputPort.handle(
-            this.conversation.user,
-            `${formatMenuOptions(this.menuOptions)}`
-        )
+        const listOutput: OutputMessage = {
+            type: 'list',
+            text: `Categoria: ${this.categoryName}`,
+            buttonText: 'Ver',
+            sections: [
+                {
+                    title: 'Items',
+                    rows: this.menuOptions.map(opt => ({
+                        id: opt.key,
+                        title: opt.label,
+                    })),
+                },
+            ],
+        } as const
+
+        this.config.outputPort.handle(this.conversation.user, listOutput)
     }
 }

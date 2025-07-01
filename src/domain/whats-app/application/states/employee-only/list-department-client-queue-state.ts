@@ -7,6 +7,7 @@ import {
     conversationStateDefaultConfig,
 } from '../conversation-state'
 import { StateTransition } from '../state-transition'
+import { OutputMessage } from '@/core/output/output-port'
 
 type ListDepartmentQueueStateProps = {
     department: Department
@@ -37,15 +38,20 @@ export class ListDepartmentQueueState extends ConversationState<ListDepartmentQu
         }
 
         if (this.department.queue.length === 0) {
-            this.config.outputPort.handle(this.conversation.user, 'Fila vazia')
+            this.config.outputPort.handle(this.conversation.user, {
+                type: 'text',
+                content: 'Fila vazia',
+            })
         }
 
-        this.config.outputPort.handle(
-            this.conversation.user,
-            this.department.queue.reduce((acc, client) => {
+        const textOutput: OutputMessage = {
+            type: 'text',
+            content: this.department.queue.reduce((acc, client) => {
                 return `${acc}${client.name} - ${client.phone}\n`
-            }, 'Fila:\n')
-        )
+            }, 'Fila:\n'),
+        }
+
+        this.config.outputPort.handle(this.conversation.user, textOutput)
     }
 
     shouldAutoTransition(): boolean {

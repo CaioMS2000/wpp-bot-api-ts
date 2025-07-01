@@ -7,9 +7,10 @@ import { OutputMessage, OutputPort } from './output-port'
 export class FileOutputPort implements OutputPort {
     handle(toUser: UserType, output: OutputMessage): void {
         if (output.type !== 'text') {
-            throw new Error(
+            logger.warn(
                 `FileOutputPort não suporta mensagens do tipo '${output.type}'`
             )
+            return
         }
         const projectRoot = findProjectRoot(__dirname)
         const responseFilePath = path.join(projectRoot, 'response.json')

@@ -25,7 +25,10 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
             throw new Error('Output port not set')
         }
 
-        this.config.outputPort.handle(this.client, messageContent)
+        this.config.outputPort.handle(this.client, {
+            type: 'text',
+            content: messageContent,
+        })
 
         return StateTransition.stayInCurrent()
     }
@@ -39,9 +42,9 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
             throw new Error('Output port not set')
         }
 
-        this.config.outputPort.handle(
-            this.conversation.user,
-            `Você está conversando com o cliente: ${this.client.name} - ${this.client.phone}`
-        )
+        this.config.outputPort.handle(this.conversation.user, {
+            type: 'text',
+            content: `Você está conversando com o cliente: ${this.client.name} - ${this.client.phone}`,
+        })
     }
 }

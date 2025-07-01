@@ -37,9 +37,9 @@ export class DepartmentQueueState extends ConversationState<DepartmentQueueState
             throw new Error('Output port not set')
         }
 
-        this.config.outputPort.handle(
-            this.conversation.user,
-            `Você está na fila de espera do ${this.department.name}, em breve um atendente entrará em contato. Caso queira sair da fila de espera, digite "sair".`
-        )
+        this.config.outputPort.handle(this.conversation.user, {
+            type: 'text',
+            content: `Você está na fila de espera do ${this.department.name}, em breve um atendente entrará em contato. Caso queira sair da fila de espera, digite "sair".`,
+        })
     }
 }
