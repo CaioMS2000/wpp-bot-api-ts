@@ -8,6 +8,7 @@ import { Message } from '@/domain/entities/message'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
 import { FAQRepository } from '@/domain/repositories/faq-repository'
 import { MessageRepository } from '@/domain/repositories/message-repository'
+import { execute } from '@caioms/ts-utils/functions'
 import { StateFactory } from '../factory/state-factory'
 import {
     ConversationStateConfig,
@@ -19,6 +20,7 @@ import { FindConversationByEmployeePhoneUseCase } from '../use-cases/find-conver
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
 import { TransferEmployeeToClientConversationUseCase } from '../use-cases/transfer-employee-to-client-conversation-use-case'
 import { MessageHandler } from './message-handler'
+import { UserType } from '../../@types'
 
 export class EmployeeMessageHandler extends MessageHandler {
     constructor(
@@ -45,11 +47,8 @@ export class EmployeeMessageHandler extends MessageHandler {
             )
         }
         try {
-            logger.info(
-                'Processing message:\n',
-                messageContent,
-                '\nemployee: ',
-                `${user.name}[${user.phone}]`
+            logger.debug(
+                `Employee handler processing message from ${user.phone}: ${messageContent}`
             )
             const [conversationType, conversation] =
                 await this.getOrCreateConversation(company, user)
@@ -67,26 +66,68 @@ export class EmployeeMessageHandler extends MessageHandler {
             await this.conversationRepository.save(conversation)
 
             if (conversationType === 'new_conversation') {
-                conversation.currentState.onEnter()
+                logger.debug(
+                    "Running 'onEnter' for state:\n",
+                    conversation.currentState.constructor.name
+                )
+                await execute(
+                    conversation.currentState.onEnter.bind(
+                        conversation.currentState
+                    )
+                )
             }
 
-            const result = conversation.processMessage(messageContent)
+            const result = await conversation.processMessage(messageContent)
 
             if (result.type === 'transition') {
-                conversation.currentState.onExit()
+                logger.debug(
+                    "Running 'onExit' for state:\n",
+                    conversation.currentState.constructor.name
+                )
+                await execute(
+                    conversation.currentState.onExit.bind(
+                        conversation.currentState
+                    )
+                )
                 await this.handleTransition(conversation, result)
-                conversation.currentState.onEnter()
+                logger.debug(
+                    "Running 'onEnter' for state:\n",
+                    conversation.currentState.constructor.name
+                )
+                await execute(
+                    conversation.currentState.onEnter.bind(
+                        conversation.currentState
+                    )
+                )
             }
 
             await this.conversationRepository.save(conversation)
 
             if (conversation.currentState.shouldAutoTransition()) {
+                logger.debug('Auto-transitioning...')
                 const autoTransition =
                     conversation.currentState.getAutoTransition()
                 if (autoTransition && autoTransition.type === 'transition') {
-                    conversation.currentState.onExit()
+                    logger.debug('will transit to:\n', autoTransition)
+                    logger.debug(
+                        "Running 'onExit' for state:\n",
+                        conversation.currentState.constructor.name
+                    )
+                    await execute(
+                        conversation.currentState.onExit.bind(
+                            conversation.currentState
+                        )
+                    )
                     await this.handleTransition(conversation, autoTransition)
-                    conversation.currentState.onEnter()
+                    logger.debug(
+                        "Running 'onEnter' for state:\n",
+                        conversation.currentState.constructor.name
+                    )
+                    await execute(
+                        conversation.currentState.onEnter.bind(
+                            conversation.currentState
+                        )
+                    )
 
                     await this.conversationRepository.save(conversation)
                 }
@@ -209,10 +250,6 @@ export class EmployeeMessageHandler extends MessageHandler {
                     )
                 )
                 break
-            //     case 'department_queue': {
-            //         const department = this.findDepartment(availableDepartments, transition.data)
-            //         break
-            //     }
         }
     }
 
@@ -231,14 +268,12 @@ export class EmployeeMessageHandler extends MessageHandler {
 
         if (conversation) {
             conversationType = 'recovered_conversation'
-            logger.debug('Usign existing conversation')
         } else {
             conversation = await this.createConversationUseCase.execute({
                 user,
                 company,
             })
             conversationType = 'new_conversation'
-            logger.debug('Usign new conversation')
         }
 
         if (this.config.outputPort) {
