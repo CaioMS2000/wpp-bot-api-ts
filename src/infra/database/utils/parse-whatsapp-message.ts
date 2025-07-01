@@ -4,21 +4,22 @@ export type ParsedWhatsAppMessage = {
     from: string
     to: string
     message: string
+    name?: string
 }
 
+// logger.debug(
+//     '[webhook] Payload bruto recebido:',
+//     JSON.stringify(payload, null, 2)
+// )
 export function parseWhatsAppMessage(
     payload: any
 ): Nullable<ParsedWhatsAppMessage> {
-    // logger.debug(
-    //     '[webhook] Payload bruto recebido:',
-    //     JSON.stringify(payload, null, 2)
-    // )
-
     try {
         const entry = payload?.entry?.[0]
         const change = entry?.changes?.[0]
         const message = change?.value?.messages?.[0]
         const metadata = change?.value?.metadata
+        const contact = change?.value?.contacts?.[0]
 
         if (!message || !metadata) {
             const tipoEvento = Object.keys(change?.value || {}).filter(
@@ -32,6 +33,7 @@ export function parseWhatsAppMessage(
 
         const from = message.from
         const to = metadata.display_phone_number
+        const name = contact?.profile?.name ?? undefined
 
         let content: string | undefined
 
@@ -59,7 +61,7 @@ export function parseWhatsAppMessage(
             throw new Error('Mensagem não possui conteúdo textual')
         }
 
-        return { from, to, message: content }
+        return { from, to, message: content, name }
     } catch (error) {
         logger.error(
             '[webhook] Erro ao analisar a mensagem do WhatsApp:',

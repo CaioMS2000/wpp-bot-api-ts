@@ -26,7 +26,11 @@ export class ResolveSenderContextUseCase {
         private findOrCreateClientUseCase: FindOrCreateClientUseCase
     ) {}
 
-    async execute(fromPhone: string, toPhone: string): Promise<SenderContext> {
+    async execute(
+        fromPhone: string,
+        toPhone: string,
+        name?: string
+    ): Promise<SenderContext> {
         const company = await this.companyRepository.findByPhone(toPhone)
         if (!company) {
             throw new Error(`Empresa com número ${toPhone} não encontrada.`)
@@ -41,7 +45,8 @@ export class ResolveSenderContextUseCase {
 
         const client = await this.findOrCreateClientUseCase.execute(
             company,
-            fromPhone
+            fromPhone,
+            name
         )
 
         if (client) {

@@ -29,6 +29,16 @@ export class DepartmentQueueState extends ConversationState<DepartmentQueueState
         if (messageContent === 'sair') {
             return StateTransition.toInitialMenu()
         }
+        if (this.config.outputPort) {
+            await execute(
+                this.config.outputPort.handle,
+                this.conversation.user,
+                {
+                    type: 'text',
+                    content: `Você está na fila de espera do ${this.department.name}, em breve um atendente entrará em contato. Caso queira sair da fila de espera, digite "sair".`,
+                }
+            )
+        }
 
         return StateTransition.stayInCurrent()
     }

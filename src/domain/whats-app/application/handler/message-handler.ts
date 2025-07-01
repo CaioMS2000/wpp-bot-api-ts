@@ -5,6 +5,7 @@ export abstract class MessageHandler {
     abstract process(
         company: Company,
         user: UserType,
-        messageContent: string
+        messageContent: string,
+        name?: string
     ): Promise<void>
 }

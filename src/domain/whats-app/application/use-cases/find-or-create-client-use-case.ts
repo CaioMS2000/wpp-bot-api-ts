@@ -6,7 +6,7 @@ import { ClientRepository } from '@/domain/repositories/client-repository'
 export class FindOrCreateClientUseCase {
     constructor(private clientRepository: ClientRepository) {}
 
-    async execute(company: Company, phone: string) {
+    async execute(company: Company, phone: string, name?: string) {
         logger.debug(`Resolving client for phone ${phone}`)
         let client = await this.clientRepository.findByPhone(company, phone)
 
@@ -14,6 +14,7 @@ export class FindOrCreateClientUseCase {
             client = Client.create({
                 phone,
                 company,
+                name,
             })
             await this.clientRepository.save(client)
             logger.info(`Client created ${client.id}`)

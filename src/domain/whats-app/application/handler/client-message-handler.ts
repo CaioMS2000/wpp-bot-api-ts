@@ -43,7 +43,8 @@ export class ClientMessageHandler extends MessageHandler {
     async process(
         company: Company,
         user: UserType,
-        messageContent: string
+        messageContent: string,
+        name?: string
     ): Promise<void> {
         if (user instanceof Employee) {
             throw new Error(
@@ -173,8 +174,16 @@ export class ClientMessageHandler extends MessageHandler {
         logger.debug(`Transitioning to ${transition.targetState}`)
         switch (transition.targetState) {
             case 'initial_menu':
+                // conversation.transitionToState(
+                //     new InitialMenuState(conversation, this.config)
+                // )
                 conversation.transitionToState(
-                    new InitialMenuState(conversation, this.config)
+                    StateFactory.create(
+                        'initial_menu',
+                        conversation,
+                        null,
+                        this.config
+                    )
                 )
                 break
             case 'faq_categories':

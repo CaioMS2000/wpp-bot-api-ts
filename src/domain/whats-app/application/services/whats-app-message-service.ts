@@ -24,7 +24,8 @@ export class WhatsAppMessageService {
     async processIncomingMessage(
         fromPhone: string,
         toPhone: string,
-        messageContent: string
+        messageContent: string,
+        userName?: string
     ) {
         try {
             logger.debug(
@@ -33,7 +34,8 @@ export class WhatsAppMessageService {
             const { type, company, client, employee } =
                 await this.resolveSenderContextUseCase.execute(
                     fromPhone,
-                    toPhone
+                    toPhone,
+                    userName
                 )
 
             const user: UserType = type === 'client' ? client! : employee!

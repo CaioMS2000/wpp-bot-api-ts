@@ -6,7 +6,7 @@ export class RemoveClientFromDepartmentQueue {
     constructor(private departmentRepository: DepartmentRepository) {}
 
     async execute(department: Department, client: Client) {
-        await this.departmentRepository.insertClientIntoQueue(
+        await this.departmentRepository.removeClientFromQueue(
             department,
             client
         )

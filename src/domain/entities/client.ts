@@ -14,7 +14,11 @@ export class Client extends Entity<ClientProps> {
         const defaults: Omit<ClientProps, 'phone' | 'company'> = {
             name: `${props.company.name}-Cliente-${props.phone}`,
         }
-        const client = new Client({ ...defaults, ...props }, id)
+        // const client = new Client({ ...defaults, ...props }, id)
+        const client = new Client(
+            { ...defaults, ...props, name: props.name ?? defaults.name },
+            id
+        )
         return client
     }
 

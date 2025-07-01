@@ -27,7 +27,7 @@ export async function whatsAppWebhook(
                 return reply.status(200).send({ status: 'ignored' })
             }
 
-            const { from, to, message } = parsed
+            const { from, to, message, name } = parsed
 
             try {
                 req.log.info(
@@ -38,7 +38,8 @@ export async function whatsAppWebhook(
                 await whatsAppMessageService.processIncomingMessage(
                     from,
                     to,
-                    message
+                    message,
+                    name
                 )
 
                 req.log.info(TAG, 'Mensagem encaminhada ao serviço com sucesso')

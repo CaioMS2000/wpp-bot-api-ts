@@ -39,7 +39,7 @@ export class ListDepartmentQueueState extends ConversationState<ListDepartmentQu
         }
 
         if (this.department.queue.length === 0) {
-            await execute(
+            return await execute(
                 this.config.outputPort.handle,
                 this.conversation.user,
                 {
