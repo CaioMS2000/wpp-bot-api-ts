@@ -3,6 +3,8 @@ import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { WhatsAppMessageService } from '@/domain/whats-app/application/services/whats-app-message-service'
 import { parseWhatsAppMessage } from '@/infra/database/utils/parse-whatsapp-message'
 
+const TAG = '[webhook]'
+
 type Resources = {
     whatsAppMessageService: WhatsAppMessageService
 }
@@ -13,8 +15,25 @@ export async function whatsAppWebhook(
 ) {
     app.withTypeProvider<ZodTypeProvider>().post('/webhook', {
         handler: async (req, reply) => {
+            req.log.info(TAG, 'Evento recebido do webhook')
+
+            const parsed = parseWhatsAppMessage(req.body)
+
+            if (!parsed) {
+                req.log.info(
+                    TAG,
+                    'Evento não é uma mensagem de usuário. Ignorado.'
+                )
+                return reply.status(200).send({ status: 'ignored' })
+            }
+
+            const { from, to, message } = parsed
+
             try {
-                const { from, to, message } = parseWhatsAppMessage(req.body)
+                req.log.info(
+                    TAG,
+                    `Mensagem recebida de ${from} para ${to}: ${message}`
+                )
 
                 await whatsAppMessageService.processIncomingMessage(
                     from,
@@ -22,10 +41,15 @@ export async function whatsAppWebhook(
                     message
                 )
 
+                req.log.info(TAG, 'Mensagem encaminhada ao serviço com sucesso')
                 return reply.status(200).send({ status: 'ok' })
             } catch (err: any) {
-                req.log.error({ err }, 'Erro ao processar mensagem')
-                return reply.status(400).send({ error: err.message })
+                req.log.error({ err }, `${TAG} Erro ao processar mensagem`)
+                return reply.status(200).send({
+                    status: 'ok',
+                    message:
+                        'Mensagem recebida, mas houve um erro interno ao processar.',
+                }) // evita retry do WhatsApp
             }
         },
     })

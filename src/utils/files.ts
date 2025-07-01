@@ -22,7 +22,7 @@ export function findProjectRoot(currentDir: string): string {
 export function emptyJsonFile(filePath: string) {
     fs.writeFileSync(
         filePath,
-        JSON.stringify({ outputs: [] }, null, 4),
+        JSON.stringify({ requests: [] }, null, 4),
         'utf-8'
     )
 }

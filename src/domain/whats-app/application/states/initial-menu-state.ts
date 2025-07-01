@@ -79,29 +79,29 @@ export class InitialMenuState extends ConversationState {
     }
 
     private handleClientMessage(messageContent: string) {
-        if (messageContent === '1') {
+        if (messageContent === 'Conversar com IA') {
             return StateTransition.toAIChat()
         }
 
-        if (messageContent === '2') {
+        if (messageContent === 'Ver Departamentos') {
             return StateTransition.toDepartmentSelection()
         }
 
-        if (messageContent === '3') {
+        if (messageContent === 'FAQ') {
             return StateTransition.toFAQCategories()
         }
     }
 
     private handleEmployeeMessage(messageContent: string) {
-        if (messageContent === '3') {
+        if (messageContent === 'FAQ') {
             return StateTransition.toFAQCategories()
         }
 
-        if (messageContent === '4') {
+        if (messageContent === 'Ver fila') {
             return StateTransition.toDepartmentListQueue()
         }
 
-        if (messageContent === '5') {
+        if (messageContent === 'Atender próximo') {
             return StateTransition.toChatWithClient()
         }
     }

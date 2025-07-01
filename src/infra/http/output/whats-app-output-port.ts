@@ -11,44 +11,41 @@ import {
 
 export class WhatsAppOutputPort implements OutputPort {
     async handle(toUser: UserType, output: OutputMessage) {
-        let fn: Nullable<Promise<any>> = null
-        switch (output.type) {
-            case 'text':
-                fn = sendTextMessage(toUser.phone, output.content)
-                break
-            case 'button':
-                fn = sendButtonMessage(
-                    toUser.phone,
-                    output.text,
-                    output.buttons
-                )
-                break
-            case 'list':
-                fn = sendListMessage(
-                    toUser.phone,
-                    output.text,
-                    output.buttonText,
-                    output.sections
-                )
-                break
-            case 'document':
-                const mediaId = await uploadDocument(output.fileUrl)
-                fn = sendDocumentMessage(toUser.phone, {
-                    mediaId,
-                    filename: output.filename,
-                })
-                break
-        }
-
-        if (!fn) {
-            logger.warn({ output }, 'Tipo de mensagem não suportado')
-        } else {
-            try {
-                await fn
-                logger.info({ toUser, output }, 'Mensagem enviada')
-            } catch (err: any) {
-                logger.error({ err }, 'Erro ao enviar mensagem')
+        try {
+            switch (output.type) {
+                case 'text':
+                    await sendTextMessage(toUser.phone, output.content)
+                    break
+                case 'button':
+                    await sendButtonMessage(
+                        toUser.phone,
+                        output.text,
+                        output.buttons
+                    )
+                    break
+                case 'list':
+                    await sendListMessage(
+                        toUser.phone,
+                        output.text,
+                        output.buttonText,
+                        output.sections
+                    )
+                    break
+                case 'document':
+                    const mediaId = await uploadDocument(output.fileUrl)
+                    await sendDocumentMessage(toUser.phone, {
+                        mediaId,
+                        filename: output.filename,
+                    })
+                    break
+                default:
+                    logger.warn({ output }, 'Tipo de mensagem não suportado')
+                    return
             }
+
+            logger.info({ toUser, output }, 'Mensagem enviada')
+        } catch (err: any) {
+            logger.error({ err }, 'Erro ao enviar mensagem')
         }
     }
 }

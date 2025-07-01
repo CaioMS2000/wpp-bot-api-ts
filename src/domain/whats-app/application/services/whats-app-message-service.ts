@@ -43,6 +43,7 @@ export class WhatsAppMessageService {
 
             logger.info('Message processed successfully')
         } catch (error) {
+            logger.error('Erro bruto:', error)
             if (error instanceof Error) {
                 logger.error(
                     `Erro durante o processamento da mensagem: ${error.message}`
