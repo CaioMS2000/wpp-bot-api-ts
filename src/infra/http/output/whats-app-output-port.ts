@@ -1,13 +1,13 @@
-import { UserType } from '@/domain/whats-app/@types'
-import { OutputMessage, OutputPort } from '@/core/output/output-port'
 import { logger } from '@/core/logger'
-import { sendTextMessage } from '../whatsapp-client/sendTextMessage'
+import { OutputMessage, OutputPort } from '@/core/output/output-port'
+import { UserType } from '@/domain/whats-app/@types'
 import { sendButtonMessage } from '../whatsapp-client/sendButtonMessage'
-import { sendListMessage } from '../whatsapp-client/sendListMessage'
 import {
     sendDocumentMessage,
     uploadDocument,
 } from '../whatsapp-client/sendDocumentMessage'
+import { sendListMessage } from '../whatsapp-client/sendListMessage'
+import { sendTextMessage } from '../whatsapp-client/sendTextMessage'
 
 export class WhatsAppOutputPort implements OutputPort {
     async handle(toUser: UserType, output: OutputMessage) {

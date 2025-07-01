@@ -10,8 +10,8 @@ import { PrismaWhatsAppMessageServiceFactory } from '../factory/prisma/prisma-wh
 import { app } from './app'
 import { interactionMock } from './interaction-mock'
 import { receiveMessage } from './routes/message/receive-message'
-import { webhook } from './routes/whats-app-webhook/token'
 import { whatsAppWebhook } from './routes/message/whats-app-webhook'
+import { webhook } from './routes/whats-app-webhook/token'
 
 console.clear()
 logger.info('Starting server setup')

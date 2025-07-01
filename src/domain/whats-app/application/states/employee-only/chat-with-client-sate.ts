@@ -1,13 +1,13 @@
 import { logger } from '@/core/logger'
 import { Client } from '@/domain/entities/client'
 import { Conversation } from '@/domain/entities/conversation'
+import { execute } from '@caioms/ts-utils/functions'
 import {
     ConversationState,
     ConversationStateConfig,
     conversationStateDefaultConfig,
 } from '../conversation-state'
 import { StateTransition } from '../state-transition'
-import { execute } from '@caioms/ts-utils/functions'
 
 type ChatWithClientStateProps = {
     client: Client

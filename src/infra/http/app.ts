@@ -1,3 +1,7 @@
+import fs from 'node:fs'
+import path from 'node:path'
+import { ConsoleFontColors, logger } from '@/core/logger'
+import { findProjectRoot } from '@/utils/files'
 import fastifyCors from '@fastify/cors'
 import { fastify } from 'fastify'
 import {
@@ -6,10 +10,6 @@ import {
     serializerCompiler,
     validatorCompiler,
 } from 'fastify-type-provider-zod'
-import { ConsoleFontColors, logger } from '@/core/logger'
-import { findProjectRoot } from '@/utils/files'
-import path from 'node:path'
-import fs from 'node:fs'
 
 const app = fastify()
 

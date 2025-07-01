@@ -3,6 +3,7 @@ import { OutputMessage } from '@/core/output/output-port'
 import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
 import { formatMenuOptions } from '@/utils/menu'
+import { execute } from '@caioms/ts-utils/functions'
 import { MenuOption } from '../../../@types'
 import {
     ConversationState,
@@ -10,7 +11,6 @@ import {
     conversationStateDefaultConfig,
 } from '../conversation-state'
 import { StateTransition } from '../state-transition'
-import { execute } from '@caioms/ts-utils/functions'
 
 type DepartmentSelectionStateProps = {
     departments: Department[]

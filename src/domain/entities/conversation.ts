@@ -1,3 +1,4 @@
+import { AggregateRoot } from '@/core/entities/aggregate-root'
 import { Entity } from '@/core/entities/entity'
 import { UserType } from '../whats-app/@types'
 import { ConversationState } from '../whats-app/application/states/conversation-state'
@@ -5,7 +6,6 @@ import { InitialMenuState } from '../whats-app/application/states/initial-menu-s
 import { Company } from './company'
 import { Employee } from './employee'
 import type { Message } from './message'
-import { AggregateRoot } from '@/core/entities/aggregate-root'
 
 export type ConversationProps = {
     company: Company

@@ -1,7 +1,7 @@
-import type { FastifyInstance } from 'fastify'
-import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { WhatsAppMessageService } from '@/domain/whats-app/application/services/whats-app-message-service'
 import { parseWhatsAppMessage } from '@/infra/database/utils/parse-whatsapp-message'
+import type { FastifyInstance } from 'fastify'
+import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 
 const TAG = '[webhook]'
 

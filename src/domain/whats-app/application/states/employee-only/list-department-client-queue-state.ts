@@ -2,13 +2,13 @@ import { logger } from '@/core/logger'
 import { OutputMessage } from '@/core/output/output-port'
 import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
+import { execute } from '@caioms/ts-utils/functions'
 import {
     ConversationState,
     ConversationStateConfig,
     conversationStateDefaultConfig,
 } from '../conversation-state'
 import { StateTransition } from '../state-transition'
-import { execute } from '@caioms/ts-utils/functions'
 
 type ListDepartmentQueueStateProps = {
     department: Department
