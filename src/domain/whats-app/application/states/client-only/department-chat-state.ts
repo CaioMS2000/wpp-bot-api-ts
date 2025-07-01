@@ -1,5 +1,6 @@
 import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
+import { execute } from '@caioms/ts-utils/functions'
 import {
     ConversationState,
     ConversationStateConfig,
@@ -20,27 +21,31 @@ export class DepartmentChatState extends ConversationState<DepartmentChatStatePr
         super(conversation, { department }, config)
     }
 
-    handleMessage(messageContent: string): StateTransition {
+    async handleMessage(messageContent: string): Promise<StateTransition> {
         if (!this.config.outputPort) {
             throw new Error('Output port not set')
         }
 
         if (this.conversation.agent && this.conversation.agent !== 'AI') {
-            this.config.outputPort.handle(this.conversation.agent, {
-                type: 'text',
-                content: messageContent,
-            })
+            await execute(
+                this.config.outputPort.handle,
+                this.conversation.agent,
+                {
+                    type: 'text',
+                    content: messageContent,
+                }
+            )
         }
 
         return StateTransition.stayInCurrent()
     }
 
-    onEnter() {
+    async onEnter() {
         if (!this.config.outputPort) {
             throw new Error('Output port not set')
         }
 
-        this.config.outputPort.handle(this.conversation.user, {
+        await execute(this.config.outputPort.handle, this.conversation.user, {
             type: 'text',
             content: `You are now chatting with the department: ${this.department.name}`,
         })

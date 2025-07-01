@@ -7,6 +7,7 @@ import {
     conversationStateDefaultConfig,
 } from '../conversation-state'
 import { StateTransition } from '../state-transition'
+import { execute } from '@caioms/ts-utils/functions'
 
 type ChatWithClientStateProps = {
     client: Client
@@ -20,12 +21,12 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
     ) {
         super(conversation, { client }, config)
     }
-    handleMessage(messageContent: string): StateTransition {
+    async handleMessage(messageContent: string): Promise<StateTransition> {
         if (!this.config.outputPort) {
             throw new Error('Output port not set')
         }
 
-        this.config.outputPort.handle(this.client, {
+        await execute(this.config.outputPort.handle, this.client, {
             type: 'text',
             content: messageContent,
         })
@@ -37,12 +38,12 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
         return this.props.client
     }
 
-    onEnter() {
+    async onEnter() {
         if (!this.config.outputPort) {
             throw new Error('Output port not set')
         }
 
-        this.config.outputPort.handle(this.conversation.user, {
+        await execute(this.config.outputPort.handle, this.conversation.user, {
             type: 'text',
             content: `Você está conversando com o cliente: ${this.client.name} - ${this.client.phone}`,
         })

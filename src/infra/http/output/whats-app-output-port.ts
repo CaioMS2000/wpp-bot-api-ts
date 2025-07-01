@@ -11,6 +11,7 @@ import {
 
 export class WhatsAppOutputPort implements OutputPort {
     async handle(toUser: UserType, output: OutputMessage) {
+        logger.debug('[handle] Output:\n', output)
         try {
             switch (output.type) {
                 case 'text':

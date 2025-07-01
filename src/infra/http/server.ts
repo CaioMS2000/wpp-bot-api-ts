@@ -23,10 +23,10 @@ emptyJsonFile(responseFilePath)
 logger.debug(`Response file initialized at ${responseFilePath}`)
 
 async function main() {
-    await prisma.$transaction(async tx => {
-        logger.debug('Clearing database collections')
-        await clearDatabase(tx, ['message', 'conversation'])
-    })
+    // await prisma.$transaction(async tx => {
+    //     logger.debug('Clearing database collections')
+    //     await clearDatabase(tx, ['message', 'conversation'])
+    // })
     const repositoryFactory: RepositoryFactory = new PrismaRepositoryFactory()
     const useCaseFactory = new UseCaseFactory(repositoryFactory)
     const whatsAppMessageServiceFactory =

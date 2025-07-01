@@ -1,4 +1,5 @@
 import { logger } from '@/core/logger'
+import { OutputMessage } from '@/core/output/output-port'
 import { Conversation } from '@/domain/entities/conversation'
 import { FAQCategory } from '@/domain/entities/faq'
 import { formatMenuOptions } from '@/utils/menu'
@@ -9,7 +10,6 @@ import {
     conversationStateDefaultConfig,
 } from './conversation-state'
 import { StateTransition } from './state-transition'
-import { OutputMessage } from '@/core/output/output-port'
 
 type FAQCategoriesStateProps = { categories: FAQCategory[] }
 
@@ -44,7 +44,7 @@ export class FAQCategoriesState extends ConversationState<FAQCategoriesStateProp
         return this.props.categories
     }
 
-    handleMessage(messageContent: string): StateTransition {
+    async handleMessage(messageContent: string): Promise<StateTransition> {
         if (messageContent === 'Menu principal') {
             return StateTransition.toInitialMenu()
         }

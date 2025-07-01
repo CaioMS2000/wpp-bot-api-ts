@@ -9,10 +9,10 @@ export type ParsedWhatsAppMessage = {
 export function parseWhatsAppMessage(
     payload: any
 ): Nullable<ParsedWhatsAppMessage> {
-    logger.debug(
-        '[webhook] Payload bruto recebido:',
-        JSON.stringify(payload, null, 2)
-    )
+    // logger.debug(
+    //     '[webhook] Payload bruto recebido:',
+    //     JSON.stringify(payload, null, 2)
+    // )
 
     try {
         const entry = payload?.entry?.[0]

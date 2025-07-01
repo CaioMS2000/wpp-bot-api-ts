@@ -1,4 +1,5 @@
 import { logger } from '@/core/logger'
+import { OutputMessage } from '@/core/output/output-port'
 import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
 import {
@@ -7,7 +8,7 @@ import {
     conversationStateDefaultConfig,
 } from '../conversation-state'
 import { StateTransition } from '../state-transition'
-import { OutputMessage } from '@/core/output/output-port'
+import { execute } from '@caioms/ts-utils/functions'
 
 type ListDepartmentQueueStateProps = {
     department: Department
@@ -26,22 +27,26 @@ export class ListDepartmentQueueState extends ConversationState<ListDepartmentQu
         return this.props.department
     }
 
-    handleMessage(messageContent: string): StateTransition {
+    async handleMessage(messageContent: string): Promise<StateTransition> {
         throw new Error(
             'This state should not even last long enough to handle a message'
         )
     }
 
-    onEnter() {
+    async onEnter() {
         if (!this.config.outputPort) {
             throw new Error('Output port not set')
         }
 
         if (this.department.queue.length === 0) {
-            this.config.outputPort.handle(this.conversation.user, {
-                type: 'text',
-                content: 'Fila vazia',
-            })
+            await execute(
+                this.config.outputPort.handle,
+                this.conversation.user,
+                {
+                    type: 'text',
+                    content: 'Fila vazia',
+                }
+            )
         }
 
         const textOutput: OutputMessage = {
@@ -51,7 +56,11 @@ export class ListDepartmentQueueState extends ConversationState<ListDepartmentQu
             }, 'Fila:\n'),
         }
 
-        this.config.outputPort.handle(this.conversation.user, textOutput)
+        await execute(
+            this.config.outputPort.handle,
+            this.conversation.user,
+            textOutput
+        )
     }
 
     shouldAutoTransition(): boolean {

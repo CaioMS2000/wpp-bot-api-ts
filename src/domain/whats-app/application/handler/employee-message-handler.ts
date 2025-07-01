@@ -36,7 +36,7 @@ export class EmployeeMessageHandler extends MessageHandler {
 
     async process(
         company: Company,
-        user: Client | Employee,
+        user: UserType,
         messageContent: string
     ): Promise<void> {
         if (user instanceof Client) {

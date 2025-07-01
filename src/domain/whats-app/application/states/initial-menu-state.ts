@@ -1,11 +1,12 @@
 import { inspect } from 'node:util'
 import { logger } from '@/core/logger'
+import { OutputMessage } from '@/core/output/output-port'
 import { isClient, isEmployee } from '@/utils/entity'
 import { formatMenuOptions } from '@/utils/menu'
+import { execute } from '@caioms/ts-utils/functions'
 import { MenuOption } from '../../@types'
 import { ConversationState } from './conversation-state'
 import { StateTransition } from './state-transition'
-import { OutputMessage } from '@/core/output/output-port'
 
 export class InitialMenuState extends ConversationState {
     private menuOptions: MenuOption[] = [
@@ -36,7 +37,7 @@ export class InitialMenuState extends ConversationState {
         },
     ]
 
-    handleMessage(messageContent: string): StateTransition {
+    async handleMessage(messageContent: string): Promise<StateTransition> {
         let res: NotDefined<Nullable<StateTransition>> = undefined
 
         if (isClient(this.conversation.user)) {
@@ -50,7 +51,7 @@ export class InitialMenuState extends ConversationState {
         return res ?? StateTransition.stayInCurrent()
     }
 
-    onEnter() {
+    async onEnter() {
         if (!this.config.outputPort) {
             throw new Error('Output port not set')
         }
@@ -75,7 +76,12 @@ export class InitialMenuState extends ConversationState {
             ],
         } as const
 
-        this.config.outputPort.handle(this.conversation.user, listOutput)
+        // this.config.outputPort.handle(this.conversation.user, listOutput)
+        await execute(
+            this.config.outputPort.handle,
+            this.conversation.user,
+            listOutput
+        )
     }
 
     private handleClientMessage(messageContent: string) {

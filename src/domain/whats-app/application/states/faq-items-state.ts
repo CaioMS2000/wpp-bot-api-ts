@@ -1,6 +1,8 @@
+import { OutputMessage } from '@/core/output/output-port'
 import { Conversation } from '@/domain/entities/conversation'
 import { FAQItem } from '@/domain/entities/faq'
 import { formatMenuOptions } from '@/utils/menu'
+import { execute } from '@caioms/ts-utils/functions'
 import { MenuOption } from '../../@types'
 import {
     ConversationState,
@@ -8,7 +10,6 @@ import {
     conversationStateDefaultConfig,
 } from './conversation-state'
 import { StateTransition } from './state-transition'
-import { OutputMessage } from '@/core/output/output-port'
 
 type FAQItemsStateProps = {
     categoryName: string
@@ -16,8 +17,6 @@ type FAQItemsStateProps = {
 }
 
 export class FAQItemsState extends ConversationState<FAQItemsStateProps> {
-    private menuOptions: MenuOption[]
-
     constructor(
         conversation: Conversation,
         private categoryName: string,
@@ -25,16 +24,9 @@ export class FAQItemsState extends ConversationState<FAQItemsStateProps> {
         config: ConversationStateConfig = conversationStateDefaultConfig
     ) {
         super(conversation, { categoryName, items }, config)
-
-        this.menuOptions = items.map((item, index) => ({
-            key: (index + 1).toString(),
-            label: `${item.question}\n${item.answer}`,
-            forClient: true,
-            forEmployee: true,
-        }))
     }
 
-    handleMessage(messageContent: string): StateTransition {
+    async handleMessage(messageContent: string): Promise<StateTransition> {
         throw new Error('Method not implemented.')
     }
 
@@ -46,26 +38,23 @@ export class FAQItemsState extends ConversationState<FAQItemsStateProps> {
         return StateTransition.toFAQCategories()
     }
 
-    onEnter() {
+    async onEnter() {
         if (!this.config.outputPort) {
             throw new Error('Output port not set')
         }
 
-        const listOutput: OutputMessage = {
-            type: 'list',
-            text: `Categoria: ${this.categoryName}`,
-            buttonText: 'Ver',
-            sections: [
-                {
-                    title: 'Items',
-                    rows: this.menuOptions.map(opt => ({
-                        id: opt.key,
-                        title: opt.label,
-                    })),
-                },
-            ],
+        const textOutput: OutputMessage = {
+            type: 'text',
+            content: this.items.reduce((acc, item) => {
+                return `${acc}*${item.question}*\n${item.answer}\n\n`
+            }, `*FAQ - ${this.categoryName}*\n\n`),
         } as const
 
-        this.config.outputPort.handle(this.conversation.user, listOutput)
+        // this.config.outputPort.handle(this.conversation.user, textOutput)
+        await execute(
+            this.config.outputPort.handle,
+            this.conversation.user,
+            textOutput
+        )
     }
 }

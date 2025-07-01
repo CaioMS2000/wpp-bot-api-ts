@@ -6,6 +6,7 @@ import {
     conversationStateDefaultConfig,
 } from '../conversation-state'
 import { StateTransition } from '../state-transition'
+import { execute } from '@caioms/ts-utils/functions'
 
 type DepartmentQueueStateProps = {
     department: Department
@@ -24,7 +25,7 @@ export class DepartmentQueueState extends ConversationState<DepartmentQueueState
         return this.props.department
     }
 
-    handleMessage(messageContent: string): StateTransition {
+    async handleMessage(messageContent: string): Promise<StateTransition> {
         if (messageContent === 'sair') {
             return StateTransition.toInitialMenu()
         }
@@ -32,12 +33,12 @@ export class DepartmentQueueState extends ConversationState<DepartmentQueueState
         return StateTransition.stayInCurrent()
     }
 
-    onEnter() {
+    async onEnter() {
         if (!this.config.outputPort) {
             throw new Error('Output port not set')
         }
 
-        this.config.outputPort.handle(this.conversation.user, {
+        await execute(this.config.outputPort.handle, this.conversation.user, {
             type: 'text',
             content: `Você está na fila de espera do ${this.department.name}, em breve um atendente entrará em contato. Caso queira sair da fila de espera, digite "sair".`,
         })

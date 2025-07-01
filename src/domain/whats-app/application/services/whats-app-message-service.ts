@@ -7,6 +7,7 @@ import { isClient, isEmployee } from '@/utils/entity'
 import { MessageHandlerFactory } from '../factory/message-handler-factory'
 import { MessageHandler } from '../handler/message-handler'
 import { ResolveSenderContextUseCase } from '../use-cases/resolve-sender-context-use-case'
+import { UserType } from '../../@types'
 
 export class WhatsAppMessageService {
     private messageHandlers: Record<string, MessageHandler>
@@ -35,8 +36,7 @@ export class WhatsAppMessageService {
                     toPhone
                 )
 
-            const user: Client | Employee =
-                type === 'client' ? client! : employee!
+            const user: UserType = type === 'client' ? client! : employee!
             const messageHandler = this.getHandlerForUser(user)
 
             await messageHandler.process(company, user, messageContent)
@@ -66,7 +66,7 @@ export class WhatsAppMessageService {
         }
     }
 
-    private getHandlerForUser(user: Client | Employee): MessageHandler {
+    private getHandlerForUser(user: UserType): MessageHandler {
         if (isClient(user)) {
             logger.debug('Using client message handler')
 

@@ -24,7 +24,7 @@ export abstract class ConversationState<T = unknown> {
         this.config.outputPort = outputPort
     }
 
-    abstract handleMessage(messageContent: string): StateTransition
+    abstract handleMessage(messageContent: string): Promise<StateTransition>
 
     shouldAutoTransition(): boolean {
         return false

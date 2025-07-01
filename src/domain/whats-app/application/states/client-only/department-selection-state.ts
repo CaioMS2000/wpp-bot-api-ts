@@ -1,4 +1,5 @@
 import { logger } from '@/core/logger'
+import { OutputMessage } from '@/core/output/output-port'
 import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
 import { formatMenuOptions } from '@/utils/menu'
@@ -9,7 +10,7 @@ import {
     conversationStateDefaultConfig,
 } from '../conversation-state'
 import { StateTransition } from '../state-transition'
-import { OutputMessage } from '@/core/output/output-port'
+import { execute } from '@caioms/ts-utils/functions'
 
 type DepartmentSelectionStateProps = {
     departments: Department[]
@@ -46,7 +47,7 @@ export class DepartmentSelectionState extends ConversationState<DepartmentSelect
         return this.props.departments
     }
 
-    handleMessage(messageContent: string): StateTransition {
+    async handleMessage(messageContent: string): Promise<StateTransition> {
         if (messageContent === 'Menu principal') {
             return StateTransition.toInitialMenu()
         }
@@ -63,7 +64,7 @@ export class DepartmentSelectionState extends ConversationState<DepartmentSelect
         return StateTransition.stayInCurrent()
     }
 
-    onEnter() {
+    async onEnter() {
         if (!this.config.outputPort) {
             throw new Error('Output port not set')
         }
@@ -83,6 +84,10 @@ export class DepartmentSelectionState extends ConversationState<DepartmentSelect
             ],
         } as const
 
-        this.config.outputPort.handle(this.conversation.user, listOutput)
+        await execute(
+            this.config.outputPort.handle,
+            this.conversation.user,
+            listOutput
+        )
     }
 }

@@ -6,7 +6,7 @@ import {
 import { StateTransition } from './state-transition'
 
 export class AIChatState extends ConversationState {
-    handleMessage(messageContent: string): StateTransition {
+    async handleMessage(messageContent: string): Promise<StateTransition> {
         throw new Error('Method not implemented.')
     }
 }
