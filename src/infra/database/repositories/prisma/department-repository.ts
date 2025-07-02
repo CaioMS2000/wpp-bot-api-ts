@@ -55,6 +55,42 @@ export class PrismaDepartmentRepository extends DepartmentRepository {
         return DepartmentMapper.toEntity(model)
     }
 
+    async findByName(
+        company: Company,
+        name: string
+    ): Promise<Nullable<Department>> {
+        const model = await prisma.department.findFirst({
+            where: {
+                companyId: company.id,
+                name,
+            },
+            include: {
+                company: { include: { manager: true } },
+                queue: true,
+                employees: true,
+            },
+        })
+
+        if (!model) {
+            return null
+        }
+
+        return DepartmentMapper.toEntity(model)
+    }
+
+    async findByNameOrThrow(
+        company: Company,
+        name: string
+    ): Promise<Department> {
+        const entity = await this.findByName(company, name)
+
+        if (!entity) {
+            throw new Error('Department not found')
+        }
+
+        return entity
+    }
+
     async findAllActive(company: Company): Promise<Department[]> {
         const models = await prisma.department.findMany({
             where: {
