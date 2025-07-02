@@ -7,6 +7,7 @@ import { InsertClientIntoDepartmentQueue } from '../use-cases/insert-client-into
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
 import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
 import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
+import { RemoveClientFromDepartmentQueue } from '../use-cases/remove-client-from-department-queue'
 import { ResolveSenderContextUseCase } from '../use-cases/resolve-sender-context-use-case'
 import { TransferEmployeeToClientConversationUseCase } from '../use-cases/transfer-employee-to-client-conversation-use-case'
 import { RepositoryFactory } from './repository-factory'
@@ -79,6 +80,12 @@ export class UseCaseFactory {
 
     getInsertClientIntoDepartmentQueue(): InsertClientIntoDepartmentQueue {
         return new InsertClientIntoDepartmentQueue(
+            this.repositoryFactory.createDepartmentRepository()
+        )
+    }
+
+    getRemoveClientFromDepartmentQueue(): RemoveClientFromDepartmentQueue {
+        return new RemoveClientFromDepartmentQueue(
             this.repositoryFactory.createDepartmentRepository()
         )
     }

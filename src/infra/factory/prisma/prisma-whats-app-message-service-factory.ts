@@ -45,7 +45,8 @@ export class PrismaWhatsAppMessageServiceFactory {
             this.useCaseFactory.getFindConversationByClientPhoneUseCase(),
             this.useCaseFactory.getFindConversationByEmployeePhoneUseCase(),
             this.useCaseFactory.getTransferEmployeeToClientConversationUseCase(),
-            this.useCaseFactory.getInsertClientIntoDepartmentQueue()
+            this.useCaseFactory.getInsertClientIntoDepartmentQueue(),
+            this.useCaseFactory.getRemoveClientFromDepartmentQueue()
         )
 
         return new WhatsAppMessageService(

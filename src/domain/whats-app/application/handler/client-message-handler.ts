@@ -24,6 +24,7 @@ import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departmen
 import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
 import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
 import { MessageHandler } from './message-handler'
+import { RemoveClientFromDepartmentQueue } from '../use-cases/remove-client-from-department-queue'
 
 export class ClientMessageHandler extends MessageHandler {
     constructor(
@@ -35,6 +36,7 @@ export class ClientMessageHandler extends MessageHandler {
         private createConversationUseCase: CreateConversationUseCase,
         private findConversationByClientPhoneUseCase: FindConversationByClientPhoneUseCase,
         private insertClientIntoDepartmentQueue: InsertClientIntoDepartmentQueue,
+        private removeClientFromDepartmentQueue: RemoveClientFromDepartmentQueue,
         private config: ConversationStateConfig = conversationStateDefaultConfig
     ) {
         super()
@@ -177,6 +179,14 @@ export class ClientMessageHandler extends MessageHandler {
                 // conversation.transitionToState(
                 //     new InitialMenuState(conversation, this.config)
                 // )
+
+                if (conversation.currentState instanceof DepartmentQueueState) {
+                    await this.removeClientFromDepartmentQueue.execute(
+                        conversation.currentState.department,
+                        conversation.user
+                    )
+                }
+
                 conversation.transitionToState(
                     StateFactory.create(
                         'initial_menu',
