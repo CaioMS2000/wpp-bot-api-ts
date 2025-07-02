@@ -1,6 +1,7 @@
 import { logger } from '@/core/logger'
 import { Conversation } from '@/domain/entities/conversation'
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
+import { isClient, isEmployee } from '@/utils/entity'
 import { StateFactory } from '../factory/state-factory'
 import { DepartmentQueueState } from '../states/client-only/department-queue-state'
 import {
@@ -8,12 +9,11 @@ import {
     conversationStateDefaultConfig,
 } from '../states/conversation-state'
 import { StateTransition } from '../states/state-transition'
-import { RemoveClientFromDepartmentQueue } from '../use-cases/remove-client-from-department-queue'
-import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
-import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
-import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
 import { InsertClientIntoDepartmentQueue } from '../use-cases/insert-client-into-department-queue'
-import { isClient, isEmployee } from '@/utils/entity'
+import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
+import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
+import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
+import { RemoveClientFromDepartmentQueue } from '../use-cases/remove-client-from-department-queue'
 import { TransferEmployeeToClientConversationUseCase } from '../use-cases/transfer-employee-to-client-conversation-use-case'
 
 export class StateTransitionService {

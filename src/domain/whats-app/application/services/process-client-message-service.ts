@@ -1,17 +1,17 @@
+import { logger } from '@/core/logger'
+import { Client } from '@/domain/entities/client'
 import { Company } from '@/domain/entities/company'
+import { Conversation } from '@/domain/entities/conversation'
+import { Message } from '@/domain/entities/message'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
 import { MessageRepository } from '@/domain/repositories/message-repository'
+import { execute } from '@caioms/ts-utils/functions'
 import {
     ConversationStateConfig,
     conversationStateDefaultConfig,
 } from '../states/conversation-state'
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
 import { FindConversationByClientPhoneUseCase } from '../use-cases/find-conversation-by-client-phone-use-case'
-import { logger } from '@/core/logger'
-import { execute } from '@caioms/ts-utils/functions'
-import { Conversation } from '@/domain/entities/conversation'
-import { Client } from '@/domain/entities/client'
-import { Message } from '@/domain/entities/message'
 import { StateTransitionService } from './state-transition-service'
 
 export class ProcessClientMessageService {

@@ -2,8 +2,8 @@ import { logger } from '@/core/logger'
 import { Company } from '@/domain/entities/company'
 import { Employee } from '@/domain/entities/employee'
 import { UserType } from '../../@types'
-import { MessageHandler } from './message-handler'
 import { ProcessClientMessageService } from '../services/process-client-message-service'
+import { MessageHandler } from './message-handler'
 
 export class ClientMessageHandler extends MessageHandler {
     constructor(

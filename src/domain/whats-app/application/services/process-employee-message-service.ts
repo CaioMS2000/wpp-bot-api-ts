@@ -10,8 +10,8 @@ import {
     ConversationStateConfig,
     conversationStateDefaultConfig,
 } from '../states/conversation-state'
-import { FindConversationByEmployeePhoneUseCase } from '../use-cases/find-conversation-by-employee-phone-use-case'
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
+import { FindConversationByEmployeePhoneUseCase } from '../use-cases/find-conversation-by-employee-phone-use-case'
 import { StateTransitionService } from './state-transition-service'
 
 export class ProcessEmployeeMessageService {
