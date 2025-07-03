@@ -4,6 +4,7 @@ import { Conversation } from '@/domain/entities/conversation'
 import { execute } from '@caioms/ts-utils/functions'
 import { TransitionIntent } from '../../factory/types'
 import { ConversationState } from '../conversation-state'
+import { isEmployee } from '@/utils/entity'
 
 type ChatWithClientStateProps = {
     client: Client
@@ -20,9 +21,17 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
     async handleMessage(
         messageContent: string
     ): Promise<Nullable<TransitionIntent>> {
+        if (!isEmployee(this.conversation.user)) {
+            throw new Error('Conversation user is not an employee')
+        }
+
+        if (!this.conversation.user.department) {
+            throw new Error('Employee does not have a department')
+        }
+
         await execute(this.outputPort.handle, this.client, {
             type: 'text',
-            content: messageContent,
+            content: `🔵 *[Funcionário] ${this.conversation.user.name}*\n🚩 *${this.conversation.user.department.name}*\n\n${messageContent}`,
         })
 
         return null
@@ -35,7 +44,7 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
     async onEnter() {
         await execute(this.outputPort.handle, this.conversation.user, {
             type: 'text',
-            content: `Você está conversando com o cliente: ${this.client.name} - ${this.client.phone}`,
+            content: `🔔 Você está conversando com o cliente *${this.client.name}*\n📞 *${this.client.phone}*`,
         })
     }
 }

@@ -31,7 +31,7 @@ export class DepartmentQueueState extends ConversationState<DepartmentQueueState
 
         await execute(this.outputPort.handle, this.conversation.user, {
             type: 'text',
-            content: `Você está na fila de espera do ${this.department.name}, em breve um atendente entrará em contato. Caso queira sair da fila de espera, digite "sair".`,
+            content: `🔔 Você está na fila de espera do *${this.department.name}*, em breve um atendente entrará em contato. Caso queira sair da fila de espera, digite "sair".`,
         })
 
         return null
@@ -40,7 +40,7 @@ export class DepartmentQueueState extends ConversationState<DepartmentQueueState
     async onEnter() {
         await execute(this.outputPort.handle, this.conversation.user, {
             type: 'text',
-            content: `Você está na fila de espera do ${this.department.name}, em breve um atendente entrará em contato. Caso queira sair da fila de espera, digite "sair".`,
+            content: `🔔 Você está na fila de espera do departamento *${this.department.name}*, em breve um atendente entrará em contato. Caso queira sair da fila de espera, digite "sair".`,
         })
     }
 }

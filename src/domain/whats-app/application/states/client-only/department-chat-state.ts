@@ -25,7 +25,7 @@ export class DepartmentChatState extends ConversationState<DepartmentChatStatePr
         if (this.conversation.agent && this.conversation.agent !== 'AI') {
             await execute(this.outputPort.handle, this.conversation.agent, {
                 type: 'text',
-                content: messageContent,
+                content: `🔵 *[Cliente] ${this.conversation.user.name}*\n📞 *${this.conversation.user.phone}*\n\n${messageContent}`,
             })
         }
 
@@ -35,7 +35,7 @@ export class DepartmentChatState extends ConversationState<DepartmentChatStatePr
     async onEnter() {
         await execute(this.outputPort.handle, this.conversation.user, {
             type: 'text',
-            content: `You are now chatting with the department: ${this.department.name}`,
+            content: `🔔 Você está conversando com o departamento: ${this.department.name}`,
         })
     }
 }

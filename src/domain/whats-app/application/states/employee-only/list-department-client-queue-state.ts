@@ -37,7 +37,7 @@ export class ListDepartmentQueueState extends ConversationState<ListDepartmentQu
                 this.conversation.user,
                 {
                     type: 'text',
-                    content: 'Fila vazia',
+                    content: '🔔 *Fila vazia*',
                 }
             )
         }
@@ -45,8 +45,8 @@ export class ListDepartmentQueueState extends ConversationState<ListDepartmentQu
         const textOutput: OutputMessage = {
             type: 'text',
             content: this.department.queue.reduce((acc, client) => {
-                return `${acc}${client.name} - ${client.phone}\n`
-            }, 'Fila:\n'),
+                return `${acc}*${client.name}*: ${client.phone}\n`
+            }, '*Fila:*\n'),
         }
 
         await execute(
