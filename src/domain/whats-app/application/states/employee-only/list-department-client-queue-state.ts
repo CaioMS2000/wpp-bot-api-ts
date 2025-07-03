@@ -1,14 +1,9 @@
-import { logger } from '@/core/logger'
-import { OutputMessage } from '@/core/output/output-port'
+import { OutputMessage, OutputPort } from '@/core/output/output-port'
 import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
 import { execute } from '@caioms/ts-utils/functions'
-import {
-    ConversationState,
-    ConversationStateConfig,
-    conversationStateDefaultConfig,
-} from '../conversation-state'
-import { StateTransition } from '../state-transition'
+import { TransitionIntent } from '../../factory/types'
+import { ConversationState } from '../conversation-state'
 
 type ListDepartmentQueueStateProps = {
     department: Department
@@ -17,30 +12,28 @@ type ListDepartmentQueueStateProps = {
 export class ListDepartmentQueueState extends ConversationState<ListDepartmentQueueStateProps> {
     constructor(
         conversation: Conversation,
-        department: Department,
-        config: ConversationStateConfig = conversationStateDefaultConfig
+        outputPort: OutputPort,
+        department: Department
     ) {
-        super(conversation, { department }, config)
+        super(conversation, outputPort, { department })
     }
 
     get department() {
         return this.props.department
     }
 
-    async handleMessage(messageContent: string): Promise<StateTransition> {
+    async handleMessage(
+        messageContent: string
+    ): Promise<Nullable<TransitionIntent>> {
         throw new Error(
             'This state should not even last long enough to handle a message'
         )
     }
 
     async onEnter() {
-        if (!this.config.outputPort) {
-            throw new Error('Output port not set')
-        }
-
         if (this.department.queue.length === 0) {
             return await execute(
-                this.config.outputPort.handle,
+                this.outputPort.handle,
                 this.conversation.user,
                 {
                     type: 'text',
@@ -57,17 +50,13 @@ export class ListDepartmentQueueState extends ConversationState<ListDepartmentQu
         }
 
         await execute(
-            this.config.outputPort.handle,
+            this.outputPort.handle,
             this.conversation.user,
             textOutput
         )
     }
 
-    shouldAutoTransition(): boolean {
-        return true
-    }
-
-    getAutoTransition(): StateTransition {
-        return StateTransition.toInitialMenu()
+    async getNextState(message = ''): Promise<Nullable<TransitionIntent>> {
+        return { target: 'initial_menu' }
     }
 }

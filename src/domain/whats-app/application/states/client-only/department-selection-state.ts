@@ -1,16 +1,10 @@
-import { logger } from '@/core/logger'
-import { OutputMessage } from '@/core/output/output-port'
+import { OutputMessage, OutputPort } from '@/core/output/output-port'
 import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
-import { formatMenuOptions } from '@/utils/menu'
 import { execute } from '@caioms/ts-utils/functions'
 import { MenuOption } from '../../../@types'
-import {
-    ConversationState,
-    ConversationStateConfig,
-    conversationStateDefaultConfig,
-} from '../conversation-state'
-import { StateTransition } from '../state-transition'
+import { TransitionIntent } from '../../factory/types'
+import { ConversationState } from '../conversation-state'
 
 type DepartmentSelectionStateProps = {
     departments: Department[]
@@ -21,10 +15,10 @@ export class DepartmentSelectionState extends ConversationState<DepartmentSelect
 
     constructor(
         conversation: Conversation,
-        departments: Department[],
-        config: ConversationStateConfig = conversationStateDefaultConfig
+        outputPort: OutputPort,
+        departments: Department[]
     ) {
-        super(conversation, { departments }, config)
+        super(conversation, outputPort, { departments })
 
         this.menuOptions = departments
             .map((dept, index) => ({
@@ -47,9 +41,11 @@ export class DepartmentSelectionState extends ConversationState<DepartmentSelect
         return this.props.departments
     }
 
-    async handleMessage(messageContent: string): Promise<StateTransition> {
+    async handleMessage(
+        messageContent: string
+    ): Promise<Nullable<TransitionIntent>> {
         if (messageContent === 'Menu principal') {
-            return StateTransition.toInitialMenu()
+            return { target: 'initial_menu' }
         }
 
         const correspondingDepartment = this.departments.find(
@@ -57,18 +53,13 @@ export class DepartmentSelectionState extends ConversationState<DepartmentSelect
         )
 
         if (correspondingDepartment) {
-            // return StateTransition.toDepartmentChat(messageContent)
-            return StateTransition.toDepartmentQueue(messageContent)
+            return { target: 'department_queue' }
         }
 
-        return StateTransition.stayInCurrent()
+        return null
     }
 
     async onEnter() {
-        if (!this.config.outputPort) {
-            throw new Error('Output port not set')
-        }
-
         const listOutput: OutputMessage = {
             type: 'list',
             text: 'Departamentos',
@@ -85,7 +76,7 @@ export class DepartmentSelectionState extends ConversationState<DepartmentSelect
         } as const
 
         await execute(
-            this.config.outputPort.handle,
+            this.outputPort.handle,
             this.conversation.user,
             listOutput
         )

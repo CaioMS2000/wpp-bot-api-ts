@@ -3,6 +3,7 @@ import { Department } from '@/domain/entities/department'
 import { FAQCategory, FAQItem } from '@/domain/entities/faq'
 
 import { logger } from '@/core/logger'
+import { OutputPort } from '@/core/output/output-port'
 import {
     isClient,
     isDepartment,
@@ -14,153 +15,105 @@ import { AIChatState } from '../states/ai-chat-state'
 import { DepartmentChatState } from '../states/client-only/department-chat-state'
 import { DepartmentQueueState } from '../states/client-only/department-queue-state'
 import { DepartmentSelectionState } from '../states/client-only/department-selection-state'
-import {
-    ConversationState,
-    ConversationStateConfig,
-    conversationStateDefaultConfig,
-} from '../states/conversation-state'
+import { ConversationState } from '../states/conversation-state'
 import { ChatWithClientState } from '../states/employee-only/chat-with-client-sate'
 import { ListDepartmentQueueState } from '../states/employee-only/list-department-client-queue-state'
 import { FAQCategoriesState } from '../states/faq-categories-state'
-import { FAQItemsState } from '../states/faq-items-state'
+import { FAQItemsState, FAQItemsStateProps } from '../states/faq-items-state'
 import { InitialMenuState } from '../states/initial-menu-state'
-
-export type StateName =
-    | 'initial_menu'
-    | 'ai_chat'
-    | 'faq_categories'
-    | 'faq_items'
-    | 'department_selection'
-    | 'department_queue'
-    | 'department_chat'
-    | 'department_queue_list'
-    | 'chat_with_client'
+import { StateDataMap, StateName } from './types'
+import { Client } from '@/domain/entities/client'
+import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
+import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
 
 export class StateFactory {
-    static create(
-        name: StateName,
+    constructor(
+        private listFAQCategoriesUseCase: ListFAQCategoriesUseCase,
+        private listFAQCategorieItemsUseCase: ListFAQCategorieItemsUseCase
+    ) {}
+    create<K extends StateName>(
+        name: K,
         conversation: Conversation,
-        data?: unknown,
-        config: ConversationStateConfig = conversationStateDefaultConfig
+        outputPort: OutputPort,
+        ...args: StateDataMap[K] extends null ? [] : [data: StateDataMap[K]]
     ): ConversationState {
+        const data = args[0] as StateDataMap[K]
+
         switch (name) {
             case 'initial_menu':
-                return new InitialMenuState(conversation, null, config)
+                return new InitialMenuState(conversation, outputPort)
+
+            case 'ai_chat':
+                return new AIChatState(conversation, outputPort)
 
             case 'faq_categories': {
-                if (!Array.isArray(data)) {
-                    throw new Error(
-                        'Data for faq_categories must be an array of FAQCategory objects'
-                    )
-                }
-
-                if (!data.every(StateFactory.isFAQCategory)) {
-                    throw new Error(
-                        'Invalid FAQCategory format. Expected { name: string, items: FAQItem[] } ' +
-                            'where FAQItem is { question: string, answer: string }'
-                    )
-                }
-
                 return new FAQCategoriesState(
                     conversation,
-                    data as FAQCategory[],
-                    config
+                    outputPort,
+                    this.listFAQCategoriesUseCase
                 )
             }
 
             case 'faq_items': {
-                if (!StateFactory.isCategoryTuple(data)) {
-                    throw new Error(
-                        'Data must be in the format [categoryName: string, items: FAQItem[]] ' +
-                            'where FAQItem is { question: string, answer: string }'
-                    )
-                }
-
-                const [categoryName, items] = data
+                const { categoryName } = data as FAQItemsStateProps
                 return new FAQItemsState(
                     conversation,
-                    categoryName,
-                    items,
-                    config
+                    outputPort,
+                    this.listFAQCategorieItemsUseCase,
+                    categoryName
                 )
             }
 
             case 'department_selection': {
-                if (!isDepartmentArray(data)) {
-                    throw new Error(
-                        'Data must be an array of Department objects'
-                    )
-                }
-
-                return new DepartmentSelectionState(conversation, data, config)
-            }
-
-            case 'department_queue': {
-                if (!isDepartment(data)) {
-                    throw new Error('Data must be a Department object')
-                }
-
-                return new DepartmentQueueState(conversation, data, config)
-            }
-            case 'department_chat': {
-                if (!isDepartment(data)) {
-                    throw new Error('Data must be a Department object')
-                }
-
-                return new DepartmentChatState(conversation, data, config)
-            }
-            case 'department_queue_list': {
-                if (isEmployee(conversation.user)) {
-                    if (!isDepartment(data)) {
-                        throw new Error('Data must be a Department object')
-                    }
-
-                    return new ListDepartmentQueueState(
-                        conversation,
-                        data,
-                        config
-                    )
-                }
-
-                throw new Error(
-                    "'department_queue_list' is only available for employees"
+                data
+                const { departments } = data as { departments: Department[] }
+                return new DepartmentSelectionState(
+                    conversation,
+                    outputPort,
+                    departments
                 )
             }
 
-            case 'chat_with_client':
-                if (!isClient(data)) {
-                    throw new Error('Data must be a Client object')
+            case 'department_queue': {
+                const { department } = data as { department: Department }
+                return new DepartmentQueueState(
+                    conversation,
+                    outputPort,
+                    department
+                )
+            }
+
+            case 'department_chat': {
+                const { department } = data as { department: Department }
+                return new DepartmentChatState(
+                    conversation,
+                    department,
+                    outputPort
+                )
+            }
+
+            case 'department_queue_list': {
+                if (!isEmployee(conversation.user)) {
+                    throw new Error(
+                        "'department_queue_list' is only available for employees"
+                    )
                 }
 
-                return new ChatWithClientState(conversation, data, config)
+                const { department } = data as { department: Department }
+                return new ListDepartmentQueueState(
+                    conversation,
+                    outputPort,
+                    department
+                )
+            }
 
-            case 'ai_chat':
-                return new AIChatState(conversation, config)
+            case 'chat_with_client': {
+                const { client } = data as { client: Client }
+                return new ChatWithClientState(conversation, client, outputPort)
+            }
 
             default:
-                throw new Error(`Unknown state: ${name}`)
+                throw new Error(`Unknown state: ${name satisfies never}`)
         }
-    }
-
-    private static isFAQCategory(category: unknown): category is FAQCategory {
-        return (
-            typeof category === 'object' &&
-            category !== null &&
-            'name' in category &&
-            'items' in category &&
-            typeof category.name === 'string' &&
-            Array.isArray(category.items) &&
-            category.items.every(isFAQItem)
-        )
-    }
-
-    private static isCategoryTuple(data: unknown): data is [string, FAQItem[]] {
-        return (
-            Array.isArray(data) &&
-            data.length === 2 &&
-            typeof data[0] === 'string' &&
-            Array.isArray(data[1]) &&
-            data[1].every(isFAQItem)
-        )
     }
 }

@@ -1,12 +1,10 @@
+import { OutputPort } from '@/core/output/output-port'
 import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
 import { execute } from '@caioms/ts-utils/functions'
-import {
-    ConversationState,
-    ConversationStateConfig,
-    conversationStateDefaultConfig,
-} from '../conversation-state'
-import { StateTransition } from '../state-transition'
+import { TransitionIntent } from '../../factory/types'
+import { ConversationState } from '../conversation-state'
+import { logger } from '@/core/logger'
 
 type DepartmentChatStateProps = {
     department: Department
@@ -16,36 +14,26 @@ export class DepartmentChatState extends ConversationState<DepartmentChatStatePr
     constructor(
         conversation: Conversation,
         private department: Department,
-        config: ConversationStateConfig = conversationStateDefaultConfig
+        outputPort: OutputPort
     ) {
-        super(conversation, { department }, config)
+        super(conversation, outputPort, { department })
     }
 
-    async handleMessage(messageContent: string): Promise<StateTransition> {
-        if (!this.config.outputPort) {
-            throw new Error('Output port not set')
-        }
-
+    async handleMessage(
+        messageContent: string
+    ): Promise<Nullable<TransitionIntent>> {
         if (this.conversation.agent && this.conversation.agent !== 'AI') {
-            await execute(
-                this.config.outputPort.handle,
-                this.conversation.agent,
-                {
-                    type: 'text',
-                    content: messageContent,
-                }
-            )
+            await execute(this.outputPort.handle, this.conversation.agent, {
+                type: 'text',
+                content: messageContent,
+            })
         }
 
-        return StateTransition.stayInCurrent()
+        return null
     }
 
     async onEnter() {
-        if (!this.config.outputPort) {
-            throw new Error('Output port not set')
-        }
-
-        await execute(this.config.outputPort.handle, this.conversation.user, {
+        await execute(this.outputPort.handle, this.conversation.user, {
             type: 'text',
             content: `You are now chatting with the department: ${this.department.name}`,
         })

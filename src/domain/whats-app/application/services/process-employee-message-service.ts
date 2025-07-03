@@ -1,4 +1,5 @@
 import { logger } from '@/core/logger'
+import { OutputPort } from '@/core/output/output-port'
 import { Company } from '@/domain/entities/company'
 import { Conversation } from '@/domain/entities/conversation'
 import { Employee } from '@/domain/entities/employee'
@@ -6,22 +7,18 @@ import { Message } from '@/domain/entities/message'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
 import { MessageRepository } from '@/domain/repositories/message-repository'
 import { execute } from '@caioms/ts-utils/functions'
-import {
-    ConversationStateConfig,
-    conversationStateDefaultConfig,
-} from '../states/conversation-state'
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
 import { FindConversationByEmployeePhoneUseCase } from '../use-cases/find-conversation-by-employee-phone-use-case'
 import { StateTransitionService } from './state-transition-service'
 
 export class ProcessEmployeeMessageService {
     constructor(
+        private outputPort: OutputPort,
+        private stateTransitionService: StateTransitionService,
         private messageRepository: MessageRepository,
         private conversationRepository: ConversationRepository,
         private findConversationByEmployeePhoneUseCase: FindConversationByEmployeePhoneUseCase,
-        private createConversationUseCase: CreateConversationUseCase,
-        private stateTransitionService: StateTransitionService,
-        private config: ConversationStateConfig = conversationStateDefaultConfig
+        private createConversationUseCase: CreateConversationUseCase
     ) {}
     async process(
         company: Company,
@@ -56,9 +53,9 @@ export class ProcessEmployeeMessageService {
             )
         }
 
-        const result = await conversation.processMessage(messageContent)
+        const transition = await conversation.processMessage(messageContent)
 
-        if (result.type === 'transition') {
+        if (transition) {
             logger.debug(
                 "Running 'onExit' for state:\n",
                 conversation.currentState.constructor.name
@@ -66,9 +63,16 @@ export class ProcessEmployeeMessageService {
             await execute(
                 conversation.currentState.onExit.bind(conversation.currentState)
             )
+
+            const resolvedTransition =
+                await this.stateTransitionService.resolveIntent(
+                    conversation,
+                    transition
+                )
+
             await this.stateTransitionService.handleTransition(
                 conversation,
-                result
+                resolvedTransition
             )
             logger.debug(
                 "Running 'onEnter' for state:\n",
@@ -79,40 +83,49 @@ export class ProcessEmployeeMessageService {
                     conversation.currentState
                 )
             )
+            await this.conversationRepository.save(conversation)
         }
 
-        await this.conversationRepository.save(conversation)
+        while (true) {
+            const nextTransition =
+                await conversation.currentState.getNextState()
 
-        if (conversation.currentState.shouldAutoTransition()) {
-            logger.debug('Auto-transitioning...')
-            const autoTransition = conversation.currentState.getAutoTransition()
-            if (autoTransition && autoTransition.type === 'transition') {
-                logger.debug('will transit to:\n', autoTransition)
-                logger.debug(
-                    "Running 'onExit' for state:\n",
-                    conversation.currentState.constructor.name
-                )
-                await execute(
-                    conversation.currentState.onExit.bind(
-                        conversation.currentState
-                    )
-                )
-                await this.stateTransitionService.handleTransition(
-                    conversation,
-                    autoTransition
-                )
-                logger.debug(
-                    "Running 'onEnter' for state:\n",
-                    conversation.currentState.constructor.name
-                )
-                await execute(
-                    conversation.currentState.onEnter.bind(
-                        conversation.currentState
-                    )
-                )
-
-                await this.conversationRepository.save(conversation)
+            if (!nextTransition) {
+                break
             }
+
+            logger.debug('Auto-transitioning...')
+            logger.debug('will transit to:\n', nextTransition)
+            logger.debug(
+                "Running 'onExit' for state:\n",
+                conversation.currentState.constructor.name
+            )
+
+            await execute(
+                conversation.currentState.onExit.bind(conversation.currentState)
+            )
+
+            const resolvedTransition =
+                await this.stateTransitionService.resolveIntent(
+                    conversation,
+                    nextTransition
+                )
+            await this.stateTransitionService.handleTransition(
+                conversation,
+                resolvedTransition
+            )
+
+            logger.debug(
+                "Running 'onEnter' for state:\n",
+                conversation.currentState.constructor.name
+            )
+            await execute(
+                conversation.currentState.onEnter.bind(
+                    conversation.currentState
+                )
+            )
+
+            await this.conversationRepository.save(conversation)
         }
     }
     private async saveMessage(
@@ -158,9 +171,7 @@ export class ProcessEmployeeMessageService {
             conversationType = 'new_conversation'
         }
 
-        if (this.config.outputPort) {
-            conversation.currentState.outputPort = this.config.outputPort
-        }
+        conversation.currentState.setOutputPort(this.outputPort)
 
         return [conversationType, conversation]
     }

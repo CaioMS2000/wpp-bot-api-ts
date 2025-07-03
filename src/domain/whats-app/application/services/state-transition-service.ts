@@ -4,28 +4,26 @@ import { DepartmentRepository } from '@/domain/repositories/department-repositor
 import { isClient, isEmployee } from '@/utils/entity'
 import { StateFactory } from '../factory/state-factory'
 import { DepartmentQueueState } from '../states/client-only/department-queue-state'
-import {
-    ConversationStateConfig,
-    conversationStateDefaultConfig,
-} from '../states/conversation-state'
 import { StateTransition } from '../states/state-transition'
 import { InsertClientIntoDepartmentQueue } from '../use-cases/insert-client-into-department-queue'
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
-import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
 import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
 import { RemoveClientFromDepartmentQueue } from '../use-cases/remove-client-from-department-queue'
 import { TransferEmployeeToClientConversationUseCase } from '../use-cases/transfer-employee-to-client-conversation-use-case'
+import { OutputPort } from '@/core/output/output-port'
+import { Department } from '@/domain/entities/department'
+import { TransitionIntent } from '../factory/types'
 
 export class StateTransitionService {
     constructor(
+        private stateFactory: StateFactory,
+        private outputPort: OutputPort,
         private departmentRepository: DepartmentRepository,
         private removeClientFromDepartmentQueue: RemoveClientFromDepartmentQueue,
         private listFAQCategoriesUseCase: ListFAQCategoriesUseCase,
-        private listFAQCategorieItemsUseCase: ListFAQCategorieItemsUseCase,
         private listActiveDepartmentsUseCase: ListActiveDepartmentsUseCase,
         private insertClientIntoDepartmentQueue: InsertClientIntoDepartmentQueue,
-        private transferEmployeeToClientConversationUseCase: TransferEmployeeToClientConversationUseCase,
-        private config: ConversationStateConfig = conversationStateDefaultConfig
+        private transferEmployeeToClientConversationUseCase: TransferEmployeeToClientConversationUseCase
     ) {}
     async handleTransition(
         conversation: Conversation,
@@ -42,11 +40,10 @@ export class StateTransitionService {
                 }
 
                 conversation.transitionToState(
-                    StateFactory.create(
+                    this.stateFactory.create(
                         'initial_menu',
                         conversation,
-                        null,
-                        this.config
+                        this.outputPort
                     )
                 )
                 break
@@ -57,11 +54,11 @@ export class StateTransitionService {
                     )
 
                 conversation.transitionToState(
-                    StateFactory.create(
+                    this.stateFactory.create(
                         'faq_categories',
                         conversation,
-                        faqCategories,
-                        this.config
+                        this.outputPort,
+                        { categories: faqCategories.map(cat => cat.name) }
                     )
                 )
                 break
@@ -70,18 +67,12 @@ export class StateTransitionService {
                     throw new Error('Invalid transition data')
                 }
 
-                const faqItems =
-                    await this.listFAQCategorieItemsUseCase.execute(
-                        conversation.company,
-                        transition.data
-                    )
-
                 conversation.transitionToState(
-                    StateFactory.create(
+                    this.stateFactory.create(
                         'faq_items',
                         conversation,
-                        [transition.data, faqItems],
-                        this.config
+                        this.outputPort,
+                        { categoryName: transition.data }
                     )
                 )
                 break
@@ -95,11 +86,11 @@ export class StateTransitionService {
             switch (transition.targetState) {
                 case 'department_selection':
                     conversation.transitionToState(
-                        StateFactory.create(
+                        this.stateFactory.create(
                             'department_selection',
                             conversation,
-                            availableDepartments,
-                            this.config
+                            this.outputPort,
+                            { departments: availableDepartments }
                         )
                     )
                     break
@@ -115,11 +106,11 @@ export class StateTransitionService {
                         )
 
                     conversation.transitionToState(
-                        StateFactory.create(
+                        this.stateFactory.create(
                             'department_chat',
                             conversation,
-                            department,
-                            this.config
+                            this.outputPort,
+                            { department }
                         )
                     )
 
@@ -139,8 +130,8 @@ export class StateTransitionService {
                     conversation.transitionToState(
                         new DepartmentQueueState(
                             conversation,
-                            department,
-                            this.config
+                            this.outputPort,
+                            department
                         )
                     )
 
@@ -160,11 +151,11 @@ export class StateTransitionService {
                             conversation
                         )
                     conversation.transitionToState(
-                        StateFactory.create(
+                        this.stateFactory.create(
                             'chat_with_client',
                             conversation,
-                            client,
-                            this.config
+                            this.outputPort,
+                            { client }
                         )
                     )
                     break
@@ -172,22 +163,63 @@ export class StateTransitionService {
                     if (!conversation.user.department) {
                         throw new Error('This employee has no department')
                     }
+                    if (
+                        !transition.data ||
+                        !(transition.data instanceof Department)
+                    ) {
+                        throw new Error('Invalid transition data')
+                    }
 
                     const department =
                         await this.departmentRepository.findByNameOrThrow(
                             conversation.company,
-                            transition.data
+                            transition.data.name
                         )
 
                     conversation.transitionToState(
-                        StateFactory.create(
+                        this.stateFactory.create(
                             'department_queue_list',
                             conversation,
-                            department
+                            this.outputPort,
+                            { department }
                         )
                     )
                     break
             }
+        }
+    }
+
+    async resolveIntent(
+        conversation: Conversation,
+        intent: TransitionIntent
+    ): Promise<StateTransition> {
+        switch (intent.target) {
+            case 'department_selection': {
+                const departments =
+                    await this.listActiveDepartmentsUseCase.execute(
+                        conversation.company
+                    )
+                return StateTransition.to('department_selection', {
+                    departments,
+                })
+            }
+            case 'faq_categories': {
+                const categories = await this.listFAQCategoriesUseCase.execute(
+                    conversation.company
+                )
+                return StateTransition.to('faq_categories', {
+                    categories: categories.map(c => c.name),
+                })
+            }
+            case 'chat_with_client': {
+                const client =
+                    await this.transferEmployeeToClientConversationUseCase.execute(
+                        conversation
+                    )
+                return StateTransition.to('chat_with_client', { client })
+            }
+            default:
+                throw new Error('Invalid intent')
         }
     }
 }

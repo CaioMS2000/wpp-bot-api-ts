@@ -1,29 +1,52 @@
-import { logger } from '@/core/logger'
-import { OutputMessage } from '@/core/output/output-port'
+import { OutputMessage, OutputPort } from '@/core/output/output-port'
 import { Conversation } from '@/domain/entities/conversation'
 import { FAQCategory } from '@/domain/entities/faq'
-import { formatMenuOptions } from '@/utils/menu'
 import { MenuOption } from '../../@types'
-import {
-    ConversationState,
-    ConversationStateConfig,
-    conversationStateDefaultConfig,
-} from './conversation-state'
-import { StateTransition } from './state-transition'
+import { TransitionIntent } from '../factory/types'
+import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
+import { ConversationState } from './conversation-state'
 
-type FAQCategoriesStateProps = { categories: FAQCategory[] }
-
+export type FAQCategoriesStateProps = { categories: FAQCategory[] }
 export class FAQCategoriesState extends ConversationState<FAQCategoriesStateProps> {
-    private menuOptions: MenuOption[]
-
     constructor(
         conversation: Conversation,
-        categories: FAQCategory[],
-        config: ConversationStateConfig = conversationStateDefaultConfig
+        outputPort: OutputPort,
+        private listFAQCategoriesUseCase: ListFAQCategoriesUseCase
     ) {
-        super(conversation, { categories }, config)
+        super(conversation, outputPort)
+    }
 
-        this.menuOptions = categories
+    get categories() {
+        return this.props.categories
+    }
+
+    set categories(categories: FAQCategory[]) {
+        this.props.categories = categories
+    }
+
+    async handleMessage(
+        messageContent: string
+    ): Promise<Nullable<TransitionIntent>> {
+        if (messageContent === 'Menu principal') {
+            return { target: 'initial_menu' }
+        }
+
+        const correspondingCategory = this.categories.find(
+            category => category.name === messageContent
+        )
+
+        if (!correspondingCategory) {
+            return null
+        }
+
+        return { target: 'faq_items' }
+    }
+
+    async onEnter() {
+        this.categories = await this.listFAQCategoriesUseCase.execute(
+            this.conversation.company
+        )
+        const menuOptions: MenuOption[] = this.categories
             .map((category, index) => ({
                 key: (index + 1).toString(),
                 label: category.name,
@@ -38,33 +61,6 @@ export class FAQCategoriesState extends ConversationState<FAQCategoriesStateProp
                     forEmployee: true,
                 },
             ])
-    }
-
-    get categories() {
-        return this.props.categories
-    }
-
-    async handleMessage(messageContent: string): Promise<StateTransition> {
-        if (messageContent === 'Menu principal') {
-            return StateTransition.toInitialMenu()
-        }
-
-        const correspondingCategory = this.categories.find(
-            category => category.name === messageContent
-        )
-
-        if (!correspondingCategory) {
-            return StateTransition.stayInCurrent()
-        }
-
-        return StateTransition.toFAQItems(correspondingCategory.name)
-    }
-
-    onEnter() {
-        if (!this.config.outputPort) {
-            throw new Error('Output port not set')
-        }
-
         const listOutput: OutputMessage = {
             type: 'list',
             text: 'Categorias',
@@ -72,7 +68,7 @@ export class FAQCategoriesState extends ConversationState<FAQCategoriesStateProp
             sections: [
                 {
                     title: 'Items',
-                    rows: this.menuOptions.map(opt => ({
+                    rows: menuOptions.map(opt => ({
                         id: opt.key,
                         title: opt.label,
                     })),
@@ -80,6 +76,6 @@ export class FAQCategoriesState extends ConversationState<FAQCategoriesStateProp
             ],
         } as const
 
-        this.config.outputPort.handle(this.conversation.user, listOutput)
+        this.outputPort.handle(this.conversation.user, listOutput)
     }
 }

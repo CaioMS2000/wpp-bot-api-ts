@@ -1,16 +1,3 @@
-Com certeza! Realizei a aplicação das atualizações solicitadas no seu documento `ddd-v2.md`.
-
-As alterações foram:
-1.  **Atualização**: Na seção `Compartilhamento de Entidades entre Subdomínios Técnicos`, o título da subseção de alternativas foi atualizado para `### 🫠 Alternativas intermediárias:`.
-2.  **Adição**: Uma nova seção, `## 🛍️ Interpretação de Mensagens e Múltiplos Canais`, foi adicionada para explicar como o sistema lida com diferentes canais de comunicação.
-3.  **Substituição**: A antiga seção de `Hierarquia de Importações` foi completamente substituída pela nova `## 📚 Hierarquia de Importações (Tabela de Permissões)`, que inclui novos papéis como `Handlers` e `Parsers`.
-
-O restante do documento foi preservado conforme a solicitação. Abaixo está o arquivo completo com as modificações aplicadas.
-
---- START OF MODIFIED FILE ddd-v2.md ---
-
----
-
 # 🧠 Guia de Arquitetura com DDD (Domain-Driven Design) - WhatsApp Support System
 
 Este documento é um guia completo sobre como estruturar, entender e organizar um sistema baseado em DDD (Domain-Driven Design), focado em uma aplicação de **atendimento automatizado via WhatsApp**. Ele reúne os conceitos, conclusões e decisões discutidas em uma sessão de mentoria técnica e pode servir como base para qualquer colaborador entender o projeto e suas decisões arquiteturais.
@@ -66,6 +53,55 @@ Exemplo: `Department` pode importar `Client`, já que clientes fazem parte da fi
 * Criar interfaces como `ClientRef` ou `ClientSummary`
 * Utilizar apenas `clientId` dentro da fila, e buscar o `Client` via repositório se necessário
 
+---
+## 🛠️ Tipos de Serviço na Arquitetura
+
+Nem todo "serviço" significa a mesma coisa. Existem diferenças conceituais importantes entre **Application Services**, **Domain Services** e **Serviços auxiliares (como FAQService)**. Entender essas distinções ajuda a posicionar corretamente a responsabilidade de cada parte.
+
+### 1. Application Service
+
+* **Camada:** Application
+* **Responsabilidade:** Orquestrar use cases e coordenar serviços externos.
+* **Exemplo:** `WhatsAppMessageService`, que orquestra o recebimento de mensagens e decide qual estado executar.
+
+> Application Services podem chamar vários Use Cases, combinar resultados e interagir com a infraestrutura.
+
+### 2. Use Case
+
+* **Camada:** Application
+* **Responsabilidade:** Executar uma intenção específica de um ator. Uma ação do ponto de vista do usuário/sistema.
+* **Exemplo:** `ListFAQCategoriesUseCase`, `InsertClientIntoDepartmentQueue`
+
+> Use Cases não devem coordenar outros Use Cases, e são sempre coesos, focados e testáveis.
+
+### 3. Domain Service
+
+* **Camada:** Domain
+* **Responsabilidade:** Lógica de negócio que não pertence a uma única entidade.
+* **Exemplo:** `QueueAssignmentPolicy`, `MessageRoutingService`
+
+> São puros, sem dependências externas. Ideal para regras que envolvem várias entidades simultaneamente.
+
+### 4. Serviço de Apoio / Auxiliar (como `FAQService`)
+
+* **Camada:** Application (ou à parte da aplicação)
+* **Responsabilidade:** Fornecer dados pré-processados, coordenação de repositórios, acesso externo simplificado.
+* **Exemplo:** `FAQService.getItems(companyId, categoryName)`
+
+> Quando um estado precisa de dados mas não faz sentido envolver um use case completo, esse tipo de serviço pode encapsular a lógica de busca/filtragem e ser mais leve.
+
+> ⚠️ Importante: esses serviços não são parte do domínio. São auxiliares à camada de aplicação.
+
+### Quando usar cada um?
+
+| Situação                                           | Tipo de Serviço Recomendado |
+| -------------------------------------------------- | --------------------------- |
+| Preciso coordenar vários Use Cases ou repositórios | Application Service         |
+| Uma ação de negócio clara e testável               | Use Case                    |
+| Regras entre várias entidades do domínio           | Domain Service              |
+| Lógica de busca ou consulta simples para um estado | Serviço Auxiliar            |
+
+> Em caso de dúvida: comece com um Use Case. Se perceber que ele é muito simples, específico e usado apenas em um único estado, considere rebaixar para um serviço auxiliar.
 ---
 
 ## 🛍️ Interpretação de Mensagens e Múltiplos Canais

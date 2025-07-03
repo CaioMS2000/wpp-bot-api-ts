@@ -6,22 +6,19 @@ import { Message } from '@/domain/entities/message'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
 import { MessageRepository } from '@/domain/repositories/message-repository'
 import { execute } from '@caioms/ts-utils/functions'
-import {
-    ConversationStateConfig,
-    conversationStateDefaultConfig,
-} from '../states/conversation-state'
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
 import { FindConversationByClientPhoneUseCase } from '../use-cases/find-conversation-by-client-phone-use-case'
 import { StateTransitionService } from './state-transition-service'
+import { OutputPort } from '@/core/output/output-port'
 
 export class ProcessClientMessageService {
     constructor(
+        private outputPort: OutputPort,
         private messageRepository: MessageRepository,
         private conversationRepository: ConversationRepository,
         private createConversationUseCase: CreateConversationUseCase,
         private findConversationByClientPhoneUseCase: FindConversationByClientPhoneUseCase,
-        private stateTransitionService: StateTransitionService,
-        private config: ConversationStateConfig = conversationStateDefaultConfig
+        private stateTransitionService: StateTransitionService
     ) {}
 
     async process(
@@ -32,6 +29,7 @@ export class ProcessClientMessageService {
     ) {
         const [conversationType, conversation] =
             await this.getOrCreateConversation(company, user)
+
         logger.debug(
             `Using conversation type: ${conversationType} -> ${conversation.id}`
         )
@@ -47,7 +45,7 @@ export class ProcessClientMessageService {
 
         if (conversationType === 'new_conversation') {
             logger.debug(
-                "Running 'onEnter' for state:\n",
+                "Running 'onEnter' for state:",
                 conversation.currentState.constructor.name
             )
             await execute(
@@ -57,22 +55,29 @@ export class ProcessClientMessageService {
             )
         }
 
-        const result = await conversation.processMessage(messageContent)
-
-        if (result.type === 'transition') {
+        const transition = await conversation.processMessage(messageContent)
+        if (transition) {
             logger.debug(
-                "Running 'onExit' for state:\n",
+                "Running 'onExit' for state:",
                 conversation.currentState.constructor.name
             )
             await execute(
                 conversation.currentState.onExit.bind(conversation.currentState)
             )
+
+            const resolvedTransition =
+                await this.stateTransitionService.resolveIntent(
+                    conversation,
+                    transition
+                )
+
             await this.stateTransitionService.handleTransition(
                 conversation,
-                result
+                resolvedTransition
             )
+
             logger.debug(
-                "Running 'onEnter' for state:\n",
+                "Running 'onEnter' for state:",
                 conversation.currentState.constructor.name
             )
             await execute(
@@ -80,40 +85,49 @@ export class ProcessClientMessageService {
                     conversation.currentState
                 )
             )
+
+            await this.conversationRepository.save(conversation)
         }
 
-        await this.conversationRepository.save(conversation)
+        while (true) {
+            const nextTransition =
+                await conversation.currentState.getNextState()
 
-        if (conversation.currentState.shouldAutoTransition()) {
-            logger.debug('Auto-transitioning...')
-            const autoTransition = conversation.currentState.getAutoTransition()
-            if (autoTransition && autoTransition.type === 'transition') {
-                logger.debug('will transit to:\n', autoTransition)
-                logger.debug(
-                    "Running 'onExit' for state:\n",
-                    conversation.currentState.constructor.name
-                )
-                await execute(
-                    conversation.currentState.onExit.bind(
-                        conversation.currentState
-                    )
-                )
-                await this.stateTransitionService.handleTransition(
-                    conversation,
-                    autoTransition
-                )
-                logger.debug(
-                    "Running 'onEnter' for state:\n",
-                    conversation.currentState.constructor.name
-                )
-                await execute(
-                    conversation.currentState.onEnter.bind(
-                        conversation.currentState
-                    )
-                )
-
-                await this.conversationRepository.save(conversation)
+            if (!nextTransition) {
+                break
             }
+
+            logger.debug('Auto-transitioning...')
+            logger.debug('Will transition to:', nextTransition)
+            logger.debug(
+                "Running 'onExit' for state:",
+                conversation.currentState.constructor.name
+            )
+            await execute(
+                conversation.currentState.onExit.bind(conversation.currentState)
+            )
+
+            const resolvedTransition =
+                await this.stateTransitionService.resolveIntent(
+                    conversation,
+                    nextTransition
+                )
+            await this.stateTransitionService.handleTransition(
+                conversation,
+                resolvedTransition
+            )
+
+            logger.debug(
+                "Running 'onEnter' for state:",
+                conversation.currentState.constructor.name
+            )
+            await execute(
+                conversation.currentState.onEnter.bind(
+                    conversation.currentState
+                )
+            )
+
+            await this.conversationRepository.save(conversation)
         }
     }
 
@@ -158,9 +172,7 @@ export class ProcessClientMessageService {
             conversationType = 'new_conversation'
         }
 
-        if (this.config.outputPort) {
-            conversation.currentState.outputPort = this.config.outputPort
-        }
+        conversation.currentState.setOutputPort(this.outputPort)
 
         return [conversationType, conversation]
     }

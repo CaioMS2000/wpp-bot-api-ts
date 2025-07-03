@@ -24,12 +24,12 @@ export class ProcessClientMessageServiceFactory {
         const stateTransitionService =
             this.stateTransitionServiceFactory.createService()
         return new ProcessClientMessageService(
+            outputPort,
             messageRepository,
             conversationRepository,
             createConversationUseCase,
             findConversationByClientPhoneUseCase,
-            stateTransitionService,
-            { outputPort }
+            stateTransitionService
         )
     }
 }

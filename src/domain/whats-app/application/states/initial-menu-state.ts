@@ -1,12 +1,9 @@
-import { inspect } from 'node:util'
-import { logger } from '@/core/logger'
 import { OutputMessage } from '@/core/output/output-port'
 import { isClient, isEmployee } from '@/utils/entity'
-import { formatMenuOptions } from '@/utils/menu'
 import { execute } from '@caioms/ts-utils/functions'
 import { MenuOption } from '../../@types'
+import { TransitionIntent } from '../factory/types'
 import { ConversationState } from './conversation-state'
-import { StateTransition } from './state-transition'
 
 export class InitialMenuState extends ConversationState {
     private menuOptions: MenuOption[] = [
@@ -37,8 +34,10 @@ export class InitialMenuState extends ConversationState {
         },
     ]
 
-    async handleMessage(messageContent: string): Promise<StateTransition> {
-        let res: NotDefined<Nullable<StateTransition>> = undefined
+    async handleMessage(
+        messageContent: string
+    ): Promise<Nullable<TransitionIntent>> {
+        let res: Nullable<TransitionIntent> = null
 
         if (isClient(this.conversation.user)) {
             res = this.handleClientMessage(messageContent)
@@ -48,14 +47,10 @@ export class InitialMenuState extends ConversationState {
             res = this.handleEmployeeMessage(messageContent)
         }
 
-        return res ?? StateTransition.stayInCurrent()
+        return res
     }
 
     async onEnter() {
-        if (!this.config.outputPort) {
-            throw new Error('Output port not set')
-        }
-
         const availableOptions = this.menuOptions.filter(opt => {
             if (isClient(this.conversation.user)) return opt.forClient
             return opt.forEmployee
@@ -76,39 +71,46 @@ export class InitialMenuState extends ConversationState {
             ],
         } as const
 
-        // this.config.outputPort.handle(this.conversation.user, listOutput)
         await execute(
-            this.config.outputPort.handle,
+            this.outputPort.handle,
             this.conversation.user,
             listOutput
         )
     }
 
-    private handleClientMessage(messageContent: string) {
+    private handleClientMessage(
+        messageContent: string
+    ): Nullable<TransitionIntent> {
         if (messageContent === 'Conversar com IA') {
-            return StateTransition.toAIChat()
+            return { target: 'ai_chat' }
         }
 
         if (messageContent === 'Ver Departamentos') {
-            return StateTransition.toDepartmentSelection()
+            return { target: 'department_selection' }
         }
 
         if (messageContent === 'FAQ') {
-            return StateTransition.toFAQCategories()
+            return { target: 'faq_categories' }
         }
+
+        return null
     }
 
-    private handleEmployeeMessage(messageContent: string) {
+    private handleEmployeeMessage(
+        messageContent: string
+    ): Nullable<TransitionIntent> {
         if (messageContent === 'FAQ') {
-            return StateTransition.toFAQCategories()
+            return { target: 'faq_categories' }
         }
 
         if (messageContent === 'Ver fila') {
-            return StateTransition.toDepartmentListQueue()
+            return { target: 'department_queue_list' }
         }
 
         if (messageContent === 'Atender próximo') {
-            return StateTransition.toChatWithClient()
+            return { target: 'chat_with_client' }
         }
+
+        return null
     }
 }

@@ -1,13 +1,9 @@
-import { logger } from '@/core/logger'
+import { OutputPort } from '@/core/output/output-port'
 import { Client } from '@/domain/entities/client'
 import { Conversation } from '@/domain/entities/conversation'
 import { execute } from '@caioms/ts-utils/functions'
-import {
-    ConversationState,
-    ConversationStateConfig,
-    conversationStateDefaultConfig,
-} from '../conversation-state'
-import { StateTransition } from '../state-transition'
+import { TransitionIntent } from '../../factory/types'
+import { ConversationState } from '../conversation-state'
 
 type ChatWithClientStateProps = {
     client: Client
@@ -17,21 +13,19 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
     constructor(
         conversation: Conversation,
         client: Client,
-        config: ConversationStateConfig = conversationStateDefaultConfig
+        outputPort: OutputPort
     ) {
-        super(conversation, { client }, config)
+        super(conversation, outputPort, { client })
     }
-    async handleMessage(messageContent: string): Promise<StateTransition> {
-        if (!this.config.outputPort) {
-            throw new Error('Output port not set')
-        }
-
-        await execute(this.config.outputPort.handle, this.client, {
+    async handleMessage(
+        messageContent: string
+    ): Promise<Nullable<TransitionIntent>> {
+        await execute(this.outputPort.handle, this.client, {
             type: 'text',
             content: messageContent,
         })
 
-        return StateTransition.stayInCurrent()
+        return null
     }
 
     get client() {
@@ -39,11 +33,7 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
     }
 
     async onEnter() {
-        if (!this.config.outputPort) {
-            throw new Error('Output port not set')
-        }
-
-        await execute(this.config.outputPort.handle, this.conversation.user, {
+        await execute(this.outputPort.handle, this.conversation.user, {
             type: 'text',
             content: `Você está conversando com o cliente: ${this.client.name} - ${this.client.phone}`,
         })

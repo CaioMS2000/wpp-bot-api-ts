@@ -1,103 +1,47 @@
-import { StateName } from '../factory/state-factory'
+import { Client } from '@/domain/entities/client'
+import { Department } from '@/domain/entities/department'
+import { FAQItemsStateProps } from './faq-items-state'
+import { StateDataMap, StateName } from '../factory/types'
 
-export type TransitionType = 'transition' | 'stay_current'
-export type StateTransitionProps = {
-    targetState: Nullable<StateName>
-    data: Nullable<any>
-    requiresExternalData: Nullable<boolean>
-}
+type StateTransitionProps<K extends keyof StateDataMap = StateName> =
+    StateDataMap[K] extends null
+        ? { targetState: K }
+        : { targetState: K; data: StateDataMap[K] }
 
-const defaultStateTransitionProps: StateTransitionProps = {
-    targetState: null,
-    data: null,
-    requiresExternalData: false,
-}
-
-export class StateTransition {
-    constructor(
-        public type: TransitionType,
-        public stateTransitionProps: Partial<StateTransitionProps> = defaultStateTransitionProps
-    ) {
-        this.stateTransitionProps = {
-            ...defaultStateTransitionProps,
-            ...stateTransitionProps,
-        }
+export class StateTransition<K extends StateName = StateName> {
+    constructor(public stateTransitionProps: StateTransitionProps<K>) {
+        this.stateTransitionProps = stateTransitionProps
     }
 
-    get targetState() {
+    get targetState(): K {
         return this.stateTransitionProps.targetState
     }
 
-    get data() {
-        return this.stateTransitionProps.data
+    get data(): Nullable<StateDataMap[K]> {
+        if ('data' in this.stateTransitionProps) {
+            return this.stateTransitionProps.data
+        }
+
+        return null
     }
 
-    get requiresExternalData() {
-        return this.stateTransitionProps.requiresExternalData
-    }
-
-    static stayInCurrent(message: Nullable<string> = null): StateTransition {
-        return new StateTransition('stay_current')
-    }
-
-    static toAIChat(): StateTransition {
-        return new StateTransition('transition', {
-            targetState: 'ai_chat',
-        })
-    }
-
-    static toFAQCategories(): StateTransition {
-        return new StateTransition('transition', {
-            targetState: 'faq_categories',
-            requiresExternalData: true,
-        })
-    }
-
-    static toFAQItems(categoryName: string): StateTransition {
-        return new StateTransition('transition', {
-            targetState: 'faq_items',
-            data: categoryName,
-        })
-    }
-
-    static toInitialMenu(): StateTransition {
-        return new StateTransition('transition', {
-            targetState: 'initial_menu',
-        })
-    }
-
-    static toDepartmentSelection(): StateTransition {
-        return new StateTransition('transition', {
-            targetState: 'department_selection',
-            requiresExternalData: true,
-        })
-    }
-
-    static toDepartmentQueue(departmentName: string): StateTransition {
-        return new StateTransition('transition', {
-            targetState: 'department_queue',
-            data: departmentName,
-        })
-    }
-
-    static toDepartmentChat(departmentName: string): StateTransition {
-        return new StateTransition('transition', {
-            targetState: 'department_chat',
-            data: departmentName,
-        })
-    }
-
-    static toDepartmentListQueue(): StateTransition {
-        return new StateTransition('transition', {
-            targetState: 'department_queue_list',
-            requiresExternalData: true,
-        })
-    }
-
-    static toChatWithClient(): StateTransition {
-        return new StateTransition('transition', {
-            targetState: 'chat_with_client',
-            requiresExternalData: true,
-        })
+    static to<K extends keyof StateDataMap>(targetState: K): StateTransition<K>
+    static to<K extends keyof StateDataMap>(
+        targetState: K,
+        data: StateDataMap[K]
+    ): StateTransition<K>
+    static to<K extends keyof StateDataMap>(
+        targetState: K,
+        data?: StateDataMap[K]
+    ): StateTransition<K> {
+        if (data === undefined || data === null) {
+            return new StateTransition({
+                targetState,
+            } as StateTransitionProps<K>)
+        }
+        return new StateTransition({
+            targetState,
+            data,
+        } as StateTransitionProps<K>)
     }
 }
