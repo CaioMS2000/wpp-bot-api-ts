@@ -1,24 +1,18 @@
 import { WhatsAppOutputPort } from '@/infra/http/output/whats-app-output-port'
 import { StateTransitionService } from '../services/state-transition-service'
 import { RepositoryFactory } from './repository-factory'
+import type { StateFactory } from './state-factory'
 import { UseCaseFactory } from './use-case-factory'
-import { StateFactory } from './state-factory'
 
 export class StateTransitionServiceFactory {
     constructor(
         private repositoryFactory: RepositoryFactory,
-        private useCaseFactory: UseCaseFactory
+        private useCaseFactory: UseCaseFactory,
+        private stateFactory: StateFactory
     ) {}
     createService() {
         const listFAQCategoriesUseCase =
             this.useCaseFactory.getListFAQCategoriesUseCase()
-        const listFAQCategorieItemsUseCase =
-            this.useCaseFactory.getListFAQCategorieItemsUseCase()
-        const stateFactory = new StateFactory(
-            listFAQCategoriesUseCase,
-            listFAQCategorieItemsUseCase
-        )
-        const outputPort = new WhatsAppOutputPort()
         const departmentRepository =
             this.repositoryFactory.createDepartmentRepository()
         const removeClientFromDepartmentQueue =
@@ -29,15 +23,17 @@ export class StateTransitionServiceFactory {
             this.useCaseFactory.getInsertClientIntoDepartmentQueue()
         const transferEmployeeToClientConversationUseCase =
             this.useCaseFactory.getTransferEmployeeToClientConversationUseCase()
+        const getDepartmentUseCase =
+            this.useCaseFactory.getGetDepartmentUseCase()
         return new StateTransitionService(
-            stateFactory,
-            outputPort,
+            this.stateFactory,
             departmentRepository,
             removeClientFromDepartmentQueue,
             listFAQCategoriesUseCase,
             listActiveDepartmentsUseCase,
             insertClientIntoDepartmentQueue,
-            transferEmployeeToClientConversationUseCase
+            transferEmployeeToClientConversationUseCase,
+            getDepartmentUseCase
         )
     }
 }

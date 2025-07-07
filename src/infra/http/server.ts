@@ -15,6 +15,8 @@ import { interactionMock } from './interaction-mock'
 import { receiveMessage } from './routes/message/receive-message'
 import { whatsAppWebhook } from './routes/message/whats-app-webhook'
 import { webhook } from './routes/whats-app-webhook/token'
+import { StateFactory } from '@/domain/whats-app/application/factory/state-factory'
+import { WhatsAppOutputPort } from './output/whats-app-output-port'
 
 console.clear()
 logger.info('Starting server setup')
@@ -32,12 +34,20 @@ async function softDBClear() {
     })
 }
 async function main() {
-    // await softDBClear()
-    const repositoryFactory: RepositoryFactory = new PrismaRepositoryFactory()
-    const useCaseFactory = new UseCaseFactory(repositoryFactory)
+    await softDBClear()
+    const outputPort = new WhatsAppOutputPort()
+    const stateFactory = new StateFactory(outputPort)
+    const repositoryFactory: RepositoryFactory = new PrismaRepositoryFactory(
+        stateFactory
+    )
+    const useCaseFactory = new UseCaseFactory(repositoryFactory, stateFactory)
+
+    stateFactory.setUseCaseFactory(useCaseFactory)
+
     const stateTransitionServiceFactory = new StateTransitionServiceFactory(
         repositoryFactory,
-        useCaseFactory
+        useCaseFactory,
+        stateFactory
     )
     const processClientMessageServiceFactory =
         new ProcessClientMessageServiceFactory(

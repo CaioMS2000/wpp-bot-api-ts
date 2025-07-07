@@ -67,7 +67,8 @@ export class ProcessEmployeeMessageService {
             const resolvedTransition =
                 await this.stateTransitionService.resolveIntent(
                     conversation,
-                    transition
+                    transition,
+                    messageContent
                 )
 
             await this.stateTransitionService.handleTransition(
@@ -108,7 +109,8 @@ export class ProcessEmployeeMessageService {
             const resolvedTransition =
                 await this.stateTransitionService.resolveIntent(
                     conversation,
-                    nextTransition
+                    nextTransition,
+                    messageContent
                 )
             await this.stateTransitionService.handleTransition(
                 conversation,
@@ -171,7 +173,13 @@ export class ProcessEmployeeMessageService {
             conversationType = 'new_conversation'
         }
 
-        conversation.currentState.setOutputPort(this.outputPort)
+        // conversation.currentState.outputPort =this.outputPort
+        if (!conversation.currentState.getOutputPort()) {
+            logger.debug(
+                'No output port found for conversation:',
+                conversation.id
+            )
+        }
 
         return [conversationType, conversation]
     }

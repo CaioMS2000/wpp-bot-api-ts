@@ -3,11 +3,14 @@ import { ConversationRepository } from '@/domain/repositories/conversation-repos
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { isEmployee } from '@/utils/entity'
 import { StateFactory } from '../factory/state-factory'
+import { OutputPort } from '@/core/output/output-port'
+import { logger } from '@/core/logger'
 
 export class TransferEmployeeToClientConversationUseCase {
     constructor(
         private conversationRepository: ConversationRepository,
-        private departmentRepository: DepartmentRepository
+        private departmentRepository: DepartmentRepository,
+        private stateFactory: StateFactory
     ) {}
     async execute(conversation: Conversation) {
         if (isEmployee(conversation.user)) {
@@ -32,6 +35,10 @@ export class TransferEmployeeToClientConversationUseCase {
                 throw new Error('Department queue is empty')
             }
 
+            logger.debug(
+                'looking for client conversation with client phone: ',
+                client.phone
+            )
             const clientConversation =
                 await this.conversationRepository.findActiveByClientPhoneOrThrow(
                     conversation.company,
@@ -40,10 +47,10 @@ export class TransferEmployeeToClientConversationUseCase {
 
             clientConversation.upsertAgent(employee)
             clientConversation.transitionToState(
-                StateFactory.create(
+                this.stateFactory.create(
                     'department_chat',
                     clientConversation,
-                    department
+                    { department }
                 )
             )
             await this.conversationRepository.save(clientConversation)

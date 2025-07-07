@@ -11,7 +11,7 @@ import { sendTextMessage } from '../whatsapp-client/sendTextMessage'
 
 export class WhatsAppOutputPort implements OutputPort {
     async handle(toUser: UserType, output: OutputMessage) {
-        logger.debug('[handle] Output:\n', output)
+        // logger.debug('[handle] Output:\n', output)
         try {
             switch (output.type) {
                 case 'text':
@@ -44,7 +44,7 @@ export class WhatsAppOutputPort implements OutputPort {
                     return
             }
 
-            logger.info({ toUser, output }, 'Mensagem enviada')
+            // logger.info({ toUser, output }, 'Mensagem enviada')
         } catch (err: any) {
             logger.error({ err }, 'Erro ao enviar mensagem')
         }

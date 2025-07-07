@@ -3,6 +3,7 @@ import { FindConversationByClientPhoneUseCase } from '../use-cases/find-conversa
 import { FindConversationByEmployeePhoneUseCase } from '../use-cases/find-conversation-by-employee-phone-use-case'
 import { FindEmployeeByPhoneUseCase } from '../use-cases/find-employee-by-phone-use-case'
 import { FindOrCreateClientUseCase } from '../use-cases/find-or-create-client-use-case'
+import { GetDepartmentUseCase } from '../use-cases/get-department-use-case'
 import { InsertClientIntoDepartmentQueue } from '../use-cases/insert-client-into-department-queue'
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
 import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
@@ -11,9 +12,13 @@ import { RemoveClientFromDepartmentQueue } from '../use-cases/remove-client-from
 import { ResolveSenderContextUseCase } from '../use-cases/resolve-sender-context-use-case'
 import { TransferEmployeeToClientConversationUseCase } from '../use-cases/transfer-employee-to-client-conversation-use-case'
 import { RepositoryFactory } from './repository-factory'
+import type { StateFactory } from './state-factory'
 
 export class UseCaseFactory {
-    constructor(private repositoryFactory: RepositoryFactory) {}
+    constructor(
+        private repositoryFactory: RepositoryFactory,
+        private stateFactory: StateFactory
+    ) {}
 
     getListActiveDepartmentsUseCase(): ListActiveDepartmentsUseCase {
         return new ListActiveDepartmentsUseCase(
@@ -53,7 +58,8 @@ export class UseCaseFactory {
 
     getCreateConversationUseCase(): CreateConversationUseCase {
         return new CreateConversationUseCase(
-            this.repositoryFactory.createConversationRepository()
+            this.repositoryFactory.createConversationRepository(),
+            this.stateFactory
         )
     }
 
@@ -68,7 +74,8 @@ export class UseCaseFactory {
     getTransferEmployeeToClientConversationUseCase(): TransferEmployeeToClientConversationUseCase {
         return new TransferEmployeeToClientConversationUseCase(
             this.repositoryFactory.createConversationRepository(),
-            this.repositoryFactory.createDepartmentRepository()
+            this.repositoryFactory.createDepartmentRepository(),
+            this.stateFactory
         )
     }
 
@@ -86,6 +93,12 @@ export class UseCaseFactory {
 
     getRemoveClientFromDepartmentQueue(): RemoveClientFromDepartmentQueue {
         return new RemoveClientFromDepartmentQueue(
+            this.repositoryFactory.createDepartmentRepository()
+        )
+    }
+
+    getGetDepartmentUseCase(): GetDepartmentUseCase {
+        return new GetDepartmentUseCase(
             this.repositoryFactory.createDepartmentRepository()
         )
     }

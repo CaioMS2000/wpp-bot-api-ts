@@ -12,7 +12,6 @@ export class ProcessClientMessageServiceFactory {
     ) {}
 
     createService() {
-        const outputPort = new WhatsAppOutputPort()
         const messageRepository =
             this.repositoryFactory.createMessageRepository()
         const conversationRepository =
@@ -24,7 +23,6 @@ export class ProcessClientMessageServiceFactory {
         const stateTransitionService =
             this.stateTransitionServiceFactory.createService()
         return new ProcessClientMessageService(
-            outputPort,
             messageRepository,
             conversationRepository,
             createConversationUseCase,

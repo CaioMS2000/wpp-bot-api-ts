@@ -6,6 +6,7 @@ import { InitialMenuState } from '../whats-app/application/states/initial-menu-s
 import { Company } from './company'
 import { Employee } from './employee'
 import type { Message } from './message'
+import { logger } from '@/core/logger'
 
 export type ConversationProps = {
     company: Company
@@ -58,6 +59,11 @@ export class Conversation extends AggregateRoot<ConversationProps> {
     }
 
     processMessage(messageContent: string) {
+        logger.debug(
+            '[Conversation.processMessage] currentState\n',
+            this.currentState,
+            '\n'
+        )
         const transition = this.currentState.handleMessage(messageContent)
 
         return transition

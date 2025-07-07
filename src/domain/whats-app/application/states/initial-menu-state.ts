@@ -1,11 +1,18 @@
-import { OutputMessage } from '@/core/output/output-port'
+import { OutputMessage, OutputPort } from '@/core/output/output-port'
 import { isClient, isEmployee } from '@/utils/entity'
 import { execute } from '@caioms/ts-utils/functions'
 import { MenuOption } from '../../@types'
 import { TransitionIntent } from '../factory/types'
 import { ConversationState } from './conversation-state'
+import { Conversation } from '@/domain/entities/conversation'
 
-export class InitialMenuState extends ConversationState {
+export class InitialMenuState extends ConversationState<null> {
+    constructor(
+        conversation: Conversation,
+        outputPort: OutputPort = null as unknown as OutputPort
+    ) {
+        super(conversation, outputPort)
+    }
     private menuOptions: MenuOption[] = [
         {
             key: '1',

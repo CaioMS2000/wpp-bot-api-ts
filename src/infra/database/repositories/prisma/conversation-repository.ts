@@ -66,19 +66,18 @@ export class PrismaConversationRepository extends ConversationRepository {
         } else if (conversation.currentState instanceof AIChatState) {
             // sem dados
         } else if (conversation.currentState instanceof FAQCategoriesState) {
-            const { categories } = conversation.currentState.data
-            const data = categories.reduce(
-                (acc, cat) => {
-                    acc[cat.name] = cat.items
-                    return acc
-                },
-                {} as Record<string, FAQItem[]>
-            )
-
-            return data
+            // const { categories } = conversation.currentState.data
+            // const data = categories.reduce(
+            //     (acc, cat) => {
+            //         acc[cat.name] = cat.items
+            //         return acc
+            //     },
+            //     {} as Record<string, FAQItem[]>
+            // )
+            // return data
         } else if (conversation.currentState instanceof FAQItemsState) {
-            const { categoryName, items } = conversation.currentState.data
-            const data = { [categoryName]: items }
+            const { categoryName } = conversation.currentState.data
+            const data = { categoryName }
 
             return data
         } else if (
@@ -128,14 +127,21 @@ export class PrismaConversationRepository extends ConversationRepository {
                 return state
             }
             case PrismaStateName.faq_categories: {
-                const data = faqCategoriesStateDataValidatorSchema.parse(
-                    model.stateData
-                )
-                const state = new FAQCategoriesState(
+                // const data = faqCategoriesStateDataValidatorSchema.parse(
+                //     model.stateData
+                // )
+                // const categories = Object.entries(data).reduce(
+                //     (acc, [key, value]) => {
+                //         acc.categories.push(key)
+                //         return acc
+                //     },
+                //     { categories: [] as string[] }
+                // )
+                const state = this.stateFactory.create(
+                    'faq_categories',
                     entity,
-                    Object.entries(data).map(([key, value]) => {
-                        return { name: key, items: value }
-                    })
+                    // categories
+                    { categories: [] as string[] }
                 )
 
                 return state
@@ -143,8 +149,10 @@ export class PrismaConversationRepository extends ConversationRepository {
             case PrismaStateName.faq_items: {
                 const data = faqCategoryValidatorSchema.parse(model.stateData)
 
-                const [categoryName, items] = Object.entries(data)[0]
-                const state = new FAQItemsState(entity, categoryName, items)
+                const [categoryName, _] = Object.entries(data)[0]
+                const state = this.stateFactory.create('faq_items', entity, {
+                    categoryName,
+                })
 
                 return state
             }
@@ -167,9 +175,14 @@ export class PrismaConversationRepository extends ConversationRepository {
                             dept !== null
                     )
                 )
-                const state = new DepartmentSelectionState(
+                const state = this.stateFactory.create(
+                    'department_selection',
                     entity,
-                    recoveredDepartments.map(DepartmentMapper.toEntity)
+                    {
+                        departments: recoveredDepartments.map(
+                            DepartmentMapper.toEntity
+                        ),
+                    }
                 )
 
                 return state
@@ -184,9 +197,10 @@ export class PrismaConversationRepository extends ConversationRepository {
                         employees: true,
                     },
                 })
-                const state = new DepartmentQueueState(
+                const state = this.stateFactory.create(
+                    'department_queue',
                     entity,
-                    DepartmentMapper.toEntity(department)
+                    { department: DepartmentMapper.toEntity(department) }
                 )
 
                 return state
@@ -201,9 +215,10 @@ export class PrismaConversationRepository extends ConversationRepository {
                         employees: true,
                     },
                 })
-                const state = new DepartmentChatState(
+                const state = this.stateFactory.create(
+                    'department_chat',
                     entity,
-                    DepartmentMapper.toEntity(department)
+                    { department: DepartmentMapper.toEntity(department) }
                 )
 
                 return state
@@ -218,9 +233,10 @@ export class PrismaConversationRepository extends ConversationRepository {
                         employees: true,
                     },
                 })
-                const state = new ListDepartmentQueueState(
+                const state = this.stateFactory.create(
+                    'department_queue_list',
                     entity,
-                    DepartmentMapper.toEntity(department)
+                    { department: DepartmentMapper.toEntity(department) }
                 )
 
                 return state
@@ -231,13 +247,16 @@ export class PrismaConversationRepository extends ConversationRepository {
                     where: { phone: data.phone },
                     include: { company: { include: { manager: true } } },
                 })
-                const state = new ChatWithClientState(
+                const state = this.stateFactory.create(
+                    'chat_with_client',
                     entity,
-                    ClientMapper.toEntity(
-                        client,
-                        client.company,
-                        client.company.manager
-                    )
+                    {
+                        client: ClientMapper.toEntity(
+                            client,
+                            client.company,
+                            client.company.manager
+                        ),
+                    }
                 )
 
                 return state
@@ -392,6 +411,8 @@ export class PrismaConversationRepository extends ConversationRepository {
         company: Company,
         phone: string
     ): Promise<Nullable<Conversation>> {
+        const allConversations = await prisma.conversation.findMany()
+        logger.debug('All conversations:\n', allConversations)
         logger.debug(`Finding active conversation for client ${phone}`)
         const model = await prisma.conversation.findFirst({
             where: {
@@ -480,6 +501,8 @@ export class PrismaConversationRepository extends ConversationRepository {
         company: Company,
         phone: string
     ): Promise<Conversation> {
+        const allConversations = await prisma.conversation.findMany()
+        logger.debug('All conversations:\n', allConversations)
         const conversation = await this.findActiveByClientPhone(company, phone)
 
         if (!conversation) {

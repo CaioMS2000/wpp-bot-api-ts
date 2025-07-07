@@ -13,8 +13,8 @@ type DepartmentChatStateProps = {
 export class DepartmentChatState extends ConversationState<DepartmentChatStateProps> {
     constructor(
         conversation: Conversation,
-        private department: Department,
-        outputPort: OutputPort
+        outputPort: OutputPort,
+        private department: Department
     ) {
         super(conversation, outputPort, { department })
     }

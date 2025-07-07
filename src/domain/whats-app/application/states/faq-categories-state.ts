@@ -5,9 +5,9 @@ import { MenuOption } from '../../@types'
 import { TransitionIntent } from '../factory/types'
 import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
 import { ConversationState } from './conversation-state'
+import { logger } from '@/core/logger'
 
-export type FAQCategoriesStateProps = { categories: FAQCategory[] }
-export class FAQCategoriesState extends ConversationState<FAQCategoriesStateProps> {
+export class FAQCategoriesState extends ConversationState<null> {
     constructor(
         conversation: Conversation,
         outputPort: OutputPort,
@@ -16,24 +16,30 @@ export class FAQCategoriesState extends ConversationState<FAQCategoriesStateProp
         super(conversation, outputPort)
     }
 
-    get categories() {
-        return this.props.categories
-    }
-
-    set categories(categories: FAQCategory[]) {
-        this.props.categories = categories
-    }
-
     async handleMessage(
         messageContent: string
     ): Promise<Nullable<TransitionIntent>> {
+        logger.debug('[FAQCategoriesState.handleMessage]\n', {
+            messageContent,
+        })
         if (messageContent === 'Menu principal') {
             return { target: 'initial_menu' }
         }
 
-        const correspondingCategory = this.categories.find(
+        const categories = await this.listFAQCategoriesUseCase.execute(
+            this.conversation.company
+        )
+        const correspondingCategory = categories.find(
             category => category.name === messageContent
         )
+
+        logger.debug('[FAQCategoriesState.handleMessage]\n', {
+            categories: categories.map(
+                cat => `${cat.name} with ${cat.items.length} items`
+            ),
+            messageContent,
+            correspondingCategory,
+        })
 
         if (!correspondingCategory) {
             return null
@@ -43,10 +49,10 @@ export class FAQCategoriesState extends ConversationState<FAQCategoriesStateProp
     }
 
     async onEnter() {
-        this.categories = await this.listFAQCategoriesUseCase.execute(
+        const categories = await this.listFAQCategoriesUseCase.execute(
             this.conversation.company
         )
-        const menuOptions: MenuOption[] = this.categories
+        const menuOptions: MenuOption[] = categories
             .map((category, index) => ({
                 key: (index + 1).toString(),
                 label: category.name,

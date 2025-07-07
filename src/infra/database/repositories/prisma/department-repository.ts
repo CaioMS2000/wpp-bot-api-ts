@@ -4,6 +4,7 @@ import { Department } from '@/domain/entities/department'
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { prisma } from '@/lib/prisma'
 import { DepartmentMapper } from '../../mapper/department-mapper'
+import { logger } from '@/core/logger'
 
 export class PrismaDepartmentRepository extends DepartmentRepository {
     async save(department: Department): Promise<void> {
@@ -82,6 +83,7 @@ export class PrismaDepartmentRepository extends DepartmentRepository {
         company: Company,
         name: string
     ): Promise<Department> {
+        logger.debug(`Finding department ${name}`)
         const entity = await this.findByName(company, name)
 
         if (!entity) {

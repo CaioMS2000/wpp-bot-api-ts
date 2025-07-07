@@ -1,4 +1,5 @@
 import { logger } from '@/core/logger'
+import { OutputPort } from '@/core/output/output-port'
 import { Client } from '@/domain/entities/client'
 import { Company } from '@/domain/entities/company'
 import { Conversation } from '@/domain/entities/conversation'
@@ -9,11 +10,9 @@ import { execute } from '@caioms/ts-utils/functions'
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
 import { FindConversationByClientPhoneUseCase } from '../use-cases/find-conversation-by-client-phone-use-case'
 import { StateTransitionService } from './state-transition-service'
-import { OutputPort } from '@/core/output/output-port'
 
 export class ProcessClientMessageService {
     constructor(
-        private outputPort: OutputPort,
         private messageRepository: MessageRepository,
         private conversationRepository: ConversationRepository,
         private createConversationUseCase: CreateConversationUseCase,
@@ -65,15 +64,16 @@ export class ProcessClientMessageService {
                 conversation.currentState.onExit.bind(conversation.currentState)
             )
 
-            const resolvedTransition =
+            const resolvedIntent =
                 await this.stateTransitionService.resolveIntent(
                     conversation,
-                    transition
+                    transition,
+                    messageContent
                 )
 
             await this.stateTransitionService.handleTransition(
                 conversation,
-                resolvedTransition
+                resolvedIntent
             )
 
             logger.debug(
@@ -110,7 +110,8 @@ export class ProcessClientMessageService {
             const resolvedTransition =
                 await this.stateTransitionService.resolveIntent(
                     conversation,
-                    nextTransition
+                    nextTransition,
+                    messageContent
                 )
             await this.stateTransitionService.handleTransition(
                 conversation,
@@ -172,7 +173,13 @@ export class ProcessClientMessageService {
             conversationType = 'new_conversation'
         }
 
-        conversation.currentState.setOutputPort(this.outputPort)
+        // conversation.currentState.outputPort = this.outputPort
+        if (!conversation.currentState.getOutputPort()) {
+            logger.debug(
+                'No output port found for conversation:',
+                conversation.id
+            )
+        }
 
         return [conversationType, conversation]
     }

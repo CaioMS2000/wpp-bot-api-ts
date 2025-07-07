@@ -1,7 +1,7 @@
 import { TransitionIntent } from '../factory/types'
 import { ConversationState } from './conversation-state'
 
-export class AIChatState extends ConversationState {
+export class AIChatState extends ConversationState<null> {
     async handleMessage(
         messageContent: string
     ): Promise<Nullable<TransitionIntent>> {
