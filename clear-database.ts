@@ -32,7 +32,30 @@ export async function clearDatabase(
 
     logger.info(`Deleting models: ${models.join(', ')}`)
 
+    // for (const modelName of models) {
+    //     const model = prisma[modelName as keyof typeof prisma] as any
+    //     if (typeof model?.deleteMany === 'function') {
+    //         logger.debug(`Deleting ${modelName}...`)
+    //         await model.deleteMany({})
+    //     }
+    // }
     for (const modelName of models) {
+        if (modelName === 'department_queue') {
+            logger.debug('Clearing department queue (N:N)...')
+            const departments = await prisma.department.findMany({
+                select: { id: true },
+            })
+
+            for (const { id } of departments) {
+                await prisma.department.update({
+                    where: { id },
+                    data: { queue: { set: [] } }, // limpa o relacionamento
+                })
+            }
+
+            continue // pula para o próximo item da lista
+        }
+
         const model = prisma[modelName as keyof typeof prisma] as any
         if (typeof model?.deleteMany === 'function') {
             logger.debug(`Deleting ${modelName}...`)

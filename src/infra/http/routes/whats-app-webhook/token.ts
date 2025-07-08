@@ -11,7 +11,7 @@ const webhookQuerySchema = z.object({
 })
 
 export async function webhook(app: FastifyInstance) {
-    app.withTypeProvider<ZodTypeProvider>().get('/webhook', {
+    app.withTypeProvider<ZodTypeProvider>().get('/', {
         schema: {
             querystring: webhookQuerySchema,
         },

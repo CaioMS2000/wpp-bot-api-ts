@@ -30,7 +30,7 @@ logger.debug(`Response file initialized at ${responseFilePath}`)
 async function softDBClear() {
     await prisma.$transaction(async tx => {
         logger.debug('Clearing database collections')
-        await clearDatabase(tx, ['message', 'conversation'])
+        await clearDatabase(tx, ['message', 'conversation', 'department_queue'])
     })
 }
 async function main() {

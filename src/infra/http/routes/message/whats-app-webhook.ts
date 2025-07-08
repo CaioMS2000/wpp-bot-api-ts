@@ -13,7 +13,7 @@ export async function whatsAppWebhook(
     app: FastifyInstance,
     { whatsAppMessageService }: Resources
 ) {
-    app.withTypeProvider<ZodTypeProvider>().post('/webhook', {
+    app.withTypeProvider<ZodTypeProvider>().post('/', {
         handler: async (req, reply) => {
             req.log.info(TAG, 'Evento recebido do webhook')
 
