@@ -3,6 +3,7 @@ import { FindConversationByClientPhoneUseCase } from '../use-cases/find-conversa
 import { FindConversationByEmployeePhoneUseCase } from '../use-cases/find-conversation-by-employee-phone-use-case'
 import { FindEmployeeByPhoneUseCase } from '../use-cases/find-employee-by-phone-use-case'
 import { FindOrCreateClientUseCase } from '../use-cases/find-or-create-client-use-case'
+import { FinishClientAndEmployeeChatUseCase } from '../use-cases/finish-client-and-employee-chat'
 import { GetDepartmentUseCase } from '../use-cases/get-department-use-case'
 import { InsertClientIntoDepartmentQueue } from '../use-cases/insert-client-into-department-queue'
 import { ListActiveDepartmentsUseCase } from '../use-cases/list-active-departments-use-case'
@@ -100,6 +101,12 @@ export class UseCaseFactory {
     getGetDepartmentUseCase(): GetDepartmentUseCase {
         return new GetDepartmentUseCase(
             this.repositoryFactory.createDepartmentRepository()
+        )
+    }
+
+    getFinishClientAndEmployeeChatUseCase(): FinishClientAndEmployeeChatUseCase {
+        return new FinishClientAndEmployeeChatUseCase(
+            this.repositoryFactory.createConversationRepository()
         )
     }
 }

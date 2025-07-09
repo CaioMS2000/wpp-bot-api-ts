@@ -25,7 +25,7 @@ export type StateName =
 export type StateDataMap = {
     initial_menu: null
     ai_chat: null
-    faq_categories: { categories: string[] }
+    faq_categories: null
     faq_items: {
         categoryName: string
     }

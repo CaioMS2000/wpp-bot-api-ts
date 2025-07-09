@@ -98,7 +98,8 @@ export class StateFactory {
                 const state = new DepartmentQueueState(
                     conversation,
                     this.outputPort,
-                    department
+                    department,
+                    this.useCaseFactory.getRemoveClientFromDepartmentQueue()
                 )
                 return state as StateInstanceMap[K]
             }
@@ -134,7 +135,9 @@ export class StateFactory {
                 const state = new ChatWithClientState(
                     conversation,
                     client,
-                    this.outputPort
+                    this.outputPort,
+                    this.useCaseFactory.getFinishClientAndEmployeeChatUseCase(),
+                    this.useCaseFactory.getRemoveClientFromDepartmentQueue()
                 )
                 return state as StateInstanceMap[K]
             }

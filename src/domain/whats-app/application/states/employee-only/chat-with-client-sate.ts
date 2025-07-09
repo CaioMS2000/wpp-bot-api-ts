@@ -5,6 +5,9 @@ import { execute } from '@caioms/ts-utils/functions'
 import { TransitionIntent } from '../../factory/types'
 import { ConversationState } from '../conversation-state'
 import { isEmployee } from '@/utils/entity'
+import { FinishClientAndEmployeeChatUseCase } from '../../use-cases/finish-client-and-employee-chat'
+import { Employee } from '@/domain/entities/employee'
+import { RemoveClientFromDepartmentQueue } from '../../use-cases/remove-client-from-department-queue'
 
 type ChatWithClientStateProps = {
     client: Client
@@ -14,7 +17,9 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
     constructor(
         conversation: Conversation,
         client: Client,
-        outputPort: OutputPort
+        outputPort: OutputPort,
+        private finishClientAndEmployeeChatUseCase: FinishClientAndEmployeeChatUseCase,
+        private removeClientFromDepartmentQueue: RemoveClientFromDepartmentQueue
     ) {
         super(conversation, outputPort, { client })
     }
@@ -27,6 +32,10 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
 
         if (!this.conversation.user.department) {
             throw new Error('Employee does not have a department')
+        }
+
+        if (messageContent.toLowerCase().trim() === '!finalizar') {
+            return { target: 'initial_menu' }
         }
 
         await execute(this.outputPort.handle, this.client, {
@@ -42,9 +51,32 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
     }
 
     async onEnter() {
+        if (!isEmployee(this.conversation.user)) {
+            throw new Error('Conversation user is not an employee')
+        }
+
+        if (!this.conversation.user.department) {
+            throw new Error('Employee does not have a department')
+        }
+
+        await execute(
+            this.removeClientFromDepartmentQueue.execute.bind(
+                this.removeClientFromDepartmentQueue
+            ),
+            this.conversation.user.department,
+            this.client
+        )
         await execute(this.outputPort.handle, this.conversation.user, {
             type: 'text',
             content: `🔔 Você está conversando com o cliente *${this.client.name}*\n📞 *${this.client.phone}*`,
         })
+    }
+
+    async onExit() {
+        await this.finishClientAndEmployeeChatUseCase.execute(
+            this.conversation.company,
+            this.client,
+            this.conversation.user as Employee
+        )
     }
 }

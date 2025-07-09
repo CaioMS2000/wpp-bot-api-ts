@@ -4,6 +4,7 @@ import { Department } from '@/domain/entities/department'
 import { execute } from '@caioms/ts-utils/functions'
 import { TransitionIntent } from '../../factory/types'
 import { ConversationState } from '../conversation-state'
+import { RemoveClientFromDepartmentQueue } from '../../use-cases/remove-client-from-department-queue'
 
 type DepartmentQueueStateProps = {
     department: Department
@@ -13,7 +14,8 @@ export class DepartmentQueueState extends ConversationState<DepartmentQueueState
     constructor(
         conversation: Conversation,
         outputPort: OutputPort,
-        department: Department
+        department: Department,
+        private removeClientFromDepartmentQueue: RemoveClientFromDepartmentQueue
     ) {
         super(conversation, outputPort, { department })
     }
@@ -42,5 +44,12 @@ export class DepartmentQueueState extends ConversationState<DepartmentQueueState
             type: 'text',
             content: `🔔 Você está na fila de espera do departamento *${this.department.name}*, em breve um atendente entrará em contato. Caso queira sair da fila de espera, digite "sair".`,
         })
+    }
+
+    async onExit() {
+        await this.removeClientFromDepartmentQueue.execute(
+            this.department,
+            this.conversation.user
+        )
     }
 }

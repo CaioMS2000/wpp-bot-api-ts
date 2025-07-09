@@ -141,4 +141,8 @@ export class Conversation extends AggregateRoot<ConversationProps> {
     set currentState(state: ConversationState) {
         this.props.currentState = state
     }
+
+    set endedAt(endedAt: Nullable<Date>) {
+        this.props.endedAt = endedAt
+    }
 }

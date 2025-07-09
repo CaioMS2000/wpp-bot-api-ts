@@ -127,22 +127,7 @@ export class PrismaConversationRepository extends ConversationRepository {
                 return state
             }
             case PrismaStateName.faq_categories: {
-                // const data = faqCategoriesStateDataValidatorSchema.parse(
-                //     model.stateData
-                // )
-                // const categories = Object.entries(data).reduce(
-                //     (acc, [key, value]) => {
-                //         acc.categories.push(key)
-                //         return acc
-                //     },
-                //     { categories: [] as string[] }
-                // )
-                const state = this.stateFactory.create(
-                    'faq_categories',
-                    entity,
-                    // categories
-                    { categories: [] as string[] }
-                )
+                const state = this.stateFactory.create('faq_categories', entity)
 
                 return state
             }
@@ -504,6 +489,22 @@ export class PrismaConversationRepository extends ConversationRepository {
         const allConversations = await prisma.conversation.findMany()
         logger.debug('All conversations:\n', allConversations)
         const conversation = await this.findActiveByClientPhone(company, phone)
+
+        if (!conversation) {
+            throw new Error('No active conversation found for client phone')
+        }
+
+        return conversation
+    }
+
+    async findActiveByEmployeePhoneOrThrow(
+        company: Company,
+        phone: string
+    ): Promise<Conversation> {
+        const conversation = await this.findActiveByEmployeePhone(
+            company,
+            phone
+        )
 
         if (!conversation) {
             throw new Error('No active conversation found for client phone')

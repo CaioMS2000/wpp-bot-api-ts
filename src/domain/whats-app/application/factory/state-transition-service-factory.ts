@@ -11,12 +11,8 @@ export class StateTransitionServiceFactory {
         private stateFactory: StateFactory
     ) {}
     createService() {
-        const listFAQCategoriesUseCase =
-            this.useCaseFactory.getListFAQCategoriesUseCase()
         const departmentRepository =
             this.repositoryFactory.createDepartmentRepository()
-        const removeClientFromDepartmentQueue =
-            this.useCaseFactory.getRemoveClientFromDepartmentQueue()
         const listActiveDepartmentsUseCase =
             this.useCaseFactory.getListActiveDepartmentsUseCase()
         const insertClientIntoDepartmentQueue =
@@ -28,8 +24,6 @@ export class StateTransitionServiceFactory {
         return new StateTransitionService(
             this.stateFactory,
             departmentRepository,
-            removeClientFromDepartmentQueue,
-            listFAQCategoriesUseCase,
             listActiveDepartmentsUseCase,
             insertClientIntoDepartmentQueue,
             transferEmployeeToClientConversationUseCase,
