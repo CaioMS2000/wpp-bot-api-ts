@@ -38,4 +38,11 @@ export class DepartmentChatState extends ConversationState<DepartmentChatStatePr
             content: `🔔 Você está conversando com o departamento: ${this.department.name}`,
         })
     }
+
+    async onExit() {
+        await execute(this.outputPort.handle, this.conversation.user, {
+            type: 'text',
+            content: '🔔 O atendimento foi encerrado',
+        })
+    }
 }

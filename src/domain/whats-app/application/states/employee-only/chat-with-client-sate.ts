@@ -78,5 +78,9 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
             this.client,
             this.conversation.user as Employee
         )
+        await execute(this.outputPort.handle, this.conversation.user, {
+            type: 'text',
+            content: `🔔 Atendimento para o cliente *${this.client.name}* encerrado.`,
+        })
     }
 }

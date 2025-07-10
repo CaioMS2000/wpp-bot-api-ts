@@ -5,9 +5,13 @@ import { ConversationRepository } from '@/domain/repositories/conversation-repos
 import { InitialMenuState } from '../states/initial-menu-state'
 import { Conversation } from '@/domain/entities/conversation'
 import { logger } from '@/core/logger'
+import type { StateFactory } from '../factory/state-factory'
 
 export class FinishClientAndEmployeeChatUseCase {
-    constructor(private conversationRepository: ConversationRepository) {}
+    constructor(
+        private conversationRepository: ConversationRepository,
+        private stateFactory: StateFactory
+    ) {}
 
     async execute(company: Company, client: Client, employee: Employee) {
         logger.debug(
@@ -34,13 +38,13 @@ export class FinishClientAndEmployeeChatUseCase {
 
         clientConversation = Conversation.create({ user: client, company })
 
-        await this.conversationRepository.save(clientConversation)
-
-        const initialMenuStateForEmployee = new InitialMenuState(
-            employeeConversation
+        clientConversation.transitionToState(
+            this.stateFactory.create('initial_menu', clientConversation)
         )
-
-        employeeConversation.transitionToState(initialMenuStateForEmployee)
+        await this.conversationRepository.save(clientConversation)
+        employeeConversation.transitionToState(
+            this.stateFactory.create('initial_menu', employeeConversation)
+        )
         await this.conversationRepository.save(employeeConversation)
     }
 }

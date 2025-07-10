@@ -106,7 +106,8 @@ export class UseCaseFactory {
 
     getFinishClientAndEmployeeChatUseCase(): FinishClientAndEmployeeChatUseCase {
         return new FinishClientAndEmployeeChatUseCase(
-            this.repositoryFactory.createConversationRepository()
+            this.repositoryFactory.createConversationRepository(),
+            this.stateFactory
         )
     }
 }

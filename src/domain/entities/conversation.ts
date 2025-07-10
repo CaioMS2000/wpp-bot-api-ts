@@ -60,9 +60,8 @@ export class Conversation extends AggregateRoot<ConversationProps> {
 
     processMessage(messageContent: string) {
         logger.debug(
-            '[Conversation.processMessage] currentState\n',
-            this.currentState,
-            '\n'
+            '[Conversation.processMessage] currentState: ',
+            this.currentState.constructor.name
         )
         const transition = this.currentState.handleMessage(messageContent)
 
