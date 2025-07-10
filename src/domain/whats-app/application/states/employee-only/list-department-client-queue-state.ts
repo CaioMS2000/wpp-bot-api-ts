@@ -4,6 +4,7 @@ import { Department } from '@/domain/entities/department'
 import { execute } from '@caioms/ts-utils/functions'
 import { TransitionIntent } from '../../factory/types'
 import { ConversationState } from '../conversation-state'
+import { logger } from '@/core/logger'
 
 type ListDepartmentQueueStateProps = {
     department: Department

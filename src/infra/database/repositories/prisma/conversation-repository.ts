@@ -30,6 +30,7 @@ import { departmentValidatorSchema } from '../../validators/stateDataJSONValidat
 import { departmentsValidatorSchema } from '../../validators/stateDataJSONValidators/departmentsValidator'
 import { faqCategoriesStateDataValidatorSchema } from '../../validators/stateDataJSONValidators/faqCategoriesValidator'
 import { faqCategoryValidatorSchema } from '../../validators/stateDataJSONValidators/faqCategoryValidator'
+import { ConversationState } from '@/domain/whats-app/application/states/conversation-state'
 
 const stateMap = {
     [InitialMenuState.name]: PrismaStateName.initial_menu,
@@ -115,21 +116,30 @@ export class PrismaConversationRepository extends ConversationRepository {
     }
 
     private async restoreSate(entity: Conversation, model: PrismaConversation) {
+        let restoredSate: Nullable<ConversationState<any>> = null
         switch (model.currentState) {
             case PrismaStateName.initial_menu: {
-                const state = new InitialMenuState(entity)
+                // const state = new InitialMenuState(entity)
+                const state = this.stateFactory.create('initial_menu', entity)
 
-                return state
+                // return state
+                restoredSate = state
+                break
             }
             case PrismaStateName.ai_chat: {
-                const state = new AIChatState(entity)
+                // const state = new AIChatState(entity)
+                const state = this.stateFactory.create('ai_chat', entity)
 
-                return state
+                // return state
+                restoredSate = state
+                break
             }
             case PrismaStateName.faq_categories: {
                 const state = this.stateFactory.create('faq_categories', entity)
 
-                return state
+                // return state
+                restoredSate = state
+                break
             }
             case PrismaStateName.faq_items: {
                 const data = faqCategoryValidatorSchema.parse(model.stateData)
@@ -139,7 +149,9 @@ export class PrismaConversationRepository extends ConversationRepository {
                     categoryName,
                 })
 
-                return state
+                // return state
+                restoredSate = state
+                break
             }
             case PrismaStateName.department_selection: {
                 const data = departmentsValidatorSchema.parse(model.stateData)
@@ -170,7 +182,9 @@ export class PrismaConversationRepository extends ConversationRepository {
                     }
                 )
 
-                return state
+                // return state
+                restoredSate = state
+                break
             }
             case PrismaStateName.department_queue: {
                 const data = departmentValidatorSchema.parse(model.stateData)
@@ -188,7 +202,9 @@ export class PrismaConversationRepository extends ConversationRepository {
                     { department: DepartmentMapper.toEntity(department) }
                 )
 
-                return state
+                // return state
+                restoredSate = state
+                break
             }
             case PrismaStateName.department_chat: {
                 const data = departmentValidatorSchema.parse(model.stateData)
@@ -206,7 +222,9 @@ export class PrismaConversationRepository extends ConversationRepository {
                     { department: DepartmentMapper.toEntity(department) }
                 )
 
-                return state
+                // return state
+                restoredSate = state
+                break
             }
             case PrismaStateName.department_queue_list: {
                 const data = departmentValidatorSchema.parse(model.stateData)
@@ -224,7 +242,9 @@ export class PrismaConversationRepository extends ConversationRepository {
                     { department: DepartmentMapper.toEntity(department) }
                 )
 
-                return state
+                // return state
+                restoredSate = state
+                break
             }
             case PrismaStateName.chat_with_client: {
                 const data = clientValidatorSchema.parse(model.stateData)
@@ -244,9 +264,13 @@ export class PrismaConversationRepository extends ConversationRepository {
                     }
                 )
 
-                return state
+                // return state
+                restoredSate = state
+                break
             }
         }
+
+        return restoredSate
     }
 
     private async createConversation(
@@ -255,7 +279,6 @@ export class PrismaConversationRepository extends ConversationRepository {
     ) {
         logger.debug(`Creating conversation ${conversation.id}`)
         const stateName = stateMap[conversation.currentState.constructor.name]
-        const stateData = conversation.currentState.data
 
         await prisma.conversation.create({
             data: {
@@ -397,8 +420,6 @@ export class PrismaConversationRepository extends ConversationRepository {
         phone: string
     ): Promise<Nullable<Conversation>> {
         const allConversations = await prisma.conversation.findMany()
-        logger.debug('All conversations:\n', allConversations)
-        logger.debug(`Finding active conversation for client ${phone}`)
         const model = await prisma.conversation.findFirst({
             where: {
                 client: {
@@ -486,8 +507,6 @@ export class PrismaConversationRepository extends ConversationRepository {
         company: Company,
         phone: string
     ): Promise<Conversation> {
-        const allConversations = await prisma.conversation.findMany()
-        logger.debug('All conversations:\n', allConversations)
         const conversation = await this.findActiveByClientPhone(company, phone)
 
         if (!conversation) {

@@ -5,6 +5,7 @@ import { execute } from '@caioms/ts-utils/functions'
 import { MenuOption } from '../../../@types'
 import { TransitionIntent } from '../../factory/types'
 import { ConversationState } from '../conversation-state'
+import { logger } from '@/core/logger'
 
 type DepartmentSelectionStateProps = {
     departments: Department[]
@@ -56,10 +57,16 @@ export class DepartmentSelectionState extends ConversationState<DepartmentSelect
             return { target: 'department_queue' }
         }
 
+        await this.sendSelectionMessage()
+
         return null
     }
 
     async onEnter() {
+        await this.sendSelectionMessage()
+    }
+
+    private async sendSelectionMessage() {
         const listOutput: OutputMessage = {
             type: 'list',
             text: 'Departamentos',

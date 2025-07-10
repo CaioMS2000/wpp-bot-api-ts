@@ -42,7 +42,7 @@ export class DepartmentChatState extends ConversationState<DepartmentChatStatePr
     async onExit() {
         await execute(this.outputPort.handle, this.conversation.user, {
             type: 'text',
-            content: '🔔 O atendimento foi encerrado',
+            content: '🔔 *O atendimento foi encerrado*',
         })
     }
 }

@@ -5,6 +5,7 @@ import { MenuOption } from '../../@types'
 import { TransitionIntent } from '../factory/types'
 import { ConversationState } from './conversation-state'
 import { Conversation } from '@/domain/entities/conversation'
+import { logger } from '@/core/logger'
 
 export class InitialMenuState extends ConversationState<null> {
     constructor(
@@ -44,6 +45,9 @@ export class InitialMenuState extends ConversationState<null> {
     async handleMessage(
         messageContent: string
     ): Promise<Nullable<TransitionIntent>> {
+        logger.debug('[InitialMenuState.handleMessage]\n', {
+            messageContent,
+        })
         let res: Nullable<TransitionIntent> = null
 
         if (isClient(this.conversation.user)) {
@@ -54,10 +58,22 @@ export class InitialMenuState extends ConversationState<null> {
             res = this.handleEmployeeMessage(messageContent)
         }
 
+        if (!res) {
+            await execute(this.outputPort.handle, this.conversation.user, {
+                type: 'text',
+                content: '‼️ *Opção inválida*',
+            })
+            await this.sendSelectionMessage()
+        }
+
         return res
     }
 
     async onEnter() {
+        await this.sendSelectionMessage()
+    }
+
+    private async sendSelectionMessage() {
         const availableOptions = this.menuOptions.filter(opt => {
             if (isClient(this.conversation.user)) return opt.forClient
             return opt.forEmployee

@@ -54,8 +54,9 @@ export class ProcessClientMessageService {
             )
         }
 
-        const transition = await conversation.processMessage(messageContent)
-        if (transition) {
+        const transitionIntent =
+            await conversation.processMessage(messageContent)
+        if (transitionIntent) {
             logger.debug(
                 "Running 'onExit' for state:",
                 conversation.currentState.constructor.name
@@ -67,7 +68,7 @@ export class ProcessClientMessageService {
             const resolvedIntent =
                 await this.stateTransitionService.resolveIntent(
                     conversation,
-                    transition,
+                    transitionIntent,
                     messageContent
                 )
 

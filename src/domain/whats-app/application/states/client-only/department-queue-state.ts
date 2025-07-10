@@ -5,6 +5,7 @@ import { execute } from '@caioms/ts-utils/functions'
 import { TransitionIntent } from '../../factory/types'
 import { ConversationState } from '../conversation-state'
 import { RemoveClientFromDepartmentQueue } from '../../use-cases/remove-client-from-department-queue'
+import { logger } from '@/core/logger'
 
 type DepartmentQueueStateProps = {
     department: Department

@@ -4,6 +4,7 @@ import { execute } from '@caioms/ts-utils/functions'
 import { TransitionIntent } from '../factory/types'
 import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
 import { ConversationState } from './conversation-state'
+import { logger } from '@/core/logger'
 
 export type FAQItemsStateProps = {
     categoryName: string

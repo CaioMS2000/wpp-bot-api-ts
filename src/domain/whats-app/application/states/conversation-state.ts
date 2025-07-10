@@ -83,11 +83,15 @@ export abstract class ConversationState<T = unknown> {
     }
 
     onEnter(): Promise<void> | void {
-        logger.debug(`[onEnter] State: ${this.constructor.name}`)
+        logger.debug(
+            `[onEnter] State: ${this.constructor.name} - Not implemented`
+        )
     }
 
     onExit(): Promise<void> | void {
-        logger.debug(`[onExit] State: ${this.constructor.name}`)
+        logger.debug(
+            `[onExit] State: ${this.constructor.name} - Not implemented`
+        )
     }
 
     onTransitionTo(

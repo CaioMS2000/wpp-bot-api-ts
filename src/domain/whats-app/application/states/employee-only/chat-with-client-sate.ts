@@ -8,6 +8,7 @@ import { isEmployee } from '@/utils/entity'
 import { FinishClientAndEmployeeChatUseCase } from '../../use-cases/finish-client-and-employee-chat'
 import { Employee } from '@/domain/entities/employee'
 import { RemoveClientFromDepartmentQueue } from '../../use-cases/remove-client-from-department-queue'
+import { logger } from '@/core/logger'
 
 type ChatWithClientStateProps = {
     client: Client

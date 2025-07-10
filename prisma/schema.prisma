@@ -9,12 +9,12 @@ datasource db {
 }
 
 model Manager {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password      String
-  phone     String?  @unique
-  company   Company?
+  id       String   @id @default(uuid())
+  name     String
+  email    String   @unique
+  password String
+  phone    String?  @unique
+  company  Company?
 }
 
 enum WeekDay {
@@ -28,24 +28,23 @@ enum WeekDay {
 }
 
 model BusinessHour {
-  id        String   @id @default(uuid())
+  id        String  @id @default(uuid())
   day       WeekDay
   openTime  String
   closeTime String
   isActive  Boolean
-  company   Company  @relation(fields: [companyId], references: [id])
+  company   Company @relation(fields: [companyId], references: [id])
   companyId String
 
   @@unique([companyId, day])
 }
 
-
 model Company {
   id            String         @id @default(uuid())
   name          String
-  email          String?
-  website          String?
-  description          String?
+  email         String?
+  website       String?
+  description   String?
   cnpj          String         @unique
   phone         String         @unique
   clients       Client[]
@@ -53,7 +52,7 @@ model Company {
   departments   Department[]
   employees     Employee[]
   faqs          FAQCategory[]
-  managerId     String @unique
+  managerId     String         @unique
   manager       Manager        @relation(fields: [managerId], references: [id])
   businessHours BusinessHour[]
 }
@@ -70,15 +69,15 @@ model Client {
 }
 
 model Employee {
-  id            String         @id @default(uuid())
-  name          String
-  phone         String         @unique
-  companyId     String
-  departmentId  String?
-  company       Company        @relation(fields: [companyId], references: [id])
-  department    Department?    @relation(fields: [departmentId], references: [id])
-  messages      Message[]
-  conversations Conversation[] @relation("employee")
+  id                 String         @id @default(uuid())
+  name               String
+  phone              String         @unique
+  companyId          String
+  departmentId       String?
+  company            Company        @relation(fields: [companyId], references: [id])
+  department         Department?    @relation(fields: [departmentId], references: [id])
+  messages           Message[]
+  conversations      Conversation[] @relation("employee")
   agentConversations Conversation[] @relation("agent")
 }
 
@@ -91,6 +90,7 @@ enum AgentType {
   EMPLOYEE
   AI
 }
+
 enum StateName {
   initial_menu
   ai_chat
@@ -104,28 +104,29 @@ enum StateName {
 }
 
 model Conversation {
-  id           String    @id @default(uuid())
-  clientId     String?
-  employeeId   String?
-  userType     UserType
-  agentType    AgentType?
-  agentId      String?
-  companyId    String
-  currentState StateName
-  stateData    Json?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  startedAt    DateTime @default(now())
-  endedAt    DateTime?
-  lastStateChange    DateTime?
-  aiServiceThreadId   String?
-  aiServiceThreadResume   String?
-  client       Client?   @relation(fields: [clientId], references: [id])
-  company      Company   @relation(fields: [companyId], references: [id])
-  employee     Employee? @relation("employee", fields: [employeeId], references: [id])
-  agent     Employee? @relation("agent", fields: [agentId], references: [id])
-  messages     Message[]
+  id                        String     @id @default(uuid())
+  clientId                  String?
+  employeeId                String?
+  userType                  UserType
+  agentType                 AgentType?
+  agentId                   String?
+  companyId                 String
+  currentState              StateName
+  stateData                 Json?
+  createdAt                 DateTime   @default(now())
+  updatedAt                 DateTime   @updatedAt
+  startedAt                 DateTime   @default(now())
+  endedAt                   DateTime?
+  lastStateChange           DateTime?
+  aiServiceThreadId         String?
+  aiServiceThreadResume     String?
+  client                    Client?    @relation(fields: [clientId], references: [id])
+  company                   Company    @relation(fields: [companyId], references: [id])
+  employee                  Employee?  @relation("employee", fields: [employeeId], references: [id])
+  agent                     Employee?  @relation("agent", fields: [agentId], references: [id])
+  messages                  Message[]
 }
+
 enum FromType {
   CLIENT
   EMPLOYEE
@@ -146,18 +147,18 @@ model Message {
 }
 
 model Department {
-  id        String     @id @default(uuid())
-  name      String     @unique
-  description      String? @default("")
-  companyId String
-  company   Company    @relation(fields: [companyId], references: [id])
-  employees Employee[]
-  queue     Client[]   @relation("queue")
+  id          String     @id @default(uuid())
+  name        String     @unique
+  description String?    @default("")
+  companyId   String
+  company     Company    @relation(fields: [companyId], references: [id])
+  employees   Employee[]
+  queue       Client[]   @relation("queue")
 }
 
 model FAQCategory {
   id        String    @id @default(uuid())
-  name     String    @unique
+  name      String    @unique
   companyId String
   company   Company   @relation(fields: [companyId], references: [id])
   items     FAQItem[]
