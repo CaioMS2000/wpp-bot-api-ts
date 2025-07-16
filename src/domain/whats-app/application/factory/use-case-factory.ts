@@ -1,3 +1,4 @@
+import { ConversationRepository } from '@/domain/repositories/conversation-repository'
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
 import { FindConversationByClientPhoneUseCase } from '../use-cases/find-conversation-by-client-phone-use-case'
 import { FindConversationByEmployeePhoneUseCase } from '../use-cases/find-conversation-by-employee-phone-use-case'
@@ -11,14 +12,17 @@ import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-it
 import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
 import { RemoveClientFromDepartmentQueue } from '../use-cases/remove-client-from-department-queue'
 import { ResolveSenderContextUseCase } from '../use-cases/resolve-sender-context-use-case'
+import { StartNextClientConversationUseCase } from '../use-cases/start-next-client-conversation-use-case'
 import { TransferEmployeeToClientConversationUseCase } from '../use-cases/transfer-employee-to-client-conversation-use-case'
 import { RepositoryFactory } from './repository-factory'
 import type { StateFactory } from './state-factory'
+import { DepartmentQueueServiceFactory } from './department-queue-service-factory'
 
 export class UseCaseFactory {
     constructor(
         private repositoryFactory: RepositoryFactory,
-        private stateFactory: StateFactory
+        private stateFactory: StateFactory,
+        private departmentQueueServiceFactory: DepartmentQueueServiceFactory
     ) {}
 
     getListActiveDepartmentsUseCase(): ListActiveDepartmentsUseCase {
@@ -108,6 +112,16 @@ export class UseCaseFactory {
         return new FinishClientAndEmployeeChatUseCase(
             this.repositoryFactory.createConversationRepository(),
             this.stateFactory
+        )
+    }
+
+    getStartNextClientConversationUseCase(): StartNextClientConversationUseCase {
+        return new StartNextClientConversationUseCase(
+            this.stateFactory,
+            this.departmentQueueServiceFactory.createService(),
+            this.repositoryFactory.createConversationRepository(),
+            this.repositoryFactory.createDepartmentRepository(),
+            this.getTransferEmployeeToClientConversationUseCase()
         )
     }
 }

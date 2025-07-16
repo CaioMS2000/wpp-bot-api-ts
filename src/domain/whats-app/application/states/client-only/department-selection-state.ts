@@ -1,27 +1,58 @@
+import { logger } from '@/core/logger'
 import { OutputMessage, OutputPort } from '@/core/output/output-port'
 import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
+import { Message } from '@/domain/entities/message'
 import { execute } from '@caioms/ts-utils/functions'
 import { MenuOption } from '../../../@types'
-import { TransitionIntent } from '../../factory/types'
+import { ListActiveDepartmentsUseCase } from '../../use-cases/list-active-departments-use-case'
 import { ConversationState } from '../conversation-state'
-import { logger } from '@/core/logger'
+import { StateTypeMapper } from '../types'
 
-type DepartmentSelectionStateProps = {
-    departments: Department[]
-}
-
-export class DepartmentSelectionState extends ConversationState<DepartmentSelectionStateProps> {
-    private menuOptions: MenuOption[]
-
+export class DepartmentSelectionState extends ConversationState<null> {
     constructor(
         conversation: Conversation,
         outputPort: OutputPort,
-        departments: Department[]
+        private listActiveDepartmentsUseCase: ListActiveDepartmentsUseCase
     ) {
-        super(conversation, outputPort, { departments })
+        super(conversation, outputPort)
+    }
 
-        this.menuOptions = departments
+    async handleMessage(message: Message): Promise<Nullable<StateTypeMapper>> {
+        if (message.content === 'Menu principal') {
+            return { stateName: 'InitialMenuState' }
+        }
+
+        const availableDepartments =
+            await this.listActiveDepartmentsUseCase.execute(
+                this.conversation.company
+            )
+        const correspondingDepartment = availableDepartments.find(
+            dept => dept.name === message.content
+        )
+
+        if (correspondingDepartment) {
+            return {
+                stateName: 'DepartmentQueueState',
+                params: { departmentId: correspondingDepartment.id },
+            }
+        }
+
+        await this.sendSelectionMessage()
+
+        return null
+    }
+
+    async onEnter() {
+        await this.sendSelectionMessage()
+    }
+
+    private async loadDepartmentsMenu() {
+        const availableDepartments =
+            await this.listActiveDepartmentsUseCase.execute(
+                this.conversation.company
+            )
+        const menuOptions: MenuOption[] = availableDepartments
             .map((dept, index) => ({
                 key: (index + 1).toString(),
                 label: dept.name,
@@ -36,37 +67,13 @@ export class DepartmentSelectionState extends ConversationState<DepartmentSelect
                     forEmployee: true,
                 },
             ])
-    }
 
-    get departments() {
-        return this.props.departments
-    }
-
-    async handleMessage(
-        messageContent: string
-    ): Promise<Nullable<TransitionIntent>> {
-        if (messageContent === 'Menu principal') {
-            return { target: 'initial_menu' }
-        }
-
-        const correspondingDepartment = this.departments.find(
-            dept => dept.name === messageContent
-        )
-
-        if (correspondingDepartment) {
-            return { target: 'department_queue' }
-        }
-
-        await this.sendSelectionMessage()
-
-        return null
-    }
-
-    async onEnter() {
-        await this.sendSelectionMessage()
+        return menuOptions
     }
 
     private async sendSelectionMessage() {
+        const menuOptions = await this.loadDepartmentsMenu()
+
         const listOutput: OutputMessage = {
             type: 'list',
             text: 'Departamentos',
@@ -74,7 +81,7 @@ export class DepartmentSelectionState extends ConversationState<DepartmentSelect
             sections: [
                 {
                     title: 'Items',
-                    rows: this.menuOptions.map(opt => ({
+                    rows: menuOptions.map(opt => ({
                         id: opt.key,
                         title: opt.label,
                     })),

@@ -1,14 +1,13 @@
 import { RepositoryFactory } from '@/domain/whats-app/application/factory/repository-factory'
 import { UseCaseFactory } from '@/domain/whats-app/application/factory/use-case-factory'
-import { WhatsAppOutputPort } from '@/infra/http/output/whats-app-output-port'
 import { ProcessClientMessageService } from '../services/process-client-message-service'
-import { StateTransitionServiceFactory } from './state-transition-service-factory'
+import { StateFactory } from './state-factory'
 
 export class ProcessClientMessageServiceFactory {
     constructor(
         private repositoryFactory: RepositoryFactory,
         private useCaseFactory: UseCaseFactory,
-        private stateTransitionServiceFactory: StateTransitionServiceFactory
+        private stateFactory: StateFactory
     ) {}
 
     createService() {
@@ -20,14 +19,12 @@ export class ProcessClientMessageServiceFactory {
             this.useCaseFactory.getCreateConversationUseCase()
         const findConversationByClientPhoneUseCase =
             this.useCaseFactory.getFindConversationByClientPhoneUseCase()
-        const stateTransitionService =
-            this.stateTransitionServiceFactory.createService()
         return new ProcessClientMessageService(
             messageRepository,
             conversationRepository,
             createConversationUseCase,
             findConversationByClientPhoneUseCase,
-            stateTransitionService
+            this.stateFactory
         )
     }
 }

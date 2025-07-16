@@ -1,10 +1,10 @@
+import { logger } from '@/core/logger'
+import { OutputPort } from '@/core/output/output-port'
 import { Conversation } from '@/domain/entities/conversation'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { isEmployee } from '@/utils/entity'
 import { StateFactory } from '../factory/state-factory'
-import { OutputPort } from '@/core/output/output-port'
-import { logger } from '@/core/logger'
 
 export class TransferEmployeeToClientConversationUseCase {
     constructor(
@@ -47,11 +47,10 @@ export class TransferEmployeeToClientConversationUseCase {
 
             clientConversation.upsertAgent(employee)
             clientConversation.transitionToState(
-                this.stateFactory.create(
-                    'department_chat',
-                    clientConversation,
-                    { department }
-                )
+                this.stateFactory.create(clientConversation, {
+                    stateName: 'DepartmentChatState',
+                    params: { departmentId: department.id },
+                })
             )
             await this.conversationRepository.save(clientConversation)
 

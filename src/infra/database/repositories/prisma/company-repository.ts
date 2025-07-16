@@ -1,45 +1,36 @@
 import { Company } from '@/domain/entities/company'
 import { CompanyRepository } from '@/domain/repositories/company-repository'
+import { CompanyMapper } from '../../mappers/company-mapper'
 import { prisma } from '@/lib/prisma'
-import { CompanyMapper } from '../../mapper/company-mapper'
 
 export class PrismaCompanyRepository extends CompanyRepository {
     async save(company: Company): Promise<void> {
-        await prisma.company.upsert({
-            where: { id: company.id },
-            update: {
-                name: company.name,
-                phone: company.phone,
-                cnpj: company.cnpj,
-                email: company.email,
-                website: company.website,
-                description: company.description,
-                managerId: company.manager.id,
-            },
-            create: {
-                id: company.id,
-                name: company.name,
-                phone: company.phone,
-                cnpj: company.cnpj,
-                email: company.email,
-                website: company.website,
-                description: company.description,
-                managerId: company.manager.id,
-            },
-        })
+        const data = CompanyMapper.toModel(company)
+        const businessHours = CompanyMapper.businessHoursToModel(company)
 
-        // Remove horários antigos e recria com os atuais
-        await prisma.businessHour.deleteMany({
-            where: { companyId: company.id },
-        })
+        await prisma.$transaction(async tx => {
+            await tx.company.upsert({
+                where: { id: company.id },
+                update: data,
+                create: {
+                    ...data,
+                    id: company.id,
+                },
+            })
 
-        await prisma.businessHour.createMany({
-            data: CompanyMapper.businessHoursToModels(company),
+            // Atualiza businessHours removendo os antigos e inserindo os novos
+            await tx.businessHour.deleteMany({
+                where: { companyId: company.id },
+            })
+
+            await tx.businessHour.createMany({
+                data: businessHours,
+            })
         })
     }
 
     async findByPhone(phone: string): Promise<Nullable<Company>> {
-        const model = await prisma.company.findUnique({
+        const raw = await prisma.company.findUnique({
             where: { phone },
             include: {
                 manager: true,
@@ -47,13 +38,12 @@ export class PrismaCompanyRepository extends CompanyRepository {
             },
         })
 
-        if (!model) return null
-
-        return CompanyMapper.toEntity(model)
+        if (!raw) return null
+        return CompanyMapper.toEntity(raw)
     }
 
     async findByCNPJ(cnpj: string): Promise<Nullable<Company>> {
-        const model = await prisma.company.findUnique({
+        const raw = await prisma.company.findUnique({
             where: { cnpj },
             include: {
                 manager: true,
@@ -61,8 +51,7 @@ export class PrismaCompanyRepository extends CompanyRepository {
             },
         })
 
-        if (!model) return null
-
-        return CompanyMapper.toEntity(model)
+        if (!raw) return null
+        return CompanyMapper.toEntity(raw)
     }
 }

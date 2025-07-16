@@ -1,7 +1,8 @@
 import { logger } from '@/core/logger'
 import { OutputPort } from '@/core/output/output-port'
 import { Conversation } from '@/domain/entities/conversation'
-import { TransitionIntent } from '../factory/types'
+import { Message } from '@/domain/entities/message'
+import { StateTypeMapper } from './types'
 
 export abstract class ConversationState<T = unknown> {
     private static readonly TEMPORARY_MARKER = Symbol('TEMPORARY_OUTPUT_PORT')
@@ -74,11 +75,9 @@ export abstract class ConversationState<T = unknown> {
         this._outputPort = outputPort
     }
 
-    abstract handleMessage(
-        messageContent: string
-    ): Promise<Nullable<TransitionIntent>>
+    abstract handleMessage(message: Message): Promise<Nullable<StateTypeMapper>>
 
-    getNextState(message = ''): Promise<Nullable<TransitionIntent>> {
+    getNextState(message = ''): Promise<Nullable<StateTypeMapper>> {
         return Promise.resolve(null)
     }
 

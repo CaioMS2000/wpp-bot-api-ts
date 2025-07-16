@@ -14,6 +14,10 @@ export type ParsedWhatsAppMessage = {
 export function parseWhatsAppMessage(
     payload: any
 ): Nullable<ParsedWhatsAppMessage> {
+    let to: string | undefined
+    let from: string | undefined
+    let name: string | undefined
+
     try {
         const entry = payload?.entry?.[0]
         const change = entry?.changes?.[0]
@@ -31,9 +35,16 @@ export function parseWhatsAppMessage(
             return null
         }
 
-        const from = message.from
-        const to = metadata.display_phone_number
-        const name = contact?.profile?.name ?? undefined
+        from = message.from
+        to = metadata.display_phone_number
+
+        if (!from || !to) {
+            throw new Error(
+                'Não foi possível identificar o remetente ou destinatário da mensagem'
+            )
+        }
+
+        name = contact?.profile?.name ?? undefined
 
         let content: string | undefined
 
@@ -64,7 +75,7 @@ export function parseWhatsAppMessage(
         return { from, to, message: content, name }
     } catch (error) {
         logger.error(
-            '[webhook] Erro ao analisar a mensagem do WhatsApp:',
+            `[webhook] Erro ao analisar a mensagem do WhatsApp vinda de ${from}${name ? ` (${name})` : ''} para ${to}:`,
             error
         )
         throw error

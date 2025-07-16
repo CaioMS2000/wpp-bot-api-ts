@@ -9,7 +9,7 @@ import { MessageRepository } from '@/domain/repositories/message-repository'
 import { execute } from '@caioms/ts-utils/functions'
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
 import { FindConversationByClientPhoneUseCase } from '../use-cases/find-conversation-by-client-phone-use-case'
-import { StateTransitionService } from './state-transition-service'
+import { StateFactory } from '../factory/state-factory'
 
 export class ProcessClientMessageService {
     constructor(
@@ -17,7 +17,7 @@ export class ProcessClientMessageService {
         private conversationRepository: ConversationRepository,
         private createConversationUseCase: CreateConversationUseCase,
         private findConversationByClientPhoneUseCase: FindConversationByClientPhoneUseCase,
-        private stateTransitionService: StateTransitionService
+        private stateFactory: StateFactory
     ) {}
 
     async process(
@@ -26,110 +26,109 @@ export class ProcessClientMessageService {
         messageContent: string,
         name?: string
     ) {
-        const [conversationType, conversation] =
-            await this.getOrCreateConversation(company, user)
+        try {
+            const [conversationType, conversation] =
+                await this.getOrCreateConversation(company, user)
 
-        logger.debug(
-            `Using conversation type: ${conversationType} -> ${conversation.id}`
-        )
-
-        const newMessage = await this.saveMessage(
-            conversation,
-            messageContent,
-            user
-        )
-
-        conversation.messages.push(newMessage)
-        await this.conversationRepository.save(conversation)
-
-        if (conversationType === 'new_conversation') {
             logger.debug(
-                "Running 'onEnter' for state:",
-                conversation.currentState.constructor.name
-            )
-            await execute(
-                conversation.currentState.onEnter.bind(
-                    conversation.currentState
-                )
-            )
-        }
-
-        const transitionIntent =
-            await conversation.processMessage(messageContent)
-        if (transitionIntent) {
-            logger.debug(
-                "Running 'onExit' for state:",
-                conversation.currentState.constructor.name
-            )
-            await execute(
-                conversation.currentState.onExit.bind(conversation.currentState)
+                `Using conversation type: ${conversationType} -> ${conversation.id}`
             )
 
-            const resolvedIntent =
-                await this.stateTransitionService.resolveIntent(
-                    conversation,
-                    transitionIntent,
-                    messageContent
-                )
-
-            await this.stateTransitionService.handleTransition(
+            const newMessage = await this.saveMessage(
                 conversation,
-                resolvedIntent
+                messageContent,
+                user
             )
 
-            logger.debug(
-                "Running 'onEnter' for state:",
-                conversation.currentState.constructor.name
-            )
-            await execute(
-                conversation.currentState.onEnter.bind(
-                    conversation.currentState
-                )
-            )
-
+            conversation.messages.push(newMessage)
             await this.conversationRepository.save(conversation)
-        }
 
-        while (true) {
-            const nextTransition =
-                await conversation.currentState.getNextState()
-
-            if (!nextTransition) {
-                break
+            if (conversationType === 'new_conversation') {
+                logger.debug(
+                    "Running 'onEnter' for state:",
+                    conversation.currentState.constructor.name
+                )
+                return await execute(
+                    conversation.currentState.onEnter.bind(
+                        conversation.currentState
+                    )
+                )
             }
 
-            logger.debug('Auto-transitioning...')
-            logger.debug('Will transition to:', nextTransition)
-            logger.debug(
-                "Running 'onExit' for state:",
-                conversation.currentState.constructor.name
-            )
-            await execute(
-                conversation.currentState.onExit.bind(conversation.currentState)
-            )
-
-            const resolvedTransition =
-                await this.stateTransitionService.resolveIntent(
-                    conversation,
-                    nextTransition,
-                    messageContent
+            const result = await conversation.processMessage(newMessage)
+            logger.debug('Result of first "processMessage":', result)
+            if (result) {
+                logger.debug(
+                    "Running 'onExit' for state:",
+                    conversation.currentState.constructor.name
                 )
-            await this.stateTransitionService.handleTransition(
-                conversation,
-                resolvedTransition
-            )
-
-            logger.debug(
-                "Running 'onEnter' for state:",
-                conversation.currentState.constructor.name
-            )
-            await execute(
-                conversation.currentState.onEnter.bind(
-                    conversation.currentState
+                await execute(
+                    conversation.currentState.onExit.bind(
+                        conversation.currentState
+                    )
                 )
-            )
 
-            await this.conversationRepository.save(conversation)
+                conversation.transitionToState(
+                    this.stateFactory.create(conversation, result)
+                )
+
+                logger.debug(
+                    "Running 'onEnter' for state:",
+                    conversation.currentState.constructor.name
+                )
+                await execute(
+                    conversation.currentState.onEnter.bind(
+                        conversation.currentState
+                    )
+                )
+
+                await this.conversationRepository.save(conversation)
+            }
+
+            while (true) {
+                const next = await conversation.currentState.getNextState()
+
+                logger.debug(
+                    'Current state:',
+                    conversation.currentState.constructor.name
+                )
+                logger.debug('Next state:', next)
+
+                if (!next) {
+                    break
+                }
+
+                logger.debug('Auto-transitioning...')
+                logger.debug('Will transition to:', next)
+                logger.debug(
+                    "Running 'onExit' for state:",
+                    conversation.currentState.constructor.name
+                )
+                await execute(
+                    conversation.currentState.onExit.bind(
+                        conversation.currentState
+                    )
+                )
+
+                conversation.transitionToState(
+                    this.stateFactory.create(conversation, next)
+                )
+
+                logger.debug(
+                    "Running 'onEnter' for state:",
+                    conversation.currentState.constructor.name
+                )
+                await execute(
+                    conversation.currentState.onEnter.bind(
+                        conversation.currentState
+                    )
+                )
+
+                await this.conversationRepository.save(conversation)
+            }
+        } catch (error) {
+            logger.error('Error processing client message:\n', error)
+            throw error
         }
     }
 
@@ -174,7 +173,6 @@ export class ProcessClientMessageService {
             conversationType = 'new_conversation'
         }
 
-        // conversation.currentState.outputPort = this.outputPort
         if (!conversation.currentState.getOutputPort()) {
             logger.debug(
                 'No output port found for conversation:',

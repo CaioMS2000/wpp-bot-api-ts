@@ -1,12 +1,12 @@
 import { AggregateRoot } from '@/core/entities/aggregate-root'
 import { Entity } from '@/core/entities/entity'
+import { logger } from '@/core/logger'
 import { UserType } from '../whats-app/@types'
 import { ConversationState } from '../whats-app/application/states/conversation-state'
 import { InitialMenuState } from '../whats-app/application/states/initial-menu-state'
 import { Company } from './company'
 import { Employee } from './employee'
 import type { Message } from './message'
-import { logger } from '@/core/logger'
 
 export type ConversationProps = {
     company: Company
@@ -18,8 +18,7 @@ export type ConversationProps = {
     participants: Employee[]
     messages: Message[]
     currentState: ConversationState
-    aiServiceThreadId: Nullable<string>
-    aiServiceThreadResume: Nullable<string>
+    resume: Nullable<string>
 }
 
 export type CreateConversationInput = RequireOnly<
@@ -36,8 +35,7 @@ export class Conversation extends AggregateRoot<ConversationProps> {
             lastStateChange: new Date(),
             endedAt: null,
             agent: null,
-            aiServiceThreadId: null,
-            aiServiceThreadResume: null,
+            resume: null,
             currentState: state,
             participants: [],
             messages: [],
@@ -53,17 +51,15 @@ export class Conversation extends AggregateRoot<ConversationProps> {
             id
         )
 
-        conversation.props.currentState = new InitialMenuState(conversation)
-
         return conversation
     }
 
-    processMessage(messageContent: string) {
+    processMessage(message: Message) {
         logger.debug(
             '[Conversation.processMessage] currentState: ',
             this.currentState.constructor.name
         )
-        const transition = this.currentState.handleMessage(messageContent)
+        const transition = this.currentState.handleMessage(message)
 
         return transition
     }
@@ -121,12 +117,8 @@ export class Conversation extends AggregateRoot<ConversationProps> {
         return this.props.lastStateChange
     }
 
-    get aiServiceThreadId() {
-        return this.props.aiServiceThreadId
-    }
-
-    get aiServiceThreadResume() {
-        return this.props.aiServiceThreadResume
+    get resume() {
+        return this.props.resume
     }
 
     get company() {

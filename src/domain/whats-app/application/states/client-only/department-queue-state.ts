@@ -1,55 +1,81 @@
+import { logger } from '@/core/logger'
 import { OutputPort } from '@/core/output/output-port'
 import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
+import { Message } from '@/domain/entities/message'
+import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { execute } from '@caioms/ts-utils/functions'
-import { TransitionIntent } from '../../factory/types'
-import { ConversationState } from '../conversation-state'
 import { RemoveClientFromDepartmentQueue } from '../../use-cases/remove-client-from-department-queue'
-import { logger } from '@/core/logger'
+import { ConversationState } from '../conversation-state'
+import { StateTypeMapper } from '../types'
 
 type DepartmentQueueStateProps = {
-    department: Department
+    departmentId: string
 }
 
 export class DepartmentQueueState extends ConversationState<DepartmentQueueStateProps> {
     constructor(
         conversation: Conversation,
         outputPort: OutputPort,
-        department: Department,
-        private removeClientFromDepartmentQueue: RemoveClientFromDepartmentQueue
+        private departmentRepository: DepartmentRepository,
+        private removeClientFromDepartmentQueue: RemoveClientFromDepartmentQueue,
+        departmentId: string
     ) {
-        super(conversation, outputPort, { department })
+        super(conversation, outputPort, { departmentId })
     }
 
-    get department() {
-        return this.props.department
+    get departmentId() {
+        return this.props.departmentId
     }
 
-    async handleMessage(
-        messageContent: string
-    ): Promise<Nullable<TransitionIntent>> {
-        if (messageContent === 'sair') {
-            return { target: 'initial_menu' }
+    async handleMessage(message: Message): Promise<Nullable<StateTypeMapper>> {
+        if (message.content === 'sair') {
+            return { stateName: 'InitialMenuState' }
+        }
+
+        const department = await this.departmentRepository.find(
+            this.conversation.company,
+            this.departmentId
+        )
+
+        if (!department) {
+            throw new Error(`Department not found: ${this.departmentId}`)
         }
 
         await execute(this.outputPort.handle, this.conversation.user, {
             type: 'text',
-            content: `🔔 Você está na fila de espera do *${this.department.name}*, em breve um atendente entrará em contato. Caso queira sair da fila de espera, digite "sair".`,
+            content: `🔔 Você está na fila de espera do *${department.name}*, em breve um atendente entrará em contato. Caso queira sair da fila de espera, digite "sair".`,
         })
 
         return null
     }
 
     async onEnter() {
+        const department = await this.departmentRepository.find(
+            this.conversation.company,
+            this.departmentId
+        )
+
+        if (!department) {
+            throw new Error(`Department not found: ${this.departmentId}`)
+        }
         await execute(this.outputPort.handle, this.conversation.user, {
             type: 'text',
-            content: `🔔 Você está na fila de espera do departamento *${this.department.name}*, em breve um atendente entrará em contato. Caso queira sair da fila de espera, digite "sair".`,
+            content: `🔔 Você está na fila de espera do departamento *${department.name}*, em breve um atendente entrará em contato. Caso queira sair da fila de espera, digite "sair".`,
         })
     }
 
     async onExit() {
+        const department = await this.departmentRepository.find(
+            this.conversation.company,
+            this.departmentId
+        )
+
+        if (!department) {
+            throw new Error(`Department not found: ${this.departmentId}`)
+        }
         await this.removeClientFromDepartmentQueue.execute(
-            this.department,
+            department,
             this.conversation.user
         )
     }

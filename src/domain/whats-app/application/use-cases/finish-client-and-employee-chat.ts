@@ -39,11 +39,15 @@ export class FinishClientAndEmployeeChatUseCase {
         clientConversation = Conversation.create({ user: client, company })
 
         clientConversation.transitionToState(
-            this.stateFactory.create('initial_menu', clientConversation)
+            this.stateFactory.create(clientConversation, {
+                stateName: 'InitialMenuState',
+            })
         )
         await this.conversationRepository.save(clientConversation)
         employeeConversation.transitionToState(
-            this.stateFactory.create('initial_menu', employeeConversation)
+            this.stateFactory.create(employeeConversation, {
+                stateName: 'InitialMenuState',
+            })
         )
         await this.conversationRepository.save(employeeConversation)
     }

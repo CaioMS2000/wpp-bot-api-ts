@@ -3,12 +3,12 @@ import { Client } from '@/domain/entities/client'
 import { Employee } from '@/domain/entities/employee'
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { FAQRepository } from '@/domain/repositories/faq-repository'
+import { WhatsAppOutputPort } from '@/infra/http/output/whats-app-output-port'
 import { isClient, isEmployee } from '@/utils/entity'
 import { UserType } from '../../@types'
 import { MessageHandlerFactory } from '../factory/message-handler-factory'
 import { MessageHandler } from '../handler/message-handler'
 import { ResolveSenderContextUseCase } from '../use-cases/resolve-sender-context-use-case'
-import { WhatsAppOutputPort } from '@/infra/http/output/whats-app-output-port'
 
 const tempOutput = new WhatsAppOutputPort()
 const testPhones = ['556292476996', '556293765723']

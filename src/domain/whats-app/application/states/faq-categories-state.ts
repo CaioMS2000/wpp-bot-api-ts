@@ -1,11 +1,12 @@
+import { logger } from '@/core/logger'
 import { OutputMessage, OutputPort } from '@/core/output/output-port'
 import { Conversation } from '@/domain/entities/conversation'
 import { FAQCategory } from '@/domain/entities/faq'
+import { Message } from '@/domain/entities/message'
 import { MenuOption } from '../../@types'
-import { TransitionIntent } from '../factory/types'
 import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
 import { ConversationState } from './conversation-state'
-import { logger } from '@/core/logger'
+import { StateTypeMapper } from './types'
 
 export class FAQCategoriesState extends ConversationState<null> {
     constructor(
@@ -16,28 +17,26 @@ export class FAQCategoriesState extends ConversationState<null> {
         super(conversation, outputPort)
     }
 
-    async handleMessage(
-        messageContent: string
-    ): Promise<Nullable<TransitionIntent>> {
+    async handleMessage(message: Message): Promise<Nullable<StateTypeMapper>> {
         logger.debug('[FAQCategoriesState.handleMessage]\n', {
-            messageContent,
+            message,
         })
-        if (messageContent === 'Menu principal') {
-            return { target: 'initial_menu' }
+        if (message.content === 'Menu principal') {
+            return { stateName: 'InitialMenuState' }
         }
 
         const categories = await this.listFAQCategoriesUseCase.execute(
             this.conversation.company
         )
         const correspondingCategory = categories.find(
-            category => category.name === messageContent
+            category => category.name === message.content
         )
 
         logger.debug('[FAQCategoriesState.handleMessage]\n', {
             categories: categories.map(
                 cat => `${cat.name} with ${cat.items.length} items`
             ),
-            messageContent,
+            message,
             correspondingCategory,
         })
 
@@ -45,7 +44,10 @@ export class FAQCategoriesState extends ConversationState<null> {
             return null
         }
 
-        return { target: 'faq_items' }
+        return {
+            stateName: 'FAQItemsState',
+            params: { categoryName: correspondingCategory.name },
+        }
     }
 
     async onEnter() {

@@ -1,32 +1,33 @@
+import { logger } from '@/core/logger'
 import { OutputPort } from '@/core/output/output-port'
 import { Client } from '@/domain/entities/client'
 import { Conversation } from '@/domain/entities/conversation'
-import { execute } from '@caioms/ts-utils/functions'
-import { TransitionIntent } from '../../factory/types'
-import { ConversationState } from '../conversation-state'
-import { isEmployee } from '@/utils/entity'
-import { FinishClientAndEmployeeChatUseCase } from '../../use-cases/finish-client-and-employee-chat'
 import { Employee } from '@/domain/entities/employee'
+import { Message } from '@/domain/entities/message'
+import { ClientRepository } from '@/domain/repositories/client-repository'
+import { isEmployee } from '@/utils/entity'
+import { execute } from '@caioms/ts-utils/functions'
+import { FinishClientAndEmployeeChatUseCase } from '../../use-cases/finish-client-and-employee-chat'
 import { RemoveClientFromDepartmentQueue } from '../../use-cases/remove-client-from-department-queue'
-import { logger } from '@/core/logger'
+import { ConversationState } from '../conversation-state'
+import { StateTypeMapper } from '../types'
 
 type ChatWithClientStateProps = {
-    client: Client
+    clientPhoneNumber: string
 }
 
 export class ChatWithClientState extends ConversationState<ChatWithClientStateProps> {
     constructor(
         conversation: Conversation,
-        client: Client,
         outputPort: OutputPort,
+        clientPhoneNumber: string,
+        private clientRepository: ClientRepository,
         private finishClientAndEmployeeChatUseCase: FinishClientAndEmployeeChatUseCase,
         private removeClientFromDepartmentQueue: RemoveClientFromDepartmentQueue
     ) {
-        super(conversation, outputPort, { client })
+        super(conversation, outputPort, { clientPhoneNumber })
     }
-    async handleMessage(
-        messageContent: string
-    ): Promise<Nullable<TransitionIntent>> {
+    async handleMessage(message: Message): Promise<Nullable<StateTypeMapper>> {
         if (!isEmployee(this.conversation.user)) {
             throw new Error('Conversation user is not an employee')
         }
@@ -35,20 +36,29 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
             throw new Error('Employee does not have a department')
         }
 
-        if (messageContent.toLowerCase().trim() === '!finalizar') {
-            return { target: 'initial_menu' }
+        if (message.content.toLowerCase().trim() === '!finalizar') {
+            return { stateName: 'InitialMenuState' }
         }
 
-        await execute(this.outputPort.handle, this.client, {
+        const client = await this.clientRepository.findByPhone(
+            this.conversation.company,
+            this.clientPhoneNumber
+        )
+
+        if (!client) {
+            throw new Error('Client not found')
+        }
+
+        await execute(this.outputPort.handle, client, {
             type: 'text',
-            content: `🔵 *[Funcionário] ${this.conversation.user.name}*\n🚩 *${this.conversation.user.department.name}*\n\n${messageContent}`,
+            content: `🔵 *[Funcionário] ${this.conversation.user.name}*\n🚩 *${this.conversation.user.department.name}*\n\n${message.content}`,
         })
 
         return null
     }
 
-    get client() {
-        return this.props.client
+    get clientPhoneNumber() {
+        return this.props.clientPhoneNumber
     }
 
     async onEnter() {
@@ -59,29 +69,46 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
         if (!this.conversation.user.department) {
             throw new Error('Employee does not have a department')
         }
+        const client = await this.clientRepository.findByPhone(
+            this.conversation.company,
+            this.clientPhoneNumber
+        )
+
+        if (!client) {
+            throw new Error('Client not found')
+        }
 
         await execute(
             this.removeClientFromDepartmentQueue.execute.bind(
                 this.removeClientFromDepartmentQueue
             ),
             this.conversation.user.department,
-            this.client
+            client
         )
         await execute(this.outputPort.handle, this.conversation.user, {
             type: 'text',
-            content: `🔔 Você está conversando com o cliente *${this.client.name}*\n📞 *${this.client.phone}*`,
+            content: `🔔 Você está conversando com o cliente *${client.name}*\n📞 *${client.phone}*`,
         })
     }
 
     async onExit() {
+        const client = await this.clientRepository.findByPhone(
+            this.conversation.company,
+            this.clientPhoneNumber
+        )
+
+        if (!client) {
+            throw new Error('Client not found')
+        }
+
         await this.finishClientAndEmployeeChatUseCase.execute(
             this.conversation.company,
-            this.client,
+            client,
             this.conversation.user as Employee
         )
         await execute(this.outputPort.handle, this.conversation.user, {
             type: 'text',
-            content: `🔔 Atendimento para o cliente *${this.client.name}* encerrado.`,
+            content: `🔔 Atendimento para o cliente *${client.name}* encerrado.`,
         })
     }
 }

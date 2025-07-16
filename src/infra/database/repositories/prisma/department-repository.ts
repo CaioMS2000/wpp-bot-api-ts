@@ -3,109 +3,127 @@ import { Company } from '@/domain/entities/company'
 import { Department } from '@/domain/entities/department'
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { prisma } from '@/lib/prisma'
-import { DepartmentMapper } from '../../mapper/department-mapper'
-import { logger } from '@/core/logger'
+import { DepartmentMapper } from '../../mappers/department-mapper'
 
 export class PrismaDepartmentRepository extends DepartmentRepository {
     async save(department: Department): Promise<void> {
+        const data = DepartmentMapper.toModel(department)
+
         await prisma.department.upsert({
             where: { id: department.id },
-            update: {
-                name: department.name,
-                companyId: department.company.id,
-                // relações queue/employees devem ser manipuladas separadamente
-            },
+            update: data,
             create: {
+                ...data,
                 id: department.id,
-                name: department.name,
-                companyId: department.company.id,
-            },
-        })
-
-        // Atualiza a fila (queue) e os funcionários (employees) manualmente
-        await prisma.department.update({
-            where: { id: department.id },
-            data: {
-                queue: {
-                    set: department.queue.map(client => ({ id: client.id })),
-                },
-                employees: {
-                    set: department.employee.map(emp => ({ id: emp.id })),
-                },
             },
         })
     }
 
     async find(company: Company, id: string): Promise<Nullable<Department>> {
-        const model = await prisma.department.findFirst({
-            where: {
-                companyId: company.id,
-                id,
-            },
+        const raw = await prisma.department.findUnique({
+            where: { id, companyId: company.id },
             include: {
-                company: { include: { manager: true } },
-                queue: true,
+                queue: {
+                    include: {
+                        client: true,
+                    },
+                },
+                company: {
+                    include: {
+                        manager: true,
+                        businessHours: true,
+                    },
+                },
                 employees: true,
             },
         })
 
-        if (!model) {
-            return null
-        }
+        if (!raw) return null
 
-        return DepartmentMapper.toEntity(model)
+        return DepartmentMapper.toEntity({
+            ...raw,
+            queue: raw.queue.map(q => ({
+                ...q.client,
+            })),
+        })
     }
 
     async findByName(
         company: Company,
         name: string
     ): Promise<Nullable<Department>> {
-        const model = await prisma.department.findFirst({
+        const raw = await prisma.department.findFirst({
             where: {
-                companyId: company.id,
                 name,
+                companyId: company.id,
             },
             include: {
-                company: { include: { manager: true } },
-                queue: true,
+                company: {
+                    include: {
+                        manager: true,
+                        businessHours: true,
+                    },
+                },
                 employees: true,
+                queue: {
+                    include: {
+                        client: true,
+                    },
+                },
             },
         })
 
-        if (!model) {
-            return null
-        }
-
-        return DepartmentMapper.toEntity(model)
+        if (!raw) return null
+        return DepartmentMapper.toEntity({
+            ...raw,
+            queue: raw.queue.map(q => ({
+                ...q.client,
+            })),
+        })
     }
 
     async findByNameOrThrow(
         company: Company,
         name: string
     ): Promise<Department> {
-        logger.debug(`Finding department ${name}`)
-        const entity = await this.findByName(company, name)
-
-        if (!entity) {
-            throw new Error('Department not found')
+        const department = await this.findByName(company, name)
+        if (!department) {
+            throw new Error(
+                `Department "${name}" not found for company ${company.id}`
+            )
         }
-
-        return entity
+        return department
     }
 
     async findAllActive(company: Company): Promise<Department[]> {
-        const models = await prisma.department.findMany({
+        const departments = await prisma.department.findMany({
             where: {
                 companyId: company.id,
             },
             include: {
-                company: { include: { manager: true } },
-                queue: true,
+                company: {
+                    include: {
+                        manager: true,
+                        businessHours: true,
+                    },
+                },
                 employees: true,
+                queue: {
+                    include: {
+                        client: true,
+                    },
+                },
             },
         })
 
-        return models.map(DepartmentMapper.toEntity)
+        return departments.map(raw =>
+            DepartmentMapper.toEntity({
+                ...raw,
+                queue: raw.queue.map(q => ({
+                    ...q.client,
+                })),
+            })
+        )
     }
 
     async insertClientIntoQueue(
@@ -113,7 +131,9 @@ export class PrismaDepartmentRepository extends DepartmentRepository {
         client: Client
     ): Promise<void> {
         await prisma.department.update({
-            where: { id: department.id },
+            where: {
+                id: department.id,
+            },
             data: {
                 queue: {
                     connect: { id: client.id },
@@ -127,12 +147,59 @@ export class PrismaDepartmentRepository extends DepartmentRepository {
         client: Client
     ): Promise<void> {
         await prisma.department.update({
-            where: { id: department.id },
+            where: {
+                id: department.id,
+            },
             data: {
                 queue: {
                     disconnect: { id: client.id },
                 },
             },
         })
+    }
+
+    async getClientPositionInQueue(
+        department: Department,
+        client: Client
+    ): Promise<Nullable<number>> {
+        const queue = await prisma.departmentQueue.findMany({
+            where: {
+                departmentId: department.id,
+                clientId: client.id,
+                leftAt: null,
+            },
+            orderBy: {
+                joinedAt: 'asc',
+            },
+        })
+
+        if (queue.length === 0) {
+            return null
+        }
+        const index = queue.findIndex(q => q.clientId === client.id)
+
+        return index >= 0 ? index : null
+    }
+
+    async getNextClientFromQueue(
+        department: Department
+    ): Promise<Nullable<string>> {
+        const queue = await prisma.departmentQueue.findMany({
+            where: {
+                departmentId: department.id,
+                leftAt: null,
+            },
+            orderBy: {
+                joinedAt: 'asc',
+            },
+        })
+
+        if (queue.length === 0) {
+            return null
+        }
+
+        const queueItem = queue[0]
+
+        return queueItem.clientId
     }
 }

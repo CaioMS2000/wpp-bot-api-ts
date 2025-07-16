@@ -1,38 +1,48 @@
+import { logger } from '@/core/logger'
 import { OutputMessage, OutputPort } from '@/core/output/output-port'
 import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
+import { Message } from '@/domain/entities/message'
+import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { execute } from '@caioms/ts-utils/functions'
-import { TransitionIntent } from '../../factory/types'
 import { ConversationState } from '../conversation-state'
-import { logger } from '@/core/logger'
+import { StateTypeMapper } from '../types'
 
 type ListDepartmentQueueStateProps = {
-    department: Department
+    departmentId: string
 }
 
 export class ListDepartmentQueueState extends ConversationState<ListDepartmentQueueStateProps> {
     constructor(
         conversation: Conversation,
         outputPort: OutputPort,
-        department: Department
+        private departmentRepository: DepartmentRepository,
+        departmentId: string
     ) {
-        super(conversation, outputPort, { department })
+        super(conversation, outputPort, { departmentId })
     }
 
-    get department() {
-        return this.props.department
+    get departmentId() {
+        return this.props.departmentId
     }
 
-    async handleMessage(
-        messageContent: string
-    ): Promise<Nullable<TransitionIntent>> {
+    async handleMessage(message: Message): Promise<Nullable<StateTypeMapper>> {
         throw new Error(
             'This state should not even last long enough to handle a message'
         )
     }
 
     async onEnter() {
-        if (this.department.queue.length === 0) {
+        const department = await this.departmentRepository.find(
+            this.conversation.company,
+            this.departmentId
+        )
+
+        if (!department) {
+            throw new Error(`Department not found: ${this.departmentId}`)
+        }
+
+        if (department.queue.length === 0) {
             return await execute(
                 this.outputPort.handle,
                 this.conversation.user,
@@ -45,7 +55,7 @@ export class ListDepartmentQueueState extends ConversationState<ListDepartmentQu
 
         const textOutput: OutputMessage = {
             type: 'text',
-            content: this.department.queue.reduce((acc, client) => {
+            content: department.queue.reduce((acc, client) => {
                 return `${acc}*${client.name}*: ${client.phone}\n`
             }, '*Fila:*\n'),
         }
@@ -57,7 +67,7 @@ export class ListDepartmentQueueState extends ConversationState<ListDepartmentQu
         )
     }
 
-    async getNextState(message = ''): Promise<Nullable<TransitionIntent>> {
-        return { target: 'initial_menu' }
+    async getNextState(message = ''): Promise<Nullable<StateTypeMapper>> {
+        return { stateName: 'InitialMenuState' }
     }
 }

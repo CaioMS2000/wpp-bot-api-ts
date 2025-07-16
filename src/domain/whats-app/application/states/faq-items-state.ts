@@ -1,10 +1,11 @@
+import { logger } from '@/core/logger'
 import { OutputMessage, OutputPort } from '@/core/output/output-port'
 import { Conversation } from '@/domain/entities/conversation'
+import { Message } from '@/domain/entities/message'
 import { execute } from '@caioms/ts-utils/functions'
-import { TransitionIntent } from '../factory/types'
 import { ListFAQCategorieItemsUseCase } from '../use-cases/list-faq-categorie-items-use-case'
 import { ConversationState } from './conversation-state'
-import { logger } from '@/core/logger'
+import { StateTypeMapper } from './types'
 
 export type FAQItemsStateProps = {
     categoryName: string
@@ -15,19 +16,21 @@ export class FAQItemsState extends ConversationState<FAQItemsStateProps> {
         conversation: Conversation,
         outputPort: OutputPort,
         private listFAQCategorieItemsUseCase: ListFAQCategorieItemsUseCase,
-        private categoryName: string
+        categoryName: string
     ) {
         super(conversation, outputPort, { categoryName })
     }
 
-    async handleMessage(
-        messageContent: string
-    ): Promise<Nullable<TransitionIntent>> {
+    get categoryName() {
+        return this.props.categoryName
+    }
+
+    async handleMessage(message: Message): Promise<Nullable<StateTypeMapper>> {
         throw new Error('Method not implemented.')
     }
 
-    async getNextState(message = ''): Promise<Nullable<TransitionIntent>> {
-        return { target: 'faq_categories' }
+    async getNextState(message = ''): Promise<Nullable<StateTypeMapper>> {
+        return { stateName: 'FAQCategoriesState' }
     }
 
     async onEnter() {

@@ -8,12 +8,23 @@ export type MessageProps = {
     timestamp: Date
     from: 'client' | 'employee' | 'AI'
     content: string
-    sender: Client | Employee
+    aiResponseId: Nullable<string>
+    sender: Nullable<Client | Employee>
 }
-
+export type CreateMessageInput = RequireOnly<
+    MessageProps,
+    'conversation' | 'from' | 'content' | 'sender'
+>
 export class Message extends Entity<MessageProps> {
-    static create(props: MessageProps, id?: string) {
-        const message = new Message(props, id)
+    static create(props: CreateMessageInput, id?: string) {
+        const defaults: Omit<
+            MessageProps,
+            'conversation' | 'from' | 'content' | 'sender'
+        > = {
+            timestamp: new Date(),
+            aiResponseId: null,
+        }
+        const message = new Message({ ...defaults, ...props }, id)
         return message
     }
 
@@ -35,5 +46,9 @@ export class Message extends Entity<MessageProps> {
 
     get sender() {
         return this.props.sender
+    }
+
+    get aiResponseId() {
+        return this.props.aiResponseId
     }
 }

@@ -13,10 +13,9 @@ export class CreateConversationUseCase {
 
     async execute(input: CreateConversationInput) {
         const conversation = Conversation.create(input)
-        conversation.currentState = this.stateFactory.create(
-            'initial_menu',
-            conversation
-        )
+        conversation.currentState = this.stateFactory.create(conversation, {
+            stateName: 'InitialMenuState',
+        })
 
         await this.conversationRepository.save(conversation)
 

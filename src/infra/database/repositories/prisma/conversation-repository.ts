@@ -1,532 +1,221 @@
-import { logger } from '@/core/logger'
-import { Client } from '@/domain/entities/client'
 import { Company } from '@/domain/entities/company'
 import { Conversation } from '@/domain/entities/conversation'
-import { Employee } from '@/domain/entities/employee'
-import { FAQItem } from '@/domain/entities/faq'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
-import { AIChatState } from '@/domain/whats-app/application/states/ai-chat-state'
-import { DepartmentChatState } from '@/domain/whats-app/application/states/client-only/department-chat-state'
-import { DepartmentQueueState } from '@/domain/whats-app/application/states/client-only/department-queue-state'
-import { DepartmentSelectionState } from '@/domain/whats-app/application/states/client-only/department-selection-state'
-import { ChatWithClientState } from '@/domain/whats-app/application/states/employee-only/chat-with-client-sate'
-import { ListDepartmentQueueState } from '@/domain/whats-app/application/states/employee-only/list-department-client-queue-state'
-import { FAQCategoriesState } from '@/domain/whats-app/application/states/faq-categories-state'
-import { FAQItemsState } from '@/domain/whats-app/application/states/faq-items-state'
-import { InitialMenuState } from '@/domain/whats-app/application/states/initial-menu-state'
+import { StateFactory } from '@/domain/whats-app/application/factory/state-factory'
 import { prisma } from '@/lib/prisma'
-import { Prisma } from 'ROOT/prisma/generated'
-import {
-    Conversation as PrismaConversation,
-    Employee as PrismaEmployee,
-    StateName as PrismaStateName,
-} from 'ROOT/prisma/generated'
-import { ClientMapper } from '../../mapper/client-mapper'
-import { ConversationMapper } from '../../mapper/conversation-mapper'
-import { DepartmentMapper } from '../../mapper/department-mapper'
-import { fromDomainToPrisma } from '../../utils/enumTypeMapping'
-import { clientValidatorSchema } from '../../validators/stateDataJSONValidators/clientValidator'
-import { departmentValidatorSchema } from '../../validators/stateDataJSONValidators/departmentValidator'
-import { departmentsValidatorSchema } from '../../validators/stateDataJSONValidators/departmentsValidator'
-import { faqCategoriesStateDataValidatorSchema } from '../../validators/stateDataJSONValidators/faqCategoriesValidator'
-import { faqCategoryValidatorSchema } from '../../validators/stateDataJSONValidators/faqCategoryValidator'
-import { ConversationState } from '@/domain/whats-app/application/states/conversation-state'
-
-const stateMap = {
-    [InitialMenuState.name]: PrismaStateName.initial_menu,
-    [AIChatState.name]: PrismaStateName.ai_chat,
-    [FAQCategoriesState.name]: PrismaStateName.faq_categories,
-    [FAQItemsState.name]: PrismaStateName.faq_items,
-    [DepartmentSelectionState.name]: PrismaStateName.department_selection,
-    [DepartmentQueueState.name]: PrismaStateName.department_queue,
-    [DepartmentChatState.name]: PrismaStateName.department_chat,
-    [ListDepartmentQueueState.name]: PrismaStateName.department_queue_list,
-    [ChatWithClientState.name]: PrismaStateName.chat_with_client,
-} as const
-
-type UserReferenceType =
-    | {
-          clientId: string
-          userType: 'CLIENT' | 'EMPLOYEE'
-          agentType: Nullable<'AI' | 'EMPLOYEE'>
-      }
-    | {
-          employeeId: string
-          userType: 'CLIENT' | 'EMPLOYEE'
-          agentType: Nullable<'AI' | 'EMPLOYEE'>
-      }
-
-type AgentType = Nullable<'AI' | 'EMPLOYEE'>
+import { ConversationMapper } from '../../mappers/conversation-mapper'
+import { PrismaStateDataParser } from '../../state-data-parser/prisma/prisma-state-data-parser'
+import { stateNameToPrismaEnum } from '../../utils/enumTypeMapping'
 
 export class PrismaConversationRepository extends ConversationRepository {
-    private serializeStateData(
-        conversation: Conversation
-    ): NotDefined<Prisma.NullableJsonNullValueInput | Prisma.InputJsonValue> {
-        if (conversation.currentState instanceof InitialMenuState) {
-            // sem dados
-        } else if (conversation.currentState instanceof AIChatState) {
-            // sem dados
-        } else if (conversation.currentState instanceof FAQCategoriesState) {
-            // const { categories } = conversation.currentState.data
-            // const data = categories.reduce(
-            //     (acc, cat) => {
-            //         acc[cat.name] = cat.items
-            //         return acc
-            //     },
-            //     {} as Record<string, FAQItem[]>
-            // )
-            // return data
-        } else if (conversation.currentState instanceof FAQItemsState) {
-            const { categoryName } = conversation.currentState.data
-            const data = { categoryName }
-
-            return data
-        } else if (
-            conversation.currentState instanceof DepartmentSelectionState
-        ) {
-            const { departments } = conversation.currentState.data
-            const data = { departments: departments.map(dept => dept.name) }
-
-            return data
-        } else if (conversation.currentState instanceof DepartmentQueueState) {
-            const { department } = conversation.currentState.data
-            const data = { name: department.name }
-
-            return data
-        } else if (conversation.currentState instanceof DepartmentChatState) {
-            const { department } = conversation.currentState.data
-            const data = { name: department.name }
-
-            return data
-        } else if (
-            conversation.currentState instanceof ListDepartmentQueueState
-        ) {
-            const { department } = conversation.currentState.data
-            const data = { name: department.name }
-
-            return data
-        } else if (conversation.currentState instanceof ChatWithClientState) {
-            const { client } = conversation.currentState.data
-            const data = { phone: client.phone }
-
-            return data
-        }
-
-        return undefined
-    }
-
-    private async restoreSate(entity: Conversation, model: PrismaConversation) {
-        let restoredSate: Nullable<ConversationState<any>> = null
-        switch (model.currentState) {
-            case PrismaStateName.initial_menu: {
-                // const state = new InitialMenuState(entity)
-                const state = this.stateFactory.create('initial_menu', entity)
-
-                // return state
-                restoredSate = state
-                break
-            }
-            case PrismaStateName.ai_chat: {
-                // const state = new AIChatState(entity)
-                const state = this.stateFactory.create('ai_chat', entity)
-
-                // return state
-                restoredSate = state
-                break
-            }
-            case PrismaStateName.faq_categories: {
-                const state = this.stateFactory.create('faq_categories', entity)
-
-                // return state
-                restoredSate = state
-                break
-            }
-            case PrismaStateName.faq_items: {
-                const data = faqCategoryValidatorSchema.parse(model.stateData)
-
-                const [categoryName, _] = Object.entries(data)[0]
-                const state = this.stateFactory.create('faq_items', entity, {
-                    categoryName,
-                })
-
-                // return state
-                restoredSate = state
-                break
-            }
-            case PrismaStateName.department_selection: {
-                const data = departmentsValidatorSchema.parse(model.stateData)
-                const recoveredDepartments = await Promise.all(
-                    data.departments.map(dep =>
-                        prisma.department.findFirst({
-                            where: { name: dep },
-                            include: {
-                                company: { include: { manager: true } },
-                                queue: true,
-                                employees: true,
-                            },
-                        })
-                    )
-                ).then(results =>
-                    results.filter(
-                        (dept): dept is NonNullable<typeof dept> =>
-                            dept !== null
-                    )
-                )
-                const state = this.stateFactory.create(
-                    'department_selection',
-                    entity,
-                    {
-                        departments: recoveredDepartments.map(
-                            DepartmentMapper.toEntity
-                        ),
-                    }
-                )
-
-                // return state
-                restoredSate = state
-                break
-            }
-            case PrismaStateName.department_queue: {
-                const data = departmentValidatorSchema.parse(model.stateData)
-                const department = await prisma.department.findFirstOrThrow({
-                    where: { name: data.name },
-                    include: {
-                        company: { include: { manager: true } },
-                        queue: true,
-                        employees: true,
-                    },
-                })
-                const state = this.stateFactory.create(
-                    'department_queue',
-                    entity,
-                    { department: DepartmentMapper.toEntity(department) }
-                )
-
-                // return state
-                restoredSate = state
-                break
-            }
-            case PrismaStateName.department_chat: {
-                const data = departmentValidatorSchema.parse(model.stateData)
-                const department = await prisma.department.findFirstOrThrow({
-                    where: { name: data.name },
-                    include: {
-                        company: { include: { manager: true } },
-                        queue: true,
-                        employees: true,
-                    },
-                })
-                const state = this.stateFactory.create(
-                    'department_chat',
-                    entity,
-                    { department: DepartmentMapper.toEntity(department) }
-                )
-
-                // return state
-                restoredSate = state
-                break
-            }
-            case PrismaStateName.department_queue_list: {
-                const data = departmentValidatorSchema.parse(model.stateData)
-                const department = await prisma.department.findFirstOrThrow({
-                    where: { name: data.name },
-                    include: {
-                        company: { include: { manager: true } },
-                        queue: true,
-                        employees: true,
-                    },
-                })
-                const state = this.stateFactory.create(
-                    'department_queue_list',
-                    entity,
-                    { department: DepartmentMapper.toEntity(department) }
-                )
-
-                // return state
-                restoredSate = state
-                break
-            }
-            case PrismaStateName.chat_with_client: {
-                const data = clientValidatorSchema.parse(model.stateData)
-                const client = await prisma.client.findUniqueOrThrow({
-                    where: { phone: data.phone },
-                    include: { company: { include: { manager: true } } },
-                })
-                const state = this.stateFactory.create(
-                    'chat_with_client',
-                    entity,
-                    {
-                        client: ClientMapper.toEntity(
-                            client,
-                            client.company,
-                            client.company.manager
-                        ),
-                    }
-                )
-
-                // return state
-                restoredSate = state
-                break
-            }
-        }
-
-        return restoredSate
-    }
-
-    private async createConversation(
-        conversation: Conversation,
-        userReference: UserReferenceType
-    ) {
-        logger.debug(`Creating conversation ${conversation.id}`)
-        const stateName = stateMap[conversation.currentState.constructor.name]
-
-        await prisma.conversation.create({
-            data: {
-                id: conversation.id,
-                startedAt: conversation.startedAt,
-                endedAt: conversation.endedAt,
-                lastStateChange: conversation.lastStateChange,
-                companyId: conversation.company.id,
-                aiServiceThreadId: conversation.aiServiceThreadId,
-                aiServiceThreadResume: conversation.aiServiceThreadResume,
-                currentState: stateName,
-                stateData: this.serializeStateData(conversation),
-                messages: {
-                    connectOrCreate: conversation.messages.map(message => {
-                        return {
-                            where: { id: message.id },
-                            create: {
-                                id: message.id,
-                                from: fromDomainToPrisma(message.from),
-                                content: message.content,
-                                // conversationId: conversation.id,
-                            },
-                        }
-                    }),
-                },
-                ...userReference,
-            },
-        })
-    }
-
-    private async updateConversation(
-        conversation: Conversation,
-        userReference: UserReferenceType
-    ) {
-        logger.debug(`Updating conversation ${conversation.id}`)
-        const stateName = stateMap[conversation.currentState.constructor.name]
-        const serializedStateData = this.serializeStateData(conversation)
-        let possibleEmployeeAgent: Nullable<PrismaEmployee> = null
-        let agentId: Nullable<string> = null
-
-        if (
-            userReference.agentType === 'EMPLOYEE' &&
-            conversation.agent &&
-            conversation.agent !== 'AI'
-        ) {
-            possibleEmployeeAgent = await prisma.employee.findUniqueOrThrow({
-                where: {
-                    id: conversation.agent.id,
-                },
-            })
-
-            agentId = possibleEmployeeAgent.id
-        }
-
-        await prisma.conversation.update({
-            where: { id: conversation.id },
-            data: {
-                startedAt: conversation.startedAt,
-                endedAt: conversation.endedAt,
-                lastStateChange: conversation.lastStateChange,
-                companyId: conversation.company.id,
-                aiServiceThreadId: conversation.aiServiceThreadId,
-                aiServiceThreadResume: conversation.aiServiceThreadResume,
-                currentState: stateName,
-                stateData: serializedStateData,
-                agentId,
-                messages: {
-                    upsert: conversation.messages.map(message => {
-                        return {
-                            where: { id: message.id },
-                            create: {
-                                id: message.id,
-                                content: message.content,
-                                // conversationId: conversation.id,
-                                from: fromDomainToPrisma(message.from),
-                            },
-                            update: {
-                                // content: message.content,
-                            },
-                        }
-                    }),
-                },
-                ...userReference,
-            },
-        })
+    constructor(private prismaStateDataParser: PrismaStateDataParser) {
+        super()
     }
 
     async save(conversation: Conversation): Promise<void> {
-        logger.debug(`Saving conversation ${conversation.id}`)
-        const user: Client | Employee = conversation.user
-        let userReferenceObject: Nullable<UserReferenceType> = null
-        let agentType: AgentType = null
+        const data = ConversationMapper.toModel(conversation)
+        const stateName =
+            stateNameToPrismaEnum[conversation.currentState.constructor.name]
 
-        if (conversation.agent === 'AI') {
-            agentType = 'AI'
-        } else if (conversation.agent) {
-            agentType = 'EMPLOYEE'
-        }
-
-        if (user instanceof Client) {
-            userReferenceObject = {
-                clientId: user.id,
-                userType: 'CLIENT',
-                agentType,
-            }
-        } else if (user instanceof Employee) {
-            userReferenceObject = {
-                employeeId: user.id,
-                userType: 'EMPLOYEE',
-                agentType,
-            }
-        }
-
-        if (!userReferenceObject) {
+        if (!stateName) {
             throw new Error(
-                '[PrismaConversationRepository.save] User type not recognized'
+                `State name ${conversation.currentState.constructor.name} not found in stateNameToPrismaEnum`
             )
         }
 
-        const existingConversation = await prisma.conversation.findUnique({
+        await prisma.conversation.upsert({
             where: { id: conversation.id },
+            update: {
+                ...data,
+                currentState: stateName,
+                stateData: this.prismaStateDataParser.serialize(conversation),
+            },
+            create: {
+                ...data,
+                currentState: stateName,
+                stateData: this.prismaStateDataParser.serialize(conversation),
+                id: conversation.id,
+            },
         })
-
-        if (existingConversation) {
-            logger.debug(`Conversation ${conversation.id} exists, updating`)
-            return await this.updateConversation(
-                conversation,
-                userReferenceObject
-            )
-        }
-
-        logger.debug(`Conversation ${conversation.id} does not exist, creating`)
-
-        return await this.createConversation(conversation, userReferenceObject)
     }
 
     async findActiveByClientPhone(
         company: Company,
-        phone: string
+        clientPhone: string
     ): Promise<Nullable<Conversation>> {
-        const allConversations = await prisma.conversation.findMany()
-        const model = await prisma.conversation.findFirst({
+        const raw = await prisma.conversation.findFirst({
             where: {
-                client: {
-                    phone,
-                    companyId: company.id,
-                },
+                companyId: company.id,
                 endedAt: null,
+                client: {
+                    phone: clientPhone,
+                },
             },
             include: {
-                client: { include: { company: true } },
-                agent: true,
-                employee: {
-                    include: { department: { include: { queue: true } } },
-                },
-                company: { include: { manager: true } },
-                messages: {
+                client: {
                     include: {
-                        client: true,
-                        employee: true,
+                        company: {
+                            include: {
+                                manager: true,
+                                businessHours: true,
+                            },
+                        },
                     },
                 },
+                employee: {
+                    include: {
+                        company: {
+                            include: {
+                                manager: true,
+                                businessHours: true,
+                            },
+                        },
+                    },
+                },
+                company: {
+                    include: {
+                        manager: true,
+                        businessHours: true,
+                    },
+                },
+                agent: {
+                    include: {
+                        company: {
+                            include: {
+                                manager: true,
+                                businessHours: true,
+                            },
+                        },
+                    },
+                },
+                messages: true,
             },
         })
 
-        const result = model ? ConversationMapper.toEntity(model) : null
+        if (!raw) return null
 
-        if (result && model) {
-            const restoredSate = await this.restoreSate(result, model)
+        const state = ConversationMapper.toEntity({
+            ...raw,
+            client: raw.client ?? undefined,
+            employee: raw.employee ?? undefined,
+            agent: raw.agent ?? undefined,
+        })
 
-            if (restoredSate) {
-                result.currentState = restoredSate
-            }
-        }
+        state.currentState = this.prismaStateDataParser.restoreState(state, raw)
 
-        logger.debug(
-            result ? `Found conversation ${result.id}` : 'No conversation found'
-        )
-        return result
+        return state
     }
 
     async findActiveByEmployeePhone(
         company: Company,
-        phone: string
+        employeePhone: string
     ): Promise<Nullable<Conversation>> {
-        logger.debug(`Finding active conversation for employee ${phone}`)
-        const model = await prisma.conversation.findFirst({
+        const raw = await prisma.conversation.findFirst({
             where: {
-                employee: {
-                    phone,
-                    companyId: company.id,
-                },
+                companyId: company.id,
                 endedAt: null,
+                employee: {
+                    phone: employeePhone,
+                },
             },
             include: {
-                client: true,
-                agent: true,
-                employee: { include: { company: true, department: true } },
-                company: { include: { manager: true } },
-                messages: {
+                client: {
                     include: {
-                        client: true,
-                        employee: true,
+                        company: {
+                            include: {
+                                manager: true,
+                                businessHours: true,
+                            },
+                        },
                     },
                 },
+                employee: {
+                    include: {
+                        company: {
+                            include: {
+                                manager: true,
+                                businessHours: true,
+                            },
+                        },
+                        department: {
+                            include: {
+                                company: {
+                                    include: {
+                                        manager: true,
+                                        businessHours: true,
+                                    },
+                                },
+                                employees: true,
+                                queue: true,
+                            },
+                        },
+                    },
+                },
+                company: {
+                    include: {
+                        manager: true,
+                        businessHours: true,
+                    },
+                },
+                agent: {
+                    include: {
+                        company: {
+                            include: {
+                                manager: true,
+                                businessHours: true,
+                            },
+                        },
+                    },
+                },
+                messages: true,
             },
         })
 
-        const result = model ? ConversationMapper.toEntity(model) : null
+        if (!raw) return null
 
-        if (result && model) {
-            const restoredSate = await this.restoreSate(result, model)
+        const state = ConversationMapper.toEntity({
+            ...raw,
+            client: raw.client ?? undefined,
+            employee: raw.employee ?? undefined,
+            agent: raw.agent ?? undefined,
+        })
 
-            if (restoredSate) {
-                result.currentState = restoredSate
-            }
-        }
+        state.currentState = this.prismaStateDataParser.restoreState(state, raw)
 
-        logger.debug(
-            result ? `Found conversation ${result.id}` : 'No conversation found'
-        )
-        return result
+        return state
     }
 
-    async findActiveByClientPhoneOrThrow(
+    async findActiveByEmployeePhoneOrThrow(
         company: Company,
-        phone: string
+        employeePhone: string
     ): Promise<Conversation> {
-        const conversation = await this.findActiveByClientPhone(company, phone)
+        const conversation = await this.findActiveByEmployeePhone(
+            company,
+            employeePhone
+        )
 
         if (!conversation) {
-            throw new Error('No active conversation found for client phone')
+            throw new Error(
+                `Active conversation not found for employee with phone ${employeePhone}`
+            )
         }
 
         return conversation
     }
 
-    async findActiveByEmployeePhoneOrThrow(
+    async findActiveByClientPhoneOrThrow(
         company: Company,
-        phone: string
+        clientPhone: string
     ): Promise<Conversation> {
-        const conversation = await this.findActiveByEmployeePhone(
+        const conversation = await this.findActiveByClientPhone(
             company,
-            phone
+            clientPhone
         )
 
         if (!conversation) {
-            throw new Error('No active conversation found for client phone')
+            throw new Error(
+                `Active conversation not found for client with phone ${clientPhone}`
+            )
         }
 
         return conversation

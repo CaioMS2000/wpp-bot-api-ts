@@ -9,12 +9,11 @@ import { MessageRepository } from '@/domain/repositories/message-repository'
 import { execute } from '@caioms/ts-utils/functions'
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
 import { FindConversationByEmployeePhoneUseCase } from '../use-cases/find-conversation-by-employee-phone-use-case'
-import { StateTransitionService } from './state-transition-service'
+import { StateFactory } from '../factory/state-factory'
 
 export class ProcessEmployeeMessageService {
     constructor(
-        private outputPort: OutputPort,
-        private stateTransitionService: StateTransitionService,
+        private stateFactory: StateFactory,
         private messageRepository: MessageRepository,
         private conversationRepository: ConversationRepository,
         private findConversationByEmployeePhoneUseCase: FindConversationByEmployeePhoneUseCase,
@@ -53,9 +52,9 @@ export class ProcessEmployeeMessageService {
             )
         }
 
-        const transition = await conversation.processMessage(messageContent)
+        const result = await conversation.processMessage(newMessage)
 
-        if (transition) {
+        if (result) {
             logger.debug(
                 "Running 'onExit' for state:\n",
                 conversation.currentState.constructor.name
@@ -64,17 +63,10 @@ export class ProcessEmployeeMessageService {
                 conversation.currentState.onExit.bind(conversation.currentState)
             )
 
-            const resolvedTransition =
-                await this.stateTransitionService.resolveIntent(
-                    conversation,
-                    transition,
-                    messageContent
-                )
-
-            await this.stateTransitionService.handleTransition(
-                conversation,
-                resolvedTransition
+            conversation.transitionToState(
+                this.stateFactory.create(conversation, result)
             )
+
             logger.debug(
                 "Running 'onEnter' for state:\n",
                 conversation.currentState.constructor.name
@@ -88,15 +80,14 @@ export class ProcessEmployeeMessageService {
         }
 
         while (true) {
-            const nextTransition =
-                await conversation.currentState.getNextState()
+            const next = await conversation.currentState.getNextState()
 
-            if (!nextTransition) {
+            if (!next) {
                 break
             }
 
             logger.debug('Auto-transitioning...')
-            logger.debug('will transit to:\n', nextTransition)
+            logger.debug('will transit to:\n', next)
             logger.debug(
                 "Running 'onExit' for state:\n",
                 conversation.currentState.constructor.name
@@ -106,15 +97,8 @@ export class ProcessEmployeeMessageService {
                 conversation.currentState.onExit.bind(conversation.currentState)
             )
 
-            const resolvedTransition =
-                await this.stateTransitionService.resolveIntent(
-                    conversation,
-                    nextTransition,
-                    messageContent
-                )
-            await this.stateTransitionService.handleTransition(
-                conversation,
-                resolvedTransition
+            conversation.transitionToState(
+                this.stateFactory.create(conversation, next)
             )
 
             logger.debug(
@@ -173,7 +157,6 @@ export class ProcessEmployeeMessageService {
             conversationType = 'new_conversation'
         }
 
-        // conversation.currentState.outputPort =this.outputPort
         if (!conversation.currentState.getOutputPort()) {
             logger.debug(
                 'No output port found for conversation:',

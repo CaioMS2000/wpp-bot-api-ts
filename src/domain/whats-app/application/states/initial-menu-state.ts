@@ -1,16 +1,20 @@
+import { logger } from '@/core/logger'
 import { OutputMessage, OutputPort } from '@/core/output/output-port'
+import { Conversation } from '@/domain/entities/conversation'
+import { Employee } from '@/domain/entities/employee'
+import { Message } from '@/domain/entities/message'
 import { isClient, isEmployee } from '@/utils/entity'
 import { execute } from '@caioms/ts-utils/functions'
 import { MenuOption } from '../../@types'
-import { TransitionIntent } from '../factory/types'
+import { StartNextClientConversationUseCase } from '../use-cases/start-next-client-conversation-use-case'
 import { ConversationState } from './conversation-state'
-import { Conversation } from '@/domain/entities/conversation'
-import { logger } from '@/core/logger'
+import { StateTypeMapper } from './types'
 
 export class InitialMenuState extends ConversationState<null> {
     constructor(
         conversation: Conversation,
-        outputPort: OutputPort = null as unknown as OutputPort
+        outputPort: OutputPort,
+        private startNextClientConversationUseCase: StartNextClientConversationUseCase
     ) {
         super(conversation, outputPort)
     }
@@ -42,20 +46,21 @@ export class InitialMenuState extends ConversationState<null> {
         },
     ]
 
-    async handleMessage(
-        messageContent: string
-    ): Promise<Nullable<TransitionIntent>> {
+    async handleMessage(message: Message): Promise<Nullable<StateTypeMapper>> {
         logger.debug('[InitialMenuState.handleMessage]\n', {
-            messageContent,
+            message,
         })
-        let res: Nullable<TransitionIntent> = null
+        let res: Nullable<StateTypeMapper> = null
 
         if (isClient(this.conversation.user)) {
-            res = this.handleClientMessage(messageContent)
+            res = this.handleClientMessage(message)
         }
 
         if (isEmployee(this.conversation.user)) {
-            res = this.handleEmployeeMessage(messageContent)
+            res = await this.handleEmployeeMessage(
+                this.conversation.user,
+                message
+            )
         }
 
         if (!res) {
@@ -101,37 +106,55 @@ export class InitialMenuState extends ConversationState<null> {
         )
     }
 
-    private handleClientMessage(
-        messageContent: string
-    ): Nullable<TransitionIntent> {
-        if (messageContent === 'Conversar com IA') {
-            return { target: 'ai_chat' }
+    private handleClientMessage(message: Message): Nullable<StateTypeMapper> {
+        if (message.content === 'Conversar com IA') {
+            return { stateName: 'AIChatState' }
         }
 
-        if (messageContent === 'Ver Departamentos') {
-            return { target: 'department_selection' }
+        if (message.content === 'Ver Departamentos') {
+            return { stateName: 'DepartmentSelectionState' }
         }
 
-        if (messageContent === 'FAQ') {
-            return { target: 'faq_categories' }
+        if (message.content === 'FAQ') {
+            return { stateName: 'FAQCategoriesState' }
         }
 
         return null
     }
 
-    private handleEmployeeMessage(
-        messageContent: string
-    ): Nullable<TransitionIntent> {
-        if (messageContent === 'FAQ') {
-            return { target: 'faq_categories' }
+    private async handleEmployeeMessage(
+        employee: Employee,
+        message: Message
+    ): Promise<Nullable<StateTypeMapper>> {
+        if (message.content === 'FAQ') {
+            return { stateName: 'FAQCategoriesState' }
         }
 
-        if (messageContent === 'Ver fila') {
-            return { target: 'department_queue_list' }
+        if (message.content === 'Ver fila') {
+            if (!employee.department) {
+                return null
+            }
+            return {
+                stateName: 'ListDepartmentQueueState',
+                params: { departmentId: employee.department.id },
+            }
         }
 
-        if (messageContent === 'Atender próximo') {
-            return { target: 'chat_with_client' }
+        if (message.content === 'Atender próximo') {
+            if (!employee.department) {
+                return null
+            }
+
+            const nextClient =
+                await this.startNextClientConversationUseCase.execute(
+                    this.conversation,
+                    employee.department.id
+                )
+
+            return {
+                stateName: 'ChatWithClientState',
+                params: { clientPhoneNumber: nextClient.phone },
+            }
         }
 
         return null

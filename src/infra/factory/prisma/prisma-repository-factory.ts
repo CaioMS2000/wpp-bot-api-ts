@@ -13,9 +13,15 @@ import { PrismaEmployeeRepository } from '../../database/repositories/prisma/emp
 import { PrismaFAQRepository } from '../../database/repositories/prisma/faq-repository'
 import { PrismaMessageRepository } from '../../database/repositories/prisma/message-repository'
 import type { StateFactory } from '@/domain/whats-app/application/factory/state-factory'
+import { PrismaStateDataParser } from '@/infra/database/state-data-parser/prisma/prisma-state-data-parser'
 
 export class PrismaRepositoryFactory {
-    constructor(private stateFactory: StateFactory) {}
+    private prismaStateDataParser: PrismaStateDataParser
+    constructor(private stateFactory: StateFactory) {
+        this.prismaStateDataParser = new PrismaStateDataParser(
+            this.stateFactory
+        )
+    }
     createClientRepository(): ClientRepository {
         return new PrismaClientRepository()
     }
@@ -25,7 +31,7 @@ export class PrismaRepositoryFactory {
     }
 
     createConversationRepository(): ConversationRepository {
-        return new PrismaConversationRepository(this.stateFactory)
+        return new PrismaConversationRepository(this.prismaStateDataParser)
     }
 
     createDepartmentRepository(): DepartmentRepository {

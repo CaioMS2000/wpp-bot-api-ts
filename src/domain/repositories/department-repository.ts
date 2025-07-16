@@ -18,8 +18,15 @@ export abstract class DepartmentRepository {
         department: Department,
         client: Client
     ): Promise<void>
+    abstract getClientPositionInQueue(
+        department: Department,
+        client: Client
+    ): Promise<Nullable<number>>
     abstract removeClientFromQueue(
         department: Department,
         client: Client
     ): Promise<void>
+    abstract getNextClientFromQueue(
+        department: Department
+    ): Promise<Nullable<string>>
 }
