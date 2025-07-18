@@ -4,19 +4,27 @@ import { Company } from './company'
 export type ClientProps = {
     phone: string
     name: string
+    companyId: string
     company: Company
 }
 
-export type CreateClientInput = RequireOnly<ClientProps, 'phone' | 'company'>
+export type CreateClientInput = RequireOnly<ClientProps, 'phone' | 'companyId'>
 
 export class Client extends Entity<ClientProps> {
+    private static readonly TEMPORARY_COMPANY = Symbol(
+        'TEMPORARY_COMPANY'
+    ) as unknown as Company
     static create(props: CreateClientInput, id?: string) {
-        const defaults: Omit<ClientProps, 'phone' | 'company'> = {
-            name: `${props.company.name}-Cliente-${props.phone}`,
+        const defaults: Omit<ClientProps, 'phone' | 'company' | 'companyId'> = {
+            name: `Cliente-${props.phone}`,
         }
-        // const client = new Client({ ...defaults, ...props }, id)
+        const company = props.company ?? Client.TEMPORARY_COMPANY
         const client = new Client(
-            { ...defaults, ...props, name: props.name ?? defaults.name },
+            {
+                ...props,
+                name: props.name ?? defaults.name,
+                company,
+            },
             id
         )
         return client
@@ -27,10 +35,22 @@ export class Client extends Entity<ClientProps> {
     }
 
     get company() {
+        if (
+            this.props.company === Client.TEMPORARY_COMPANY ||
+            !this.props.company
+        ) {
+            throw new Error(
+                'Company não foi definida. Use o setter para definir a company.'
+            )
+        }
         return this.props.company
     }
 
     get name() {
         return this.props.name
+    }
+
+    set company(company: Company) {
+        this.props.company = company
     }
 }

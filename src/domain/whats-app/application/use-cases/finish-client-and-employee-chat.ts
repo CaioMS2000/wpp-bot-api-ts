@@ -36,7 +36,10 @@ export class FinishClientAndEmployeeChatUseCase {
         await this.conversationRepository.save(clientConversation)
         await clientConversation.currentState.onExit()
 
-        clientConversation = Conversation.create({ user: client, company })
+        clientConversation = Conversation.create({
+            userId: client.id,
+            companyId: company.id,
+        })
 
         clientConversation.transitionToState(
             this.stateFactory.create(clientConversation, {

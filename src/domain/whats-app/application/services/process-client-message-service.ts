@@ -138,11 +138,12 @@ export class ProcessClientMessageService {
         sender: Client
     ): Promise<Message> {
         const message = Message.create({
-            conversation,
-            timestamp: new Date(),
+            conversationId: conversation.id,
+            conversation: conversation,
+            senderId: sender.id,
             from: 'client',
             content,
-            sender,
+            sender: sender,
         })
 
         await this.messageRepository.save(message)
@@ -167,8 +168,8 @@ export class ProcessClientMessageService {
             conversationType = 'recovered_conversation'
         } else {
             conversation = await this.createConversationUseCase.execute({
-                user,
-                company,
+                userId: user.id,
+                companyId: company.id,
             })
             conversationType = 'new_conversation'
         }

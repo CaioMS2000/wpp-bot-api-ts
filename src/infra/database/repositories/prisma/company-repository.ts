@@ -2,8 +2,19 @@ import { Company } from '@/domain/entities/company'
 import { CompanyRepository } from '@/domain/repositories/company-repository'
 import { CompanyMapper } from '../../mappers/company-mapper'
 import { prisma } from '@/lib/prisma'
+import { ManagerRepository } from '@/domain/repositories/manager-repository'
 
 export class PrismaCompanyRepository extends CompanyRepository {
+    private _managerRepository!: ManagerRepository
+
+    set managerRepository(managerRepository: ManagerRepository) {
+        this._managerRepository = managerRepository
+    }
+
+    get managerRepository() {
+        return this._managerRepository
+    }
+
     async save(company: Company): Promise<void> {
         const data = CompanyMapper.toModel(company)
         const businessHours = CompanyMapper.businessHoursToModel(company)
@@ -29,6 +40,33 @@ export class PrismaCompanyRepository extends CompanyRepository {
         })
     }
 
+    async find(id: string): Promise<Nullable<Company>> {
+        const raw = await prisma.company.findUnique({
+            where: { id },
+            include: {
+                manager: true,
+                businessHours: true,
+            },
+        })
+
+        if (!raw) return null
+
+        const manager = await this.managerRepository.findOrThrow(raw.managerId)
+
+        const company = CompanyMapper.toEntity(raw)
+        company.manager = manager
+
+        return company
+    }
+
+    async findOrThrow(id: string): Promise<Company> {
+        const company = await this.find(id)
+        if (!company) {
+            throw new Error(`Company with id ${id} not found`)
+        }
+        return company
+    }
+
     async findByPhone(phone: string): Promise<Nullable<Company>> {
         const raw = await prisma.company.findUnique({
             where: { phone },
@@ -39,7 +77,14 @@ export class PrismaCompanyRepository extends CompanyRepository {
         })
 
         if (!raw) return null
-        return CompanyMapper.toEntity(raw)
+
+        const manager = await this.managerRepository.findOrThrow(raw.managerId)
+
+        const company = CompanyMapper.toEntity(raw)
+
+        company.manager = manager
+
+        return company
     }
 
     async findByCNPJ(cnpj: string): Promise<Nullable<Company>> {
@@ -52,6 +97,27 @@ export class PrismaCompanyRepository extends CompanyRepository {
         })
 
         if (!raw) return null
+
+        const manager = await this.managerRepository.findOrThrow(raw.managerId)
+
+        const company = CompanyMapper.toEntity(raw)
+
+        company.manager = manager
+
+        return company
+    }
+
+    async findByManagerId(managerId: string): Promise<Nullable<Company>> {
+        const raw = await prisma.company.findUnique({
+            where: { managerId },
+            include: {
+                manager: true,
+                businessHours: true,
+            },
+        })
+
+        if (!raw) return null
+
         return CompanyMapper.toEntity(raw)
     }
 }

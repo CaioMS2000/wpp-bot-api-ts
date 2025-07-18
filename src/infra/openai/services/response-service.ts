@@ -77,10 +77,9 @@ export class AIResponseService extends AIService {
 
         const result = await this.generateResponse(input, lastResponseId)
         const newMessage = Message.create({
-            conversation,
+            conversationId: conversation.id,
             from: 'AI',
             content: result.message,
-            sender: null,
             aiResponseId: result.responseId,
         })
 

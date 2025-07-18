@@ -1,11 +1,33 @@
 import { Client } from '@/domain/entities/client'
 import { Company } from '@/domain/entities/company'
 import { Department } from '@/domain/entities/department'
+import type { Employee } from '@/domain/entities/employee'
+import { ClientRepository } from '@/domain/repositories/client-repository'
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
+import { EmployeeRepository } from '@/domain/repositories/employee-repository'
 import { prisma } from '@/lib/prisma'
 import { DepartmentMapper } from '../../mappers/department-mapper'
 
 export class PrismaDepartmentRepository extends DepartmentRepository {
+    private _clientRepository!: ClientRepository
+    private _employeeRepository!: EmployeeRepository
+
+    set clientRepository(clientRepository: ClientRepository) {
+        this._clientRepository = clientRepository
+    }
+
+    get clientRepository() {
+        return this._clientRepository
+    }
+
+    set employeeRepository(employeeRepository: EmployeeRepository) {
+        this._employeeRepository = employeeRepository
+    }
+
+    get employeeRepository() {
+        return this._employeeRepository
+    }
+
     async save(department: Department): Promise<void> {
         const data = DepartmentMapper.toModel(department)
 
@@ -27,6 +49,9 @@ export class PrismaDepartmentRepository extends DepartmentRepository {
                     include: {
                         client: true,
                     },
+                    orderBy: {
+                        joinedAt: 'asc',
+                    },
                 },
                 company: {
                     include: {
@@ -40,12 +65,24 @@ export class PrismaDepartmentRepository extends DepartmentRepository {
 
         if (!raw) return null
 
-        return DepartmentMapper.toEntity({
-            ...raw,
-            queue: raw.queue.map(q => ({
-                ...q.client,
-            })),
-        })
+        const department = DepartmentMapper.toEntity(raw)
+        department.company = company
+
+        // Preencher employees
+        const employees = await Promise.all(
+            raw.employees.map(e => this.employeeRepository.find(e.id))
+        )
+        department.employees = employees.filter((e): e is Employee =>
+            Boolean(e)
+        )
+
+        // Preencher queue mantendo a ordem original
+        const clients = await Promise.all(
+            raw.queue.map(q => this.clientRepository.find(company, q.clientId))
+        )
+        department.queue = clients.filter((c): c is Client => Boolean(c))
+
+        return department
     }
 
     async findByName(
@@ -69,17 +106,33 @@ export class PrismaDepartmentRepository extends DepartmentRepository {
                     include: {
                         client: true,
                     },
+                    orderBy: {
+                        joinedAt: 'asc',
+                    },
                 },
             },
         })
 
         if (!raw) return null
-        return DepartmentMapper.toEntity({
-            ...raw,
-            queue: raw.queue.map(q => ({
-                ...q.client,
-            })),
-        })
+
+        const department = DepartmentMapper.toEntity(raw)
+        department.company = company
+
+        // Preencher employees
+        const employees = await Promise.all(
+            raw.employees.map(e => this.employeeRepository.find(e.id))
+        )
+        department.employees = employees.filter((e): e is Employee =>
+            Boolean(e)
+        )
+
+        // Preencher queue mantendo a ordem original
+        const clients = await Promise.all(
+            raw.queue.map(q => this.clientRepository.find(company, q.clientId))
+        )
+        department.queue = clients.filter((c): c is Client => Boolean(c))
+
+        return department
     }
 
     async findByNameOrThrow(
@@ -96,7 +149,8 @@ export class PrismaDepartmentRepository extends DepartmentRepository {
     }
 
     async findAllActive(company: Company): Promise<Department[]> {
-        const departments = await prisma.department.findMany({
+        const departments: Department[] = []
+        const rawDepartments = await prisma.department.findMany({
             where: {
                 companyId: company.id,
             },
@@ -112,18 +166,39 @@ export class PrismaDepartmentRepository extends DepartmentRepository {
                     include: {
                         client: true,
                     },
+                    orderBy: {
+                        joinedAt: 'asc',
+                    },
                 },
             },
         })
 
-        return departments.map(raw =>
-            DepartmentMapper.toEntity({
-                ...raw,
-                queue: raw.queue.map(q => ({
-                    ...q.client,
-                })),
-            })
-        )
+        for (const rawDepartment of rawDepartments) {
+            const department = DepartmentMapper.toEntity(rawDepartment)
+            department.company = company
+
+            // Preencher employees
+            const employees = await Promise.all(
+                rawDepartment.employees.map(e =>
+                    this.employeeRepository.find(e.id)
+                )
+            )
+            department.employees = employees.filter((e): e is Employee =>
+                Boolean(e)
+            )
+
+            // Preencher queue mantendo a ordem original
+            const clients = await Promise.all(
+                rawDepartment.queue.map(q =>
+                    this.clientRepository.find(company, q.clientId)
+                )
+            )
+            department.queue = clients.filter((c): c is Client => Boolean(c))
+
+            departments.push(department)
+        }
+
+        return departments
     }
 
     async insertClientIntoQueue(

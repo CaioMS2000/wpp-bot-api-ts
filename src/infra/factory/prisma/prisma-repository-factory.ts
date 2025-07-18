@@ -14,39 +14,94 @@ import { PrismaFAQRepository } from '../../database/repositories/prisma/faq-repo
 import { PrismaMessageRepository } from '../../database/repositories/prisma/message-repository'
 import type { StateFactory } from '@/domain/whats-app/application/factory/state-factory'
 import { PrismaStateDataParser } from '@/infra/database/state-data-parser/prisma/prisma-state-data-parser'
+import { ManagerRepository } from '@/domain/repositories/manager-repository'
+import { PrismaManagerRepository } from '@/infra/database/repositories/prisma/manager-repository'
+import { RepositoryFactory } from '@/domain/whats-app/application/factory/repository-factory'
 
-export class PrismaRepositoryFactory {
+export class PrismaRepositoryFactory implements RepositoryFactory {
+    private clientRepository!: PrismaClientRepository
+    private employeeRepository!: PrismaEmployeeRepository
+    private conversationRepository!: PrismaConversationRepository
+    private departmentRepository!: PrismaDepartmentRepository
+    private fAQRepository!: PrismaFAQRepository
+    private messageRepository!: PrismaMessageRepository
+    private companyRepository!: PrismaCompanyRepository
+    private managerRepository!: PrismaManagerRepository
     private prismaStateDataParser: PrismaStateDataParser
+
     constructor(private stateFactory: StateFactory) {
         this.prismaStateDataParser = new PrismaStateDataParser(
             this.stateFactory
         )
-    }
-    createClientRepository(): ClientRepository {
-        return new PrismaClientRepository()
-    }
-
-    createEmployeeRepository(): EmployeeRepository {
-        return new PrismaEmployeeRepository()
+        this.initializeRepositories()
+        this.wireDependencies()
     }
 
-    createConversationRepository(): ConversationRepository {
-        return new PrismaConversationRepository(this.prismaStateDataParser)
+    private initializeRepositories() {
+        this.conversationRepository = new PrismaConversationRepository()
+        this.clientRepository = new PrismaClientRepository()
+        this.employeeRepository = new PrismaEmployeeRepository()
+        this.departmentRepository = new PrismaDepartmentRepository()
+        this.fAQRepository = new PrismaFAQRepository()
+        this.messageRepository = new PrismaMessageRepository()
+        this.companyRepository = new PrismaCompanyRepository()
+        this.managerRepository = new PrismaManagerRepository()
+    }
+    private wireDependencies() {
+        // company repository
+        this.companyRepository.managerRepository = this.managerRepository
+
+        // conversation repository
+        this.conversationRepository.prismaStateDataParser =
+            this.prismaStateDataParser
+        this.conversationRepository.clientRepository = this.clientRepository
+        this.conversationRepository.employeeRepository = this.employeeRepository
+        this.conversationRepository.companyRepository = this.companyRepository
+
+        // department repository
+        this.departmentRepository.clientRepository = this.clientRepository
+        this.departmentRepository.employeeRepository = this.employeeRepository
+
+        // employee repository
+        this.employeeRepository.companyRepository = this.companyRepository
+
+        // manager repository
+        this.managerRepository.companyRepository = this.companyRepository
+
+        // message repository
+        this.messageRepository.conversationRepository =
+            this.conversationRepository
     }
 
-    createDepartmentRepository(): DepartmentRepository {
-        return new PrismaDepartmentRepository()
+    getClientRepository(): ClientRepository {
+        return this.clientRepository
     }
 
-    createFAQRepository(): FAQRepository {
-        return new PrismaFAQRepository()
+    getEmployeeRepository(): EmployeeRepository {
+        return this.employeeRepository
     }
 
-    createMessageRepository(): MessageRepository {
-        return new PrismaMessageRepository()
+    getConversationRepository(): ConversationRepository {
+        return this.conversationRepository
     }
 
-    createCompanyRepository(): CompanyRepository {
-        return new PrismaCompanyRepository()
+    getDepartmentRepository(): DepartmentRepository {
+        return this.departmentRepository
+    }
+
+    getFAQRepository(): FAQRepository {
+        return this.fAQRepository
+    }
+
+    getMessageRepository(): MessageRepository {
+        return this.messageRepository
+    }
+
+    getCompanyRepository(): CompanyRepository {
+        return this.companyRepository
+    }
+
+    getManagerRepository(): ManagerRepository {
+        return this.managerRepository
     }
 }

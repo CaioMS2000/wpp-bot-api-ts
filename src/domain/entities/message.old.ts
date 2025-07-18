@@ -5,7 +5,6 @@ import { Employee } from './employee'
 
 export type MessageProps = {
     conversation: Conversation
-    conversationId: string
     timestamp: Date
     from: 'client' | 'employee' | 'AI'
     content: string
@@ -15,20 +14,8 @@ export type MessageProps = {
 }
 export type CreateMessageInput = RequireOnly<
     MessageProps,
-    'conversationId' | 'from' | 'content'
-> & {
-    // Quando from é 'AI', aiResponseId é obrigatório
-    aiResponseId?: Nullable<string>
-} & (
-        | {
-              from: 'AI'
-              aiResponseId: string // Obrigatório para AI
-          }
-        | {
-              from: 'client' | 'employee'
-              aiResponseId?: never // Não permitido para outros tipos
-          }
-    )
+    'conversation' | 'from' | 'content'
+>
 
 export class Message extends Entity<MessageProps> {
     private static readonly TEMPORARY_CONVERSATION = Symbol(
@@ -36,33 +23,18 @@ export class Message extends Entity<MessageProps> {
     ) as unknown as Conversation
 
     static create(props: CreateMessageInput, id?: string) {
-        // Validação específica para mensagens AI
-        if (props.from === 'AI' && !props.aiResponseId) {
-            throw new Error('AI messages must have an aiResponseId')
-        }
-
-        // Validação para evitar aiResponseId em mensagens não-AI
-        if (props.from !== 'AI' && props.aiResponseId) {
-            throw new Error('Only AI messages can have an aiResponseId')
-        }
         const defaults: Omit<
             MessageProps,
-            'conversationId' | 'from' | 'content'
+            'conversation' | 'from' | 'content'
         > = {
             timestamp: new Date(),
-            aiResponseId: props.from === 'AI' ? props.aiResponseId : null,
+            aiResponseId: null,
             sender: null,
             senderId: null,
-            conversation: Message.TEMPORARY_CONVERSATION,
         }
-        const message = new Message(
-            {
-                ...defaults,
-                ...props,
-                aiResponseId: props.from === 'AI' ? props.aiResponseId! : null,
-            },
-            id
-        )
+        const conversation =
+            props.conversation ?? Message.TEMPORARY_CONVERSATION
+        const message = new Message({ ...defaults, ...props, conversation }, id)
         return message
     }
 
@@ -102,28 +74,16 @@ export class Message extends Entity<MessageProps> {
         return this.props.aiResponseId
     }
 
-    get conversationId() {
-        return this.props.conversationId
-    }
-
     set conversation(conversation: Conversation) {
         this.props.conversation = conversation
     }
 
     set sender(sender: Client | Employee) {
-        if (this.from === 'AI') {
-            throw new Error('AI messages cannot have a sender')
-        }
-
         this.props.sender = sender
         this.props.senderId = sender.id
     }
 
     set senderId(senderId: string) {
-        if (this.from === 'AI') {
-            throw new Error('AI messages cannot have a sender')
-        }
-
         if (this.props.sender && this.props.sender.id !== senderId) {
             this.props.sender = null
         }

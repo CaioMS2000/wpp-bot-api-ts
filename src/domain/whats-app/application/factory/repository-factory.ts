@@ -7,11 +7,11 @@ import { FAQRepository } from '@/domain/repositories/faq-repository'
 import { MessageRepository } from '@/domain/repositories/message-repository'
 
 export abstract class RepositoryFactory {
-    abstract createClientRepository(): ClientRepository
-    abstract createEmployeeRepository(): EmployeeRepository
-    abstract createConversationRepository(): ConversationRepository
-    abstract createDepartmentRepository(): DepartmentRepository
-    abstract createFAQRepository(): FAQRepository
-    abstract createMessageRepository(): MessageRepository
-    abstract createCompanyRepository(): CompanyRepository
+    abstract getClientRepository(): ClientRepository
+    abstract getEmployeeRepository(): EmployeeRepository
+    abstract getConversationRepository(): ConversationRepository
+    abstract getDepartmentRepository(): DepartmentRepository
+    abstract getFAQRepository(): FAQRepository
+    abstract getMessageRepository(): MessageRepository
+    abstract getCompanyRepository(): CompanyRepository
 }

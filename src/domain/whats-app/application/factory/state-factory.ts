@@ -76,7 +76,7 @@ export class StateFactory {
                     return new DepartmentChatState(
                         conversation,
                         this.outputPort,
-                        this.repositoryFactory.createDepartmentRepository(),
+                        this.repositoryFactory.getDepartmentRepository(),
                         stateTypeMapper.params.departmentId
                     )
                 }
@@ -84,7 +84,7 @@ export class StateFactory {
                     return new DepartmentQueueState(
                         conversation,
                         this.outputPort,
-                        this.repositoryFactory.createDepartmentRepository(),
+                        this.repositoryFactory.getDepartmentRepository(),
                         this.useCaseFactory.getRemoveClientFromDepartmentQueue(),
                         stateTypeMapper.params.departmentId
                     )
@@ -99,7 +99,7 @@ export class StateFactory {
                         conversation,
                         this.outputPort,
                         stateTypeMapper.params.clientPhoneNumber,
-                        this.repositoryFactory.createClientRepository(),
+                        this.repositoryFactory.getClientRepository(),
                         this.useCaseFactory.getFinishClientAndEmployeeChatUseCase(),
                         this.useCaseFactory.getRemoveClientFromDepartmentQueue()
                     )
@@ -107,7 +107,7 @@ export class StateFactory {
                     return new ListDepartmentQueueState(
                         conversation,
                         this.outputPort,
-                        this.repositoryFactory.createDepartmentRepository(),
+                        this.repositoryFactory.getDepartmentRepository(),
                         stateTypeMapper.params.departmentId
                     )
             }

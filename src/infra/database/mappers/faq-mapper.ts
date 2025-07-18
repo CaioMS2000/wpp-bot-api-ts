@@ -1,19 +1,11 @@
-// src/infra/database/mappers/faq-mapper.ts
 import {
     FAQCategory as PrismaFAQCategory,
     FAQItem as PrismaFAQItem,
-    Company as PrismaCompany,
-    Manager as PrismaManager,
-    BusinessHour as PrismaBusinessHour,
 } from 'ROOT/prisma/generated'
-import { FAQ, FAQCategory, FAQItem } from '@/domain/entities/faq'
+import { FAQ, FAQCategory } from '@/domain/entities/faq'
 
 type FAQCategoryWithRelations = PrismaFAQCategory & {
     items: PrismaFAQItem[]
-    company: PrismaCompany & {
-        businessHours: PrismaBusinessHour[]
-        manager: PrismaManager
-    }
 }
 
 export class FAQMapper {

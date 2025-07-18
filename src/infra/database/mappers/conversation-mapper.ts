@@ -17,71 +17,46 @@ import { ClientMapper } from './client-mapper'
 import { EmployeeMapper } from './employee-mapper'
 import { MessageMapper } from './message-mapper'
 import { Employee } from '@/domain/entities/employee'
-
-type ConversationWithRelations = PrismaConversation & {
-    client?: PrismaClient & {
-        company: PrismaCompany & {
-            businessHours: PrismaBusinessHour[]
-            manager: PrismaManager
-        }
-    }
-    employee?: PrismaEmployee & {
-        company: PrismaCompany & {
-            businessHours: PrismaBusinessHour[]
-            manager: PrismaManager
-        }
-    }
-    agent?: PrismaEmployee & {
-        company: PrismaCompany & {
-            businessHours: PrismaBusinessHour[]
-            manager: PrismaManager
-        }
-    }
-    company: PrismaCompany & {
-        businessHours: PrismaBusinessHour[]
-        manager: PrismaManager
-    }
-    messages: PrismaMessage[]
-}
+import { Company } from '@/domain/entities/company'
+import { ConversationState } from '@/domain/whats-app/application/states/conversation-state'
 
 export class ConversationMapper {
-    static toEntity(raw: ConversationWithRelations): Conversation {
-        let user: UserType
+    static toEntity(raw: PrismaConversation): Conversation {
+        const companyId: string = raw.companyId
+        const startedAt: Date = raw.startedAt
+        const endedAt: Nullable<Date> = raw.endedAt
+        const lastStateChange: Nullable<Date> = raw.lastStateChange
+        const agentId: Nullable<string> = raw.agentId
+        const resume: Nullable<string> = raw.resume
+        let userId: string
 
-        if (raw.client) {
-            user = ClientMapper.toEntity(raw.client)
-        } else if (raw.employee) {
-            user = EmployeeMapper.toEntity(raw.employee)
+        if (raw.userType === 'CLIENT' && raw.clientId) {
+            userId = raw.clientId
+        } else if (raw.userType === 'EMPLOYEE' && raw.employeeId) {
+            userId = raw.employeeId
         } else {
-            throw new Error('Conversation must have either client or employee')
+            throw new Error('Invalid user type')
         }
 
-        let agent: 'AI' | Employee | null = null
-        if (raw.agentType === 'AI') {
-            agent = 'AI'
-        } else if (raw.agent) {
-            agent = EmployeeMapper.toEntity(raw.agent)
-        }
-
-        return Conversation.create(
+        const conversation = Conversation.create(
             {
-                user,
-                company: CompanyMapper.toEntity(raw.company),
-                startedAt: raw.startedAt,
-                endedAt: raw.endedAt,
-                lastStateChange: raw.lastStateChange,
-                agent,
-                participants: [], // Será carregado separadamente se necessário
-                messages: raw.messages.map(msg => MessageMapper.toEntity(msg)),
-                resume: raw.resume,
+                companyId,
+                userId,
+                startedAt,
+                endedAt,
+                lastStateChange,
+                agentId,
+                resume,
             },
             raw.id
         )
+
+        return conversation
     }
 
     static toModel(entity: Conversation): Omit<PrismaConversation, 'id'> {
-        // Verifica se user é Client ou Employee baseado na presença da propriedade 'email'
-        const isEmployee = 'email' in entity.user
+        // Verifica se user é Client ou Employee baseado na presença da propriedade 'department'
+        const isEmployee = 'department' in entity.user
 
         return {
             userType: isEmployee ? 'EMPLOYEE' : 'CLIENT',

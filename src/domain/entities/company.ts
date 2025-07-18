@@ -27,6 +27,7 @@ export type CompanyProps = {
     website: Nullable<string>
     description: Nullable<string>
     businessHours: BusinessHours[]
+    managerId: string
     manager: Manager
 }
 
@@ -34,7 +35,8 @@ export type CreateCompanyInput = {
     cnpj: string
     name: string
     phone: string
-    manager: Manager
+    managerId: string
+    manager?: Nullable<Manager>
     email?: Nullable<string>
     website?: Nullable<string>
     description?: Nullable<string>
@@ -42,6 +44,9 @@ export type CreateCompanyInput = {
 }
 
 export class Company extends Entity<CompanyProps> {
+    private static readonly TEMPORARY_MANAGER = Symbol(
+        'TEMPORARY_MANAGER'
+    ) as unknown as Manager
     private static DEFAULT_BUSINESS_HOURS: Record<
         WeekDay,
         Omit<BusinessHours, 'day'>
@@ -62,11 +67,15 @@ export class Company extends Entity<CompanyProps> {
 
         const company = new Company(
             {
-                email: null,
-                website: null,
-                description: null,
-                ...props,
+                cnpj: props.cnpj,
+                name: props.name,
+                email: props.email ?? null,
+                phone: props.phone,
+                website: props.website ?? null,
+                description: props.description ?? null,
                 businessHours,
+                managerId: props.managerId,
+                manager: props.manager ?? Company.TEMPORARY_MANAGER,
             },
             id
         )
@@ -177,7 +186,23 @@ export class Company extends Entity<CompanyProps> {
         return this.props.businessHours
     }
 
+    get managerId() {
+        return this.props.managerId
+    }
+
     get manager() {
+        if (
+            this.props.manager === Company.TEMPORARY_MANAGER ||
+            !this.props.manager
+        ) {
+            throw new Error(
+                "Manager is not set. Use the setter to set the manager or use 'managerId'."
+            )
+        }
         return this.props.manager
+    }
+
+    set manager(manager: Manager) {
+        this.props.manager = manager
     }
 }

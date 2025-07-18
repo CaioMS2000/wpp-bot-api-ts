@@ -15,18 +15,18 @@ export class WhatsAppMessageServiceFactory {
         private processClientMessageServiceFactory: ProcessClientMessageServiceFactory,
         private processEmployeeMessageServiceFactory: ProcessEmployeeMessageServiceFactory
     ) {}
-    createService() {
+    getService() {
         const processClientMessageService =
-            this.processClientMessageServiceFactory.createService()
+            this.processClientMessageServiceFactory.getService()
         const processEmployeeMessageService =
-            this.processEmployeeMessageServiceFactory.createService()
+            this.processEmployeeMessageServiceFactory.getService()
         const messageHandlerFactory = new MessageHandlerFactory(
             processClientMessageService,
             processEmployeeMessageService
         )
         const departmentRepository =
-            this.repositoryFactory.createDepartmentRepository()
-        const faqRepository = this.repositoryFactory.createFAQRepository()
+            this.repositoryFactory.getDepartmentRepository()
+        const faqRepository = this.repositoryFactory.getFAQRepository()
         const resolveSenderContextUseCase =
             this.useCaseFactory.getResolveSenderContextUseCase()
 

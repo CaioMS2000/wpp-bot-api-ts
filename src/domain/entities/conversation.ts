@@ -10,11 +10,14 @@ import type { Message } from './message'
 
 export type ConversationProps = {
     company: Company
+    companyId: string
     user: UserType
+    userId: string
     startedAt: Date
     endedAt: Nullable<Date>
     lastStateChange: Nullable<Date>
     agent: Nullable<Employee | 'AI'>
+    agentId: Nullable<string>
     participants: Employee[]
     messages: Message[]
     currentState: ConversationState
@@ -23,30 +26,40 @@ export type ConversationProps = {
 
 export type CreateConversationInput = RequireOnly<
     ConversationProps,
-    'user' | 'company'
+    'userId' | 'companyId'
 >
 
 export class Conversation extends AggregateRoot<ConversationProps> {
+    private static readonly TEMPORARY_STATE = Symbol(
+        'TEMPORARY_STATE'
+    ) as unknown as ConversationState
+    private static readonly TEMPORARY_COMPANY = Symbol(
+        'TEMPORARY_COMPANY'
+    ) as unknown as Company
+    private static readonly TEMPORARY_USER = Symbol(
+        'TEMPORARY_USER'
+    ) as unknown as UserType
     static create(props: CreateConversationInput, id?: string) {
-        const temporaryState = null as unknown as ConversationState
+        const temporaryState = Conversation.TEMPORARY_STATE
         const state = props.currentState || temporaryState
-        const defaults: Omit<ConversationProps, 'user' | 'company'> = {
+        const defaults: Omit<ConversationProps, 'userId' | 'companyId'> = {
             startedAt: new Date(),
             lastStateChange: new Date(),
             endedAt: null,
             agent: null,
             resume: null,
             currentState: state,
+            company: Conversation.TEMPORARY_COMPANY,
             participants: [],
             messages: [],
+            user: Conversation.TEMPORARY_USER,
+            agentId: null,
         }
 
         const conversation = new Conversation(
             {
                 ...defaults,
                 ...props,
-                messages: props.messages ?? [],
-                participants: props.participants ?? [],
             },
             id
         )
@@ -110,6 +123,14 @@ export class Conversation extends AggregateRoot<ConversationProps> {
     }
 
     get currentState() {
+        if (
+            this.props.currentState === Conversation.TEMPORARY_STATE ||
+            !this.props.currentState
+        ) {
+            throw new Error(
+                'currentState não foi definido. Use o setter para definir o estado atual.'
+            )
+        }
         return this.props.currentState
     }
 
@@ -135,5 +156,13 @@ export class Conversation extends AggregateRoot<ConversationProps> {
 
     set endedAt(endedAt: Nullable<Date>) {
         this.props.endedAt = endedAt
+    }
+
+    set company(company: Company) {
+        this.props.company = company
+    }
+
+    set user(user: UserType) {
+        this.props.user = user
     }
 }

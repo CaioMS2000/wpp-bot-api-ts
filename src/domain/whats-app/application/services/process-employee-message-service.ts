@@ -121,7 +121,7 @@ export class ProcessEmployeeMessageService {
     ): Promise<Message> {
         const message = Message.create({
             conversation,
-            timestamp: new Date(),
+            conversationId: conversation.id,
             from: 'employee',
             content,
             sender,
@@ -151,8 +151,8 @@ export class ProcessEmployeeMessageService {
             conversationType = 'recovered_conversation'
         } else {
             conversation = await this.createConversationUseCase.execute({
-                user,
-                company,
+                userId: user.id,
+                companyId: company.id,
             })
             conversationType = 'new_conversation'
         }

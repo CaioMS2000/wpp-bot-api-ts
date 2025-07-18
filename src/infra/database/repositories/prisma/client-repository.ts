@@ -3,7 +3,6 @@ import { Company } from '@/domain/entities/company'
 import { ClientRepository } from '@/domain/repositories/client-repository'
 import { prisma } from '@/lib/prisma'
 import { ClientMapper } from '../../mappers/client-mapper'
-import { CompanyMapper } from '../../mappers/company-mapper'
 
 export class PrismaClientRepository extends ClientRepository {
     async save(client: Client): Promise<void> {
@@ -40,7 +39,10 @@ export class PrismaClientRepository extends ClientRepository {
 
         if (!raw) return null
 
-        return ClientMapper.toEntity(raw)
+        const client = ClientMapper.toEntity(raw)
+        client.company = company
+
+        return client
     }
 
     async find(company: Company, id: string): Promise<Nullable<Client>> {
@@ -63,7 +65,10 @@ export class PrismaClientRepository extends ClientRepository {
             return null
         }
 
-        return ClientMapper.toEntity(raw)
+        const client = ClientMapper.toEntity(raw)
+        client.company = company
+
+        return client
     }
 
     async findOrThrow(company: Company, id: string): Promise<Client> {

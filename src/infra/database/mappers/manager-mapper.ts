@@ -9,7 +9,7 @@ export class ManagerMapper {
                 email: raw.email,
                 password: raw.password,
                 phone: raw.phone,
-                company: null, // Será carregado separadamente se necessário
+                company: null,
             },
             raw.id
         )

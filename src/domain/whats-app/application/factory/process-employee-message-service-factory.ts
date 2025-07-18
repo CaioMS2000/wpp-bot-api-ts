@@ -10,11 +10,10 @@ export class ProcessEmployeeMessageServiceFactory {
         private stateFactory: StateFactory
     ) {}
 
-    createService() {
-        const messageRepository =
-            this.repositoryFactory.createMessageRepository()
+    getService() {
+        const messageRepository = this.repositoryFactory.getMessageRepository()
         const conversationRepository =
-            this.repositoryFactory.createConversationRepository()
+            this.repositoryFactory.getConversationRepository()
         const findConversationByEmployeePhoneUseCase =
             this.useCaseFactory.getFindConversationByEmployeePhoneUseCase()
         const createConversationUseCase =

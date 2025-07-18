@@ -1,14 +1,12 @@
 import {
     Company as PrismaCompany,
     BusinessHour as PrismaBusinessHour,
-    Manager as PrismaManager,
 } from 'ROOT/prisma/generated'
 import { Company, WeekDay, BusinessHours } from '@/domain/entities/company'
-import { ManagerMapper } from './manager-mapper'
 
 type CompanyWithRelations = PrismaCompany & {
     businessHours: PrismaBusinessHour[]
-    manager: PrismaManager
+    // manager: PrismaManager
 }
 
 export class CompanyMapper {
@@ -28,7 +26,7 @@ export class CompanyMapper {
                 email: raw.email,
                 website: raw.website,
                 description: raw.description,
-                manager: ManagerMapper.toEntity(raw.manager),
+                managerId: raw.managerId,
                 businessHours: businessHours.reduce((acc, bh) => {
                     acc[bh.day] = {
                         openTime: bh.openTime,

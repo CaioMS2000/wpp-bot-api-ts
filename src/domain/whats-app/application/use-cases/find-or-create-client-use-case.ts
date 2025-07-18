@@ -13,7 +13,7 @@ export class FindOrCreateClientUseCase {
         if (!client) {
             client = Client.create({
                 phone,
-                company,
+                companyId: company.id,
                 name,
             })
             await this.clientRepository.save(client)

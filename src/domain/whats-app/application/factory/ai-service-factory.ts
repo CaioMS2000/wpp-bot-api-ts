@@ -14,8 +14,8 @@ export class AIServiceFactory {
 
     createService(): AIService {
         return new AIResponseService(
-            this.repositoryFactory.createMessageRepository(),
-            this.repositoryFactory.createConversationRepository()
+            this.repositoryFactory.getMessageRepository(),
+            this.repositoryFactory.getConversationRepository()
         )
     }
 }

@@ -4,10 +4,10 @@ import { RepositoryFactory } from './repository-factory'
 export class DepartmentQueueServiceFactory {
     constructor(private repositoryFactory: RepositoryFactory) {}
 
-    createService(): DepartmentQueueService {
+    getService(): DepartmentQueueService {
         return new DepartmentQueueService(
-            this.repositoryFactory.createDepartmentRepository(),
-            this.repositoryFactory.createClientRepository()
+            this.repositoryFactory.getDepartmentRepository(),
+            this.repositoryFactory.getClientRepository()
         )
     }
 }

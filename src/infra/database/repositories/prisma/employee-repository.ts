@@ -2,8 +2,19 @@ import { Employee } from '@/domain/entities/employee'
 import { EmployeeRepository } from '@/domain/repositories/employee-repository'
 import { prisma } from '@/lib/prisma'
 import { EmployeeMapper } from '../../mappers/employee-mapper'
+import { CompanyRepository } from '@/domain/repositories/company-repository'
 
 export class PrismaEmployeeRepository extends EmployeeRepository {
+    private _companyRepository!: CompanyRepository
+
+    set companyRepository(companyRepository: CompanyRepository) {
+        this._companyRepository = companyRepository
+    }
+
+    get companyRepository() {
+        return this._companyRepository
+    }
+
     async save(employee: Employee): Promise<void> {
         const data = EmployeeMapper.toModel(employee)
 
@@ -44,7 +55,11 @@ export class PrismaEmployeeRepository extends EmployeeRepository {
 
         if (!raw) return null
 
-        return EmployeeMapper.toEntity(raw)
+        const company = await this.companyRepository.findOrThrow(raw.companyId)
+        const employee = EmployeeMapper.toEntity(raw)
+        employee.company = company
+
+        return employee
     }
 
     async find(id: string): Promise<Nullable<Employee>> {
@@ -74,7 +89,11 @@ export class PrismaEmployeeRepository extends EmployeeRepository {
 
         if (!raw) return null
 
-        return EmployeeMapper.toEntity(raw)
+        const company = await this.companyRepository.findOrThrow(raw.companyId)
+        const employee = EmployeeMapper.toEntity(raw)
+        employee.company = company
+
+        return employee
     }
 
     async findOrThrow(id: string): Promise<Employee> {

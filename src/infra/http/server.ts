@@ -70,7 +70,7 @@ async function main() {
         processEmployeeMessageServiceFactory
     )
     logger.debug('Creating WhatsApp message service')
-    const whatsAppMessageService = whatsAppMessageServiceFactory.createService()
+    const whatsAppMessageService = whatsAppMessageServiceFactory.getService()
 
     app.register(webhook)
     // app.register(receiveMessage, { whatsAppMessageService })

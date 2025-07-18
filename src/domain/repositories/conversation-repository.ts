@@ -3,6 +3,7 @@ import { Conversation } from '../entities/conversation'
 
 export abstract class ConversationRepository {
     abstract save(conversation: Conversation): Promise<void>
+    abstract findOrThrow(id: string): Promise<Conversation>
     abstract findActiveByClientPhone(
         company: Company,
         clientPhone: string
