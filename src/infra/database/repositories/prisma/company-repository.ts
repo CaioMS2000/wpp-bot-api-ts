@@ -118,6 +118,12 @@ export class PrismaCompanyRepository extends CompanyRepository {
 
         if (!raw) return null
 
-        return CompanyMapper.toEntity(raw)
+        const manager = await this.managerRepository.findOrThrow(raw.managerId)
+
+        const company = CompanyMapper.toEntity(raw)
+
+        company.manager = manager
+
+        return company
     }
 }
