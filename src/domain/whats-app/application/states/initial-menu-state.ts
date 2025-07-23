@@ -74,9 +74,6 @@ export class InitialMenuState extends ConversationState<InitialMenuStateProps> {
 	async handleMessage(
 		message: Message
 	): Promise<Nullable<StateTransitionIntention>> {
-		logger.debug('[InitialMenuState.handleMessage]\n', {
-			message,
-		})
 		let res: Nullable<StateTransitionIntention> = null
 
 		if (isClient(this.user)) {
@@ -168,10 +165,6 @@ export class InitialMenuState extends ConversationState<InitialMenuStateProps> {
 		employee: Employee,
 		message: Message
 	): Promise<Nullable<StateTransitionIntention>> {
-		logger.debug('[InitialMenuState.handleEmployeeMessage]\n', {
-			employee,
-			message,
-		})
 		if (message.content === 'FAQ') {
 			if (isClient(this.user)) {
 				return {

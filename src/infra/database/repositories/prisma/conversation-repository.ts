@@ -142,20 +142,9 @@ export class PrismaConversationRepository extends ConversationRepository {
 
 		try {
 			const conversation = await this.findOrThrow(existingConversation.id)
-			logger.debug('[PrismaConversationRepository.findActiveByClientPhone]\n', {
-				companyId,
-				clientPhone,
-				allConversations,
-				conversation,
-			})
+
 			return conversation
 		} catch (error) {
-			logger.debug('[PrismaConversationRepository.findActiveByClientPhone]\n', {
-				companyId,
-				clientPhone,
-				allConversations,
-				conversation: 'deu erro no truque, retornando null...',
-			})
 			logger.error(error)
 			return null
 		}

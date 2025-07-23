@@ -53,11 +53,6 @@ export class DepartmentSelectionState extends ConversationState<DepartmentSelect
 		const correspondingDepartment = this.activeDepartments.find(
 			dept => dept.name === message.content
 		)
-		logger.debug('[DepartmentSelectionState.handleMessage]\n', {
-			activeDepartments: this.activeDepartments,
-			correspondingDepartment,
-			message,
-		})
 
 		if (correspondingDepartment) {
 			await this.insertClientIntoDepartmentQueue.execute(

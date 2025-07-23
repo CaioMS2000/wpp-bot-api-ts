@@ -6,9 +6,6 @@ import { logger } from '@/core/logger'
 
 export class MessageMapper {
 	static toEntity(raw: PrismaMessage): Message {
-		logger.debug('[MessageMapper.toEntity]\n', {
-			raw,
-		})
 		if (raw.from === 'AI' && raw.aiResponseId) {
 			return Message.create(
 				{
@@ -78,15 +75,7 @@ export class MessageMapper {
 			clientId,
 			employeeId,
 		}
-		logger.debug(
-			'[MessageMapper.toModel]\n',
-			{
-				aux,
-				entity,
-				model,
-			},
-			`\nalvo de comparação 'SenderType.EMPLOYEE': ${SenderType.EMPLOYEE}`
-		)
+
 		return model
 	}
 }

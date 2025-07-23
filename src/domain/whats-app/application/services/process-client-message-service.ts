@@ -51,7 +51,6 @@ export class ProcessClientMessageService {
 			}
 
 			const result = await conversation.processMessage(newMessage)
-			logger.debug('Result of first "processMessage":', result)
 			if (result) {
 				logger.debug(
 					"Running 'onExit' for state:",

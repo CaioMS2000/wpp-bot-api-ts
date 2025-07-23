@@ -16,12 +16,6 @@ export class FinishClientAndEmployeeChatUseCase {
 	) {}
 
 	async execute(company: Company, client: Client, employee: Employee) {
-		logger.debug(
-			'FinishClientAndEmployeeChatUseCase\nclient\n',
-			client,
-			'\nemployee\n',
-			employee
-		)
 		let clientConversation =
 			await this.conversationRepository.findActiveByClientPhoneOrThrow(
 				company.id,

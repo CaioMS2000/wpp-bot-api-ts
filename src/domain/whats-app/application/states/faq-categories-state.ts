@@ -28,9 +28,6 @@ export class FAQCategoriesState extends ConversationState<FAQCategoriesStateProp
 	async handleMessage(
 		message: Message
 	): Promise<Nullable<StateTransitionIntention>> {
-		logger.debug('[FAQCategoriesState.handleMessage]\n', {
-			message,
-		})
 		if (message.content === 'Menu principal') {
 			if (isClient(this.user)) {
 				return {
@@ -59,14 +56,6 @@ export class FAQCategoriesState extends ConversationState<FAQCategoriesStateProp
 			category => category.name === message.content
 		)
 
-		logger.debug('[FAQCategoriesState.handleMessage]\n', {
-			categories: this.categories.map(
-				cat => `${cat.name} with ${cat.items.length} items`
-			),
-			message,
-			correspondingCategory,
-		})
-
 		if (!correspondingCategory) {
 			return null
 		}
@@ -75,6 +64,7 @@ export class FAQCategoriesState extends ConversationState<FAQCategoriesStateProp
 			userId: this.user.id,
 			categoryId: correspondingCategory.id,
 		}
+
 		if (isClient(this.user)) {
 			return {
 				target: StateName.FAQItemsState,

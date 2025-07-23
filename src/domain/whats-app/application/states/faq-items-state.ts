@@ -74,11 +74,6 @@ export class FAQItemsState extends ConversationState<FAQItemsStateProps> {
 			this.category.id
 		)
 
-		logger.debug('[FAQItemsState.onEnter]\n', {
-			items,
-			category: this.category,
-		})
-
 		const textOutput: OutputMessage = {
 			type: 'text',
 			content: items.reduce((acc, item) => {

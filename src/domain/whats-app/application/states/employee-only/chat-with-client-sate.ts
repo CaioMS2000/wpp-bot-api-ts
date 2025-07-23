@@ -16,7 +16,8 @@ import { GetDepartmentByNameUseCase } from '../../use-cases/get-department-by-na
 import { GetEmployeeUseCase } from '../../use-cases/get-employee-use-case'
 import { RemoveClientFromDepartmentQueue } from '../../use-cases/remove-client-from-department-queue'
 import { ConversationState } from '../conversation-state'
-import { StateDataType, StateTransitionIntention } from '../types'
+import { StateDataType, StateName, StateTransitionIntention } from '../types'
+import { UserType } from '@/domain/whats-app/@types'
 
 type ChatWithClientStateProps = {
 	employee: Employee
@@ -57,6 +58,17 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
 	async handleMessage(
 		message: Message
 	): Promise<Nullable<StateTransitionIntention>> {
+		if (message.content === '!finalizar') {
+			return {
+				target: StateName.InitialMenuState,
+				context: {
+					userId: this.client.id,
+					userType: UserType.CLIENT,
+					companyId: this.client.companyId,
+				},
+			}
+		}
+
 		await execute(this.outputPort.handle, this.client, {
 			type: 'text',
 			content: `🔵 *[Funcionário] ${this.employee.name}*\n🚩 *${this.department.name}*\n\n${message.content}`,
