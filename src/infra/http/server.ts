@@ -2,7 +2,6 @@ import path from 'node:path'
 import { logger } from '@/core/logger'
 import { ProcessClientMessageServiceFactory } from '@/domain/whats-app/application/factory/process-client-message-service-factory'
 import { ProcessEmployeeMessageServiceFactory } from '@/domain/whats-app/application/factory/process-employee-message-service-factory'
-import { RepositoryFactory } from '@/domain/whats-app/application/factory/repository-factory'
 import { UseCaseFactory } from '@/domain/whats-app/application/factory/use-case-factory'
 import { prisma } from '@/lib/prisma'
 import { emptyJsonFile, findProjectRoot } from '@/utils/files'
@@ -16,6 +15,8 @@ import { WhatsAppOutputPort } from './output/whats-app-output-port'
 import { AIServiceFactory } from '@/domain/whats-app/application/factory/ai-service-factory'
 import { DepartmentQueueServiceFactory } from '@/domain/whats-app/application/factory/department-queue-service-factory'
 import { clearDatabase } from 'ROOT/clear-database'
+import { StateServiceFactory } from '@/domain/whats-app/application/factory/state-service-factory'
+import { PrismaStateDataParser } from '../database/state-data-parser/prisma/prisma-state-data-parser'
 // console.clear()
 logger.info('Starting server setup')
 
@@ -26,62 +27,71 @@ emptyJsonFile(responseFilePath)
 logger.debug(`Response file initialized at ${responseFilePath}`)
 
 async function softDBClear() {
-    await prisma.$transaction(async tx => {
-        logger.debug('Clearing database collections')
-        await clearDatabase(tx, ['message', 'conversation', 'department_queue'])
-    })
+	await prisma.$transaction(async tx => {
+		logger.debug('Clearing database collections')
+		await clearDatabase(tx, ['message', 'conversation', 'department_queue'])
+	})
 }
 async function main() {
-    await softDBClear()
-    const outputPort = new WhatsAppOutputPort()
-    const aiServiceFactory = new AIServiceFactory()
-    const stateFactory = new StateFactory(outputPort, aiServiceFactory)
-    const repositoryFactory: RepositoryFactory = new PrismaRepositoryFactory(
-        stateFactory
-    )
-    const departmentQueueServiceFactory = new DepartmentQueueServiceFactory(
-        repositoryFactory
-    )
-    const useCaseFactory = new UseCaseFactory(
-        repositoryFactory,
-        stateFactory,
-        departmentQueueServiceFactory
-    )
+	// await softDBClear()
+	const outputPort = new WhatsAppOutputPort()
+	const aiServiceFactory = new AIServiceFactory()
+	const stateFactory = new StateFactory(outputPort, aiServiceFactory)
+	const repositoryFactory = new PrismaRepositoryFactory()
+	const departmentQueueServiceFactory = new DepartmentQueueServiceFactory(
+		repositoryFactory
+	)
+	const useCaseFactory = new UseCaseFactory(
+		repositoryFactory,
+		stateFactory,
+		departmentQueueServiceFactory
+	)
+	const prismaStateDataParser = new PrismaStateDataParser(
+		stateFactory,
+		repositoryFactory,
+		useCaseFactory
+	)
+	const stateServiceFactory = new StateServiceFactory(
+		repositoryFactory,
+		useCaseFactory,
+		stateFactory
+	)
 
-    stateFactory.setUseCaseFactory(useCaseFactory)
-    aiServiceFactory.setRepositoryFactory(repositoryFactory)
+	repositoryFactory.setPrismaStateDataParser(prismaStateDataParser)
+	stateFactory.setUseCaseFactory(useCaseFactory)
+	aiServiceFactory.setRepositoryFactory(repositoryFactory)
 
-    const processClientMessageServiceFactory =
-        new ProcessClientMessageServiceFactory(
-            repositoryFactory,
-            useCaseFactory,
-            stateFactory
-        )
-    const processEmployeeMessageServiceFactory =
-        new ProcessEmployeeMessageServiceFactory(
-            repositoryFactory,
-            useCaseFactory,
-            stateFactory
-        )
-    const whatsAppMessageServiceFactory = new WhatsAppMessageServiceFactory(
-        repositoryFactory,
-        useCaseFactory,
-        processClientMessageServiceFactory,
-        processEmployeeMessageServiceFactory
-    )
-    logger.debug('Creating WhatsApp message service')
-    const whatsAppMessageService = whatsAppMessageServiceFactory.getService()
+	const processClientMessageServiceFactory =
+		new ProcessClientMessageServiceFactory(
+			repositoryFactory,
+			useCaseFactory,
+			stateServiceFactory
+		)
+	const processEmployeeMessageServiceFactory =
+		new ProcessEmployeeMessageServiceFactory(
+			repositoryFactory,
+			useCaseFactory,
+			stateServiceFactory
+		)
+	const whatsAppMessageServiceFactory = new WhatsAppMessageServiceFactory(
+		repositoryFactory,
+		useCaseFactory,
+		processClientMessageServiceFactory,
+		processEmployeeMessageServiceFactory
+	)
+	logger.debug('Creating WhatsApp message service')
+	const whatsAppMessageService = whatsAppMessageServiceFactory.getService()
 
-    app.register(webhook)
-    // app.register(receiveMessage, { whatsAppMessageService })
-    app.register(whatsAppWebhook, { whatsAppMessageService })
+	app.register(webhook)
+	// app.register(receiveMessage, { whatsAppMessageService })
+	app.register(whatsAppWebhook, { whatsAppMessageService })
 
-    logger.debug('Routes registered')
-    const serverAddress = await app.listen({ port: 8000 })
+	logger.debug('Routes registered')
+	const serverAddress = await app.listen({ port: 8000 })
 
-    logger.info(`Server running on -> ${serverAddress}`)
+	logger.info(`Server running on -> ${serverAddress}`)
 
-    // await interactionMock()
+	// await interactionMock()
 }
 
 main()

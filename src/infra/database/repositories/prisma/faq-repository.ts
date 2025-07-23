@@ -1,84 +1,145 @@
-import { Company } from '@/domain/entities/company'
-import { FAQCategory, FAQItem } from '@/domain/entities/faq'
+import { FAQCategory } from '@/domain/entities/faq-category'
+import { FAQItem } from '@/domain/entities/faq-item'
 import { FAQRepository } from '@/domain/repositories/faq-repository'
 import { prisma } from '@/lib/prisma'
 
 export class PrismaFAQRepository extends FAQRepository {
-    async save(
-        company: Company,
-        category: string,
-        question: string,
-        answer: string
-    ): Promise<void> {
-        const existingCategory = await prisma.fAQCategory.findFirst({
-            where: {
-                companyId: company.id,
-                name: category,
-            },
-        })
+	async save(
+		companyId: string,
+		category: string,
+		question: string,
+		answer: string
+	): Promise<void> {
+		const existingCategory = await prisma.fAQCategory.findFirst({
+			where: {
+				companyId,
+				name: category,
+			},
+		})
 
-        if (existingCategory) {
-            await prisma.fAQItem.create({
-                data: {
-                    question,
-                    answer,
-                    categoryId: existingCategory.id,
-                },
-            })
-        } else {
-            await prisma.fAQCategory.create({
-                data: {
-                    name: category,
-                    companyId: company.id,
-                    items: {
-                        create: {
-                            question,
-                            answer,
-                        },
-                    },
-                },
-            })
-        }
-    }
+		if (existingCategory) {
+			await prisma.fAQItem.create({
+				data: {
+					question,
+					answer,
+					categoryId: existingCategory.id,
+				},
+			})
+		} else {
+			await prisma.fAQCategory.create({
+				data: {
+					name: category,
+					companyId,
+					items: {
+						create: {
+							question,
+							answer,
+						},
+					},
+				},
+			})
+		}
+	}
 
-    async findCategories(company: Company): Promise<FAQCategory[]> {
-        const categories = await prisma.fAQCategory.findMany({
-            where: {
-                companyId: company.id,
-            },
-            include: {
-                items: true,
-            },
-        })
+	async findCategories(companyId: string): Promise<FAQCategory[]> {
+		const categories = await prisma.fAQCategory.findMany({
+			where: {
+				companyId,
+			},
+			include: {
+				items: true,
+			},
+		})
 
-        return categories.map(cat => ({
-            name: cat.name,
-            items: cat.items.map(item => ({
-                question: item.question,
-                answer: item.answer,
-            })),
-        }))
-    }
+		return categories.map(cat =>
+			FAQCategory.create(
+				{
+					name: cat.name,
+					items: cat.items.map(i => i.id),
+				},
+				cat.id
+			)
+		)
+	}
 
-    async findItemsByCategory(
-        company: Company,
-        categoryName: string
-    ): Promise<FAQItem[]> {
-        const category = await prisma.fAQCategory.findFirst({
-            where: {
-                companyId: company.id,
-                name: categoryName,
-            },
-            include: {
-                items: true,
-            },
-        })
+	async findItemsByCategoryName(
+		companyId: string,
+		categoryName: string
+	): Promise<FAQItem[]> {
+		const category = await prisma.fAQCategory.findFirst({
+			where: {
+				companyId,
+				name: categoryName,
+			},
+			include: {
+				items: true,
+			},
+		})
 
-        if (!category) return []
+		if (!category) return []
 
-        return category.items.map(item => ({
-            question: item.question,
-            answer: item.answer,
-        }))
-    }
+		return category.items.map(item =>
+			FAQItem.create(
+				{
+					answer: item.answer,
+					question: item.question,
+				},
+				item.id
+			)
+		)
+	}
+
+	async findItemsByCategory(
+		companyId: string,
+		categoryId: string
+	): Promise<FAQItem[]> {
+		const category = await prisma.fAQCategory.findFirst({
+			where: {
+				companyId,
+				id: categoryId,
+			},
+			include: {
+				items: true,
+			},
+		})
+
+		if (!category) return []
+
+		return category.items.map(item =>
+			FAQItem.create(
+				{
+					answer: item.answer,
+					question: item.question,
+				},
+				item.id
+			)
+		)
+	}
+
+	async findCategoryByNameOrThrow(
+		companyId: string,
+		name: string
+	): Promise<FAQCategory> {
+		const category = await prisma.fAQCategory.findFirst({
+			where: {
+				companyId,
+				name,
+			},
+			include: {
+				items: true,
+			},
+		})
+
+		if (!category) {
+			throw new Error('Category not found')
+		}
+
+		return FAQCategory.create(
+			{
+				name: category.name,
+				items: category.items.map(i => i.id),
+			},
+			category.id
+		)
+	}
 }

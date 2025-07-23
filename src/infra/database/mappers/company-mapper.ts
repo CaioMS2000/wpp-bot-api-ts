@@ -1,70 +1,68 @@
 import {
-    Company as PrismaCompany,
-    BusinessHour as PrismaBusinessHour,
+	BusinessHours,
+	Day,
+	TimeString,
+	WeekDay,
+} from '@/core/value-objects/business-hours'
+import { Company } from '@/domain/entities/company'
+import {
+	BusinessHour as PrismaBusinessHour,
+	Company as PrismaCompany,
 } from 'ROOT/prisma/generated'
-import { Company, WeekDay, BusinessHours } from '@/domain/entities/company'
 
 type CompanyWithRelations = PrismaCompany & {
-    businessHours: PrismaBusinessHour[]
-    // manager: PrismaManager
+	businessHours: PrismaBusinessHour[]
+	// manager: PrismaManager
 }
 
 export class CompanyMapper {
-    static toEntity(raw: CompanyWithRelations): Company {
-        const businessHours: BusinessHours[] = raw.businessHours.map(bh => ({
-            day: bh.day.toLowerCase() as WeekDay,
-            openTime: bh.openTime as `${number}:${number}`,
-            closeTime: bh.closeTime as `${number}:${number}`,
-            isActive: bh.isActive,
-        }))
+	static toEntity(raw: CompanyWithRelations): Company {
+		const days: Day[] = raw.businessHours.map(bh => {
+			const weekDay: WeekDay = bh.day
+			const openTime: TimeString = bh.openTime as `${number}:${number}`
+			const closeTime: TimeString = bh.closeTime as `${number}:${number}`
 
-        const entity = Company.create(
-            {
-                cnpj: raw.cnpj,
-                name: raw.name,
-                phone: raw.phone,
-                email: raw.email,
-                website: raw.website,
-                description: raw.description,
-                managerId: raw.managerId,
-                businessHours: businessHours.reduce((acc, bh) => {
-                    acc[bh.day] = {
-                        openTime: bh.openTime,
-                        closeTime: bh.closeTime,
-                        isActive: bh.isActive,
-                    }
-                    return acc
-                }, {} as any),
-            },
-            raw.id
-        )
+			return new Day(weekDay, openTime, closeTime)
+		})
 
-        entity.manager.company = entity
+		const entity = Company.create(
+			{
+				cnpj: raw.cnpj,
+				name: raw.name,
+				phone: raw.phone,
+				email: raw.email,
+				website: raw.website,
+				description: raw.description,
+				managerId: raw.managerId,
+				businessHours: new BusinessHours(days),
+			},
+			raw.id
+		)
 
-        return entity
-    }
+		return entity
+	}
 
-    static toModel(entity: Company): Omit<PrismaCompany, 'id'> {
-        return {
-            cnpj: entity.cnpj,
-            name: entity.name,
-            email: entity.email,
-            phone: entity.phone,
-            website: entity.website,
-            description: entity.description,
-            managerId: entity.manager.id,
-        }
-    }
+	static toModel(entity: Company): Omit<PrismaCompany, 'id'> {
+		return {
+			cnpj: entity.cnpj,
+			name: entity.name,
+			email: entity.email,
+			phone: entity.phone,
+			website: entity.website,
+			description: entity.description,
+			managerId: entity.manager.id,
+		}
+	}
 
-    static businessHoursToModel(
-        entity: Company
-    ): Omit<PrismaBusinessHour, 'id'>[] {
-        return entity.businessHours.map(bh => ({
-            day: bh.day,
-            openTime: bh.openTime,
-            closeTime: bh.closeTime,
-            isActive: bh.isActive,
-            companyId: entity.id,
-        }))
-    }
+	static businessHoursToModel(
+		entity: Company
+	): Omit<PrismaBusinessHour, 'id'>[] {
+		return entity.businessHours.getDays().map(bh => ({
+			day: bh.weekDay,
+			openTime: bh.openTime,
+			closeTime: bh.closeTime,
+			isActive: bh.isOpenAt(new Date()),
+			companyId: entity.id,
+		}))
+	}
 }

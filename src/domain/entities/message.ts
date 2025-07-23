@@ -1,133 +1,85 @@
 import { Entity } from '@/core/entities/entity'
-import { Client } from './client'
-import { Conversation } from './conversation'
-import { Employee } from './employee'
+import { SenderType } from '../whats-app/@types'
 
 export type MessageProps = {
-    conversation: Conversation
-    conversationId: string
-    timestamp: Date
-    from: 'client' | 'employee' | 'AI'
-    content: string
-    aiResponseId: Nullable<string>
-    sender: Nullable<Client | Employee>
-    senderId: Nullable<string>
+	conversationId: string
+	timestamp: Date
+	content: string
+	aiResponseId: Nullable<string>
+	senderType: SenderType
+	senderId: Nullable<string>
 }
 export type CreateMessageInput = RequireOnly<
-    MessageProps,
-    'conversationId' | 'from' | 'content'
+	MessageProps,
+	'conversationId' | 'senderType' | 'content'
 > & {
-    // Quando from é 'AI', aiResponseId é obrigatório
-    aiResponseId?: Nullable<string>
+	// Quando from é 'AI', aiResponseId é obrigatório
+	aiResponseId?: Nullable<string>
 } & (
-        | {
-              from: 'AI'
-              aiResponseId: string // Obrigatório para AI
-          }
-        | {
-              from: 'client' | 'employee'
-              aiResponseId?: never // Não permitido para outros tipos
-          }
-    )
+		| {
+				senderType: SenderType.AI
+				aiResponseId: string // Obrigatório para AI
+		  }
+		| {
+				senderType: SenderType.CLIENT | SenderType.EMPLOYEE
+				senderId: string
+				aiResponseId?: never // Não permitido para outros tipos
+		  }
+	)
 
 export class Message extends Entity<MessageProps> {
-    private static readonly TEMPORARY_CONVERSATION = Symbol(
-        'TEMPORARY_CONVERSATION'
-    ) as unknown as Conversation
+	static create(props: CreateMessageInput, id?: string) {
+		// Validação específica para mensagens AI
+		if (props.senderType === SenderType.AI && !props.aiResponseId) {
+			throw new Error('AI messages must have an aiResponseId')
+		}
 
-    static create(props: CreateMessageInput, id?: string) {
-        // Validação específica para mensagens AI
-        if (props.from === 'AI' && !props.aiResponseId) {
-            throw new Error('AI messages must have an aiResponseId')
-        }
+		// Validação para evitar aiResponseId em mensagens não-AI
+		if (props.senderType !== SenderType.AI && props.aiResponseId) {
+			throw new Error('Only AI messages can have an aiResponseId')
+		}
+		const defaults: Omit<
+			MessageProps,
+			'conversationId' | 'senderType' | 'content'
+		> = {
+			timestamp: new Date(),
+			aiResponseId:
+				props.senderType === SenderType.AI ? props.aiResponseId : null,
+			senderId: null,
+		}
+		const message = new Message(
+			{
+				...defaults,
+				...props,
+				aiResponseId:
+					props.senderType === SenderType.AI ? props.aiResponseId! : null,
+			},
+			id
+		)
+		return message
+	}
 
-        // Validação para evitar aiResponseId em mensagens não-AI
-        if (props.from !== 'AI' && props.aiResponseId) {
-            throw new Error('Only AI messages can have an aiResponseId')
-        }
-        const defaults: Omit<
-            MessageProps,
-            'conversationId' | 'from' | 'content'
-        > = {
-            timestamp: new Date(),
-            aiResponseId: props.from === 'AI' ? props.aiResponseId : null,
-            sender: null,
-            senderId: null,
-            conversation: Message.TEMPORARY_CONVERSATION,
-        }
-        const message = new Message(
-            {
-                ...defaults,
-                ...props,
-                aiResponseId: props.from === 'AI' ? props.aiResponseId! : null,
-            },
-            id
-        )
-        return message
-    }
+	get timestamp() {
+		return this.props.timestamp
+	}
 
-    get conversation() {
-        if (
-            this.props.conversation === Message.TEMPORARY_CONVERSATION ||
-            !this.props.conversation
-        ) {
-            throw new Error(
-                'Conversation is not set. Use o setter para definir a conversation.'
-            )
-        }
-        return this.props.conversation
-    }
+	get senderType() {
+		return this.props.senderType
+	}
 
-    get timestamp() {
-        return this.props.timestamp
-    }
+	get content() {
+		return this.props.content
+	}
 
-    get from() {
-        return this.props.from
-    }
+	get senderId(): Nullable<string> {
+		return this.props.senderId
+	}
 
-    get content() {
-        return this.props.content
-    }
+	get aiResponseId() {
+		return this.props.aiResponseId
+	}
 
-    get sender(): Nullable<Client | Employee> {
-        return this.props.sender
-    }
-
-    get senderId(): Nullable<string> {
-        return this.props.senderId
-    }
-
-    get aiResponseId() {
-        return this.props.aiResponseId
-    }
-
-    get conversationId() {
-        return this.props.conversationId
-    }
-
-    set conversation(conversation: Conversation) {
-        this.props.conversation = conversation
-    }
-
-    set sender(sender: Client | Employee) {
-        if (this.from === 'AI') {
-            throw new Error('AI messages cannot have a sender')
-        }
-
-        this.props.sender = sender
-        this.props.senderId = sender.id
-    }
-
-    set senderId(senderId: string) {
-        if (this.from === 'AI') {
-            throw new Error('AI messages cannot have a sender')
-        }
-
-        if (this.props.sender && this.props.sender.id !== senderId) {
-            this.props.sender = null
-        }
-
-        this.props.senderId = senderId
-    }
+	get conversationId() {
+		return this.props.conversationId
+	}
 }

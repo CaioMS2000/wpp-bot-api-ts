@@ -4,14 +4,12 @@ import { ConversationRepository } from '@/domain/repositories/conversation-repos
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { EmployeeRepository } from '@/domain/repositories/employee-repository'
 import { FAQRepository } from '@/domain/repositories/faq-repository'
-import { MessageRepository } from '@/domain/repositories/message-repository'
 
 export abstract class RepositoryFactory {
-    abstract getClientRepository(): ClientRepository
-    abstract getEmployeeRepository(): EmployeeRepository
-    abstract getConversationRepository(): ConversationRepository
-    abstract getDepartmentRepository(): DepartmentRepository
-    abstract getFAQRepository(): FAQRepository
-    abstract getMessageRepository(): MessageRepository
-    abstract getCompanyRepository(): CompanyRepository
+	abstract getClientRepository(): ClientRepository
+	abstract getEmployeeRepository(): EmployeeRepository
+	abstract getConversationRepository(): ConversationRepository
+	abstract getDepartmentRepository(): DepartmentRepository
+	abstract getFAQRepository(): FAQRepository
+	abstract getCompanyRepository(): CompanyRepository
 }

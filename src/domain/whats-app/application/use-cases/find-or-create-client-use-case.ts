@@ -4,23 +4,23 @@ import { Company } from '@/domain/entities/company'
 import { ClientRepository } from '@/domain/repositories/client-repository'
 
 export class FindOrCreateClientUseCase {
-    constructor(private clientRepository: ClientRepository) {}
+	constructor(private clientRepository: ClientRepository) {}
 
-    async execute(company: Company, phone: string, name?: string) {
-        logger.debug(`Resolving client for phone ${phone}`)
-        let client = await this.clientRepository.findByPhone(company, phone)
+	async execute(companyId: string, phone: string, name?: string) {
+		logger.debug(`Resolving client for phone ${phone}`)
+		let client = await this.clientRepository.findByPhone(companyId, phone)
 
-        if (!client) {
-            client = Client.create({
-                phone,
-                companyId: company.id,
-                name,
-            })
-            await this.clientRepository.save(client)
-            logger.info(`Client created ${client.id}`)
-        }
+		if (!client) {
+			client = Client.create({
+				phone,
+				companyId,
+				name,
+			})
+			await this.clientRepository.save(client)
+			logger.info(`Client created ${client.id}`)
+		}
 
-        logger.debug(`Returning client ${client.id}`)
-        return client
-    }
+		logger.debug(`Returning client ${client.id}`)
+		return client
+	}
 }

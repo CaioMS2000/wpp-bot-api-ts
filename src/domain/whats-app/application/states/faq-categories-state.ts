@@ -1,89 +1,134 @@
 import { logger } from '@/core/logger'
 import { OutputMessage, OutputPort } from '@/core/output/output-port'
-import { Conversation } from '@/domain/entities/conversation'
-import { FAQCategory } from '@/domain/entities/faq'
+import { FAQCategory } from '@/domain/entities/faq-category'
 import { Message } from '@/domain/entities/message'
-import { MenuOption } from '../../@types'
-import { ListFAQCategoriesUseCase } from '../use-cases/list-faq-categories-use-case'
+import { isClient, isEmployee } from '@/utils/entity'
+import { MenuOption, User, UserType } from '../../@types'
 import { ConversationState } from './conversation-state'
-import { StateTypeMapper } from './types'
+import { StateName, StateTransitionIntention } from './types'
 
-export class FAQCategoriesState extends ConversationState<null> {
-    constructor(
-        conversation: Conversation,
-        outputPort: OutputPort,
-        private listFAQCategoriesUseCase: ListFAQCategoriesUseCase
-    ) {
-        super(conversation, outputPort)
-    }
+type FAQCategoriesStateProps = {
+	user: User
+	categories: FAQCategory[]
+}
 
-    async handleMessage(message: Message): Promise<Nullable<StateTypeMapper>> {
-        logger.debug('[FAQCategoriesState.handleMessage]\n', {
-            message,
-        })
-        if (message.content === 'Menu principal') {
-            return { stateName: 'InitialMenuState' }
-        }
+export class FAQCategoriesState extends ConversationState<FAQCategoriesStateProps> {
+	constructor(outputPort: OutputPort, user: User, categories: FAQCategory[]) {
+		super(outputPort, { user, categories })
+	}
 
-        const categories = await this.listFAQCategoriesUseCase.execute(
-            this.conversation.company
-        )
-        const correspondingCategory = categories.find(
-            category => category.name === message.content
-        )
+	get user() {
+		return this.props.user
+	}
 
-        logger.debug('[FAQCategoriesState.handleMessage]\n', {
-            categories: categories.map(
-                cat => `${cat.name} with ${cat.items.length} items`
-            ),
-            message,
-            correspondingCategory,
-        })
+	get categories() {
+		return this.props.categories
+	}
 
-        if (!correspondingCategory) {
-            return null
-        }
+	async handleMessage(
+		message: Message
+	): Promise<Nullable<StateTransitionIntention>> {
+		logger.debug('[FAQCategoriesState.handleMessage]\n', {
+			message,
+		})
+		if (message.content === 'Menu principal') {
+			if (isClient(this.user)) {
+				return {
+					target: StateName.InitialMenuState,
+					context: {
+						userId: this.user.id,
+						userType: UserType.CLIENT,
+						companyId: this.user.companyId,
+					},
+				}
+			} else if (isEmployee(this.user)) {
+				return {
+					target: StateName.InitialMenuState,
+					context: {
+						userId: this.user.id,
+						userType: UserType.EMPLOYEE,
+						companyId: this.user.companyId,
+					},
+				}
+			}
 
-        return {
-            stateName: 'FAQItemsState',
-            params: { categoryName: correspondingCategory.name },
-        }
-    }
+			throw new Error('Invalid user type')
+		}
 
-    async onEnter() {
-        const categories = await this.listFAQCategoriesUseCase.execute(
-            this.conversation.company
-        )
-        const menuOptions: MenuOption[] = categories
-            .map((category, index) => ({
-                key: (index + 1).toString(),
-                label: category.name,
-                forClient: true,
-                forEmployee: true,
-            }))
-            .concat([
-                {
-                    key: 'menu',
-                    label: 'Menu principal',
-                    forClient: true,
-                    forEmployee: true,
-                },
-            ])
-        const listOutput: OutputMessage = {
-            type: 'list',
-            text: 'Categorias',
-            buttonText: 'Ver',
-            sections: [
-                {
-                    title: 'Items',
-                    rows: menuOptions.map(opt => ({
-                        id: opt.key,
-                        title: opt.label,
-                    })),
-                },
-            ],
-        } as const
+		const correspondingCategory = this.categories.find(
+			category => category.name === message.content
+		)
 
-        this.outputPort.handle(this.conversation.user, listOutput)
-    }
+		logger.debug('[FAQCategoriesState.handleMessage]\n', {
+			categories: this.categories.map(
+				cat => `${cat.name} with ${cat.items.length} items`
+			),
+			message,
+			correspondingCategory,
+		})
+
+		if (!correspondingCategory) {
+			return null
+		}
+
+		const partialObject = {
+			userId: this.user.id,
+			categoryId: correspondingCategory.id,
+		}
+		if (isClient(this.user)) {
+			return {
+				target: StateName.FAQItemsState,
+				context: {
+					...partialObject,
+					userType: UserType.CLIENT,
+					companyId: this.user.companyId,
+				},
+			}
+		} else if (isEmployee(this.user)) {
+			return {
+				target: StateName.FAQItemsState,
+				context: {
+					...partialObject,
+					userType: UserType.EMPLOYEE,
+					companyId: this.user.companyId,
+				},
+			}
+		}
+
+		throw new Error('Invalid user type')
+	}
+
+	async onEnter() {
+		const menuOptions: MenuOption[] = this.categories
+			.map((category, index) => ({
+				key: (index + 1).toString(),
+				label: category.name,
+				forClient: true,
+				forEmployee: true,
+			}))
+			.concat([
+				{
+					key: 'menu',
+					label: 'Menu principal',
+					forClient: true,
+					forEmployee: true,
+				},
+			])
+		const listOutput: OutputMessage = {
+			type: 'list',
+			text: 'Categorias',
+			buttonText: 'Ver',
+			sections: [
+				{
+					title: 'Items',
+					rows: menuOptions.map(opt => ({
+						id: opt.key,
+						title: opt.label,
+					})),
+				},
+			],
+		} as const
+
+		this.outputPort.handle(this.user, listOutput)
+	}
 }

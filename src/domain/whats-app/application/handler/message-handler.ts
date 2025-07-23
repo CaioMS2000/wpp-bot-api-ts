@@ -1,11 +1,11 @@
 import { Company } from '@/domain/entities/company'
-import { UserType } from '../../@types'
+import { User } from '../../@types'
 
 export abstract class MessageHandler {
-    abstract process(
-        company: Company,
-        user: UserType,
-        messageContent: string,
-        name?: string
-    ): Promise<void>
+	abstract process(
+		company: Company,
+		user: User,
+		messageContent: string,
+		name?: string
+	): Promise<void>
 }

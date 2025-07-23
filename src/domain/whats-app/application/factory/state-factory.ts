@@ -12,106 +12,112 @@ import { ListDepartmentQueueState } from '../states/employee-only/list-departmen
 import { FAQCategoriesState } from '../states/faq-categories-state'
 import { FAQItemsState } from '../states/faq-items-state'
 import { InitialMenuState } from '../states/initial-menu-state'
-import { StateTypeMapper } from '../states/types'
+import { StateDataType, StateName } from '../states/types'
 import { AIServiceFactory } from './ai-service-factory'
 import { RepositoryFactory } from './repository-factory'
 import { UseCaseFactory } from './use-case-factory'
 
 export class StateFactory {
-    private repositoryFactory: RepositoryFactory =
-        null as unknown as RepositoryFactory
-    private useCaseFactory: UseCaseFactory = null as unknown as UseCaseFactory
-    constructor(
-        private outputPort: OutputPort,
-        private aiServiceFactory: AIServiceFactory
-    ) {}
+	private repositoryFactory: RepositoryFactory =
+		null as unknown as RepositoryFactory
+	private useCaseFactory: UseCaseFactory = null as unknown as UseCaseFactory
+	constructor(
+		private outputPort: OutputPort,
+		private aiServiceFactory: AIServiceFactory
+	) {}
 
-    setUseCaseFactory(useCaseFactory: UseCaseFactory) {
-        this.useCaseFactory = useCaseFactory
-    }
+	setUseCaseFactory(useCaseFactory: UseCaseFactory) {
+		this.useCaseFactory = useCaseFactory
+	}
 
-    setRepositoryFactory(repositoryFactory: RepositoryFactory) {
-        this.repositoryFactory = repositoryFactory
-    }
+	setRepositoryFactory(repositoryFactory: RepositoryFactory) {
+		this.repositoryFactory = repositoryFactory
+	}
 
-    create(conversation: Conversation, stateTypeMapper: StateTypeMapper) {
-        switch (stateTypeMapper.stateName) {
-            case 'InitialMenuState':
-                return new InitialMenuState(
-                    conversation,
-                    this.outputPort,
-                    this.useCaseFactory.getStartNextClientConversationUseCase()
-                )
-            case 'FAQCategoriesState':
-                return new FAQCategoriesState(
-                    conversation,
-                    this.outputPort,
-                    this.useCaseFactory.getListFAQCategoriesUseCase()
-                )
-            case 'FAQItemsState':
-                return new FAQItemsState(
-                    conversation,
-                    this.outputPort,
-                    this.useCaseFactory.getListFAQCategorieItemsUseCase(),
-                    stateTypeMapper.params.categoryName
-                )
-            case 'AIChatState': {
-                return new AIChatState(
-                    conversation,
-                    this.outputPort,
-                    this.aiServiceFactory.createService()
-                )
-            }
-        }
-
-        if (isClient(conversation.user)) {
-            switch (stateTypeMapper.stateName) {
-                case 'DepartmentSelectionState':
-                    return new DepartmentSelectionState(
-                        conversation,
-                        this.outputPort,
-                        this.useCaseFactory.getListActiveDepartmentsUseCase()
-                    )
-                case 'DepartmentChatState': {
-                    return new DepartmentChatState(
-                        conversation,
-                        this.outputPort,
-                        this.repositoryFactory.getDepartmentRepository(),
-                        stateTypeMapper.params.departmentId
-                    )
-                }
-                case 'DepartmentQueueState': {
-                    return new DepartmentQueueState(
-                        conversation,
-                        this.outputPort,
-                        this.repositoryFactory.getDepartmentRepository(),
-                        this.useCaseFactory.getRemoveClientFromDepartmentQueue(),
-                        stateTypeMapper.params.departmentId
-                    )
-                }
-            }
-        }
-
-        if (isEmployee(conversation.user)) {
-            switch (stateTypeMapper.stateName) {
-                case 'ChatWithClientState':
-                    return new ChatWithClientState(
-                        conversation,
-                        this.outputPort,
-                        stateTypeMapper.params.clientPhoneNumber,
-                        this.repositoryFactory.getClientRepository(),
-                        this.useCaseFactory.getFinishClientAndEmployeeChatUseCase(),
-                        this.useCaseFactory.getRemoveClientFromDepartmentQueue()
-                    )
-                case 'ListDepartmentQueueState':
-                    return new ListDepartmentQueueState(
-                        conversation,
-                        this.outputPort,
-                        this.repositoryFactory.getDepartmentRepository(),
-                        stateTypeMapper.params.departmentId
-                    )
-            }
-        }
-        throw new Error('Invalid state name')
-    }
+	create(stateDataType: StateDataType) {
+		const { stateName, params } = stateDataType
+		switch (stateName) {
+			case StateName.InitialMenuState: {
+				// const {  } = params
+				const { user, company, conversation } = params
+				return new InitialMenuState(
+					this.outputPort,
+					user,
+					company,
+					conversation,
+					this.useCaseFactory.getStartNextClientConversationUseCase(),
+					this.useCaseFactory.getGetDepartmentUseCase()
+				)
+			}
+			case StateName.FAQCategoriesState: {
+				const { user, categories } = params
+				return new FAQCategoriesState(this.outputPort, user, categories)
+			}
+			case StateName.FAQItemsState: {
+				const { user, category } = params
+				return new FAQItemsState(
+					this.outputPort,
+					user,
+					category,
+					this.useCaseFactory.getGetFAQItemsUseCase()
+				)
+			}
+			case StateName.AIChatState: {
+				const { user, conversation } = params
+				return new AIChatState(
+					this.outputPort,
+					conversation,
+					user,
+					this.aiServiceFactory.createService()
+				)
+			}
+			case StateName.DepartmentSelectionState: {
+				const { activeDepartments, client } = params
+				return new DepartmentSelectionState(
+					this.outputPort,
+					client,
+					activeDepartments
+				)
+			}
+			case StateName.DepartmentChatState: {
+				const { client, department, employee } = params
+				return new DepartmentChatState(
+					this.outputPort,
+					employee,
+					client,
+					department
+				)
+			}
+			case StateName.DepartmentQueueState: {
+				const { client, department } = params
+				return new DepartmentQueueState(
+					this.outputPort,
+					client,
+					department,
+					this.useCaseFactory.getRemoveClientFromDepartmentQueue()
+				)
+			}
+			case StateName.ChatWithClientState: {
+				const { client, company, department, employee } = params
+				return new ChatWithClientState(
+					this.outputPort,
+					employee,
+					department,
+					client,
+					company,
+					this.useCaseFactory.getFinishClientAndEmployeeChatUseCase(),
+					this.useCaseFactory.getRemoveClientFromDepartmentQueue()
+				)
+			}
+			case StateName.ListDepartmentQueueState: {
+				const { department, employee } = params
+				return new ListDepartmentQueueState(
+					this.outputPort,
+					employee,
+					department,
+					this.useCaseFactory.getGetClientUseCase()
+				)
+			}
+		}
+	}
 }

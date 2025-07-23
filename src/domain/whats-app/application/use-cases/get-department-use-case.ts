@@ -2,14 +2,18 @@ import { Company } from '@/domain/entities/company'
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
 
 export class GetDepartmentUseCase {
-    constructor(private departmentRepository: DepartmentRepository) {}
+	constructor(private departmentRepository: DepartmentRepository) {}
 
-    async execute(company: Company, departmentName: string) {
-        const departments = await this.departmentRepository.findByNameOrThrow(
-            company,
-            departmentName
-        )
+	async execute(companyId: string, departmentId: string) {
+		const department = await this.departmentRepository.find(
+			companyId,
+			departmentId
+		)
 
-        return departments
-    }
+		if (!department) {
+			throw new Error('Department not found')
+		}
+
+		return department
+	}
 }

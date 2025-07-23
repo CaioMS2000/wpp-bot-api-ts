@@ -5,182 +5,165 @@ import { Company } from '@/domain/entities/company'
 import { Conversation } from '@/domain/entities/conversation'
 import { Message } from '@/domain/entities/message'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
-import { MessageRepository } from '@/domain/repositories/message-repository'
 import { execute } from '@caioms/ts-utils/functions'
 import { CreateConversationUseCase } from '../use-cases/create-conversation-use-case'
 import { FindConversationByClientPhoneUseCase } from '../use-cases/find-conversation-by-client-phone-use-case'
 import { StateFactory } from '../factory/state-factory'
+import { SenderType, UserType } from '../../@types'
+import { StateService } from './state-service'
 
 export class ProcessClientMessageService {
-    constructor(
-        private messageRepository: MessageRepository,
-        private conversationRepository: ConversationRepository,
-        private createConversationUseCase: CreateConversationUseCase,
-        private findConversationByClientPhoneUseCase: FindConversationByClientPhoneUseCase,
-        private stateFactory: StateFactory
-    ) {}
+	constructor(
+		private conversationRepository: ConversationRepository,
+		private createConversationUseCase: CreateConversationUseCase,
+		private findConversationByClientPhoneUseCase: FindConversationByClientPhoneUseCase,
+		private stateService: StateService
+	) {}
 
-    async process(
-        company: Company,
-        user: Client,
-        messageContent: string,
-        name?: string
-    ) {
-        try {
-            const [conversationType, conversation] =
-                await this.getOrCreateConversation(company, user)
+	async process(
+		company: Company,
+		user: Client,
+		messageContent: string,
+		name?: string
+	) {
+		try {
+			const [conversationType, conversation] =
+				await this.getOrCreateConversation(company, user)
 
-            logger.debug(
-                `Using conversation type: ${conversationType} -> ${conversation.id}`
-            )
+			logger.debug(
+				`Using conversation type: ${conversationType} -> ${conversation.id}`
+			)
 
-            const newMessage = await this.saveMessage(
-                conversation,
-                messageContent,
-                user
-            )
+			const newMessage = await this.saveMessage(
+				conversation,
+				messageContent,
+				user
+			)
 
-            conversation.messages.push(newMessage)
-            await this.conversationRepository.save(conversation)
+			if (conversationType === 'new_conversation') {
+				logger.debug(
+					"Running 'onEnter' for state:",
+					conversation.currentState.constructor.name
+				)
+				return await execute(
+					conversation.currentState.onEnter.bind(conversation.currentState)
+				)
+			}
 
-            if (conversationType === 'new_conversation') {
-                logger.debug(
-                    "Running 'onEnter' for state:",
-                    conversation.currentState.constructor.name
-                )
-                return await execute(
-                    conversation.currentState.onEnter.bind(
-                        conversation.currentState
-                    )
-                )
-            }
+			const result = await conversation.processMessage(newMessage)
+			logger.debug('Result of first "processMessage":', result)
+			if (result) {
+				logger.debug(
+					"Running 'onExit' for state:",
+					conversation.currentState.constructor.name
+				)
+				await execute(
+					conversation.currentState.onExit.bind(conversation.currentState)
+				)
 
-            const result = await conversation.processMessage(newMessage)
-            logger.debug('Result of first "processMessage":', result)
-            if (result) {
-                logger.debug(
-                    "Running 'onExit' for state:",
-                    conversation.currentState.constructor.name
-                )
-                await execute(
-                    conversation.currentState.onExit.bind(
-                        conversation.currentState
-                    )
-                )
+				conversation.transitionToState(
+					await this.stateService.createState(result)
+				)
 
-                conversation.transitionToState(
-                    this.stateFactory.create(conversation, result)
-                )
+				logger.debug(
+					"Running 'onEnter' for state:",
+					conversation.currentState.constructor.name
+				)
+				await execute(
+					conversation.currentState.onEnter.bind(conversation.currentState)
+				)
 
-                logger.debug(
-                    "Running 'onEnter' for state:",
-                    conversation.currentState.constructor.name
-                )
-                await execute(
-                    conversation.currentState.onEnter.bind(
-                        conversation.currentState
-                    )
-                )
+				await this.conversationRepository.save(conversation)
+			}
 
-                await this.conversationRepository.save(conversation)
-            }
+			while (true) {
+				const next = await conversation.currentState.getNextState()
 
-            while (true) {
-                const next = await conversation.currentState.getNextState()
+				logger.debug(
+					'Current state:',
+					conversation.currentState.constructor.name
+				)
+				logger.debug('Next state:', next)
 
-                logger.debug(
-                    'Current state:',
-                    conversation.currentState.constructor.name
-                )
-                logger.debug('Next state:', next)
+				if (!next) {
+					break
+				}
 
-                if (!next) {
-                    break
-                }
+				logger.debug('Auto-transitioning...')
+				logger.debug('Will transition to:', next)
+				logger.debug(
+					"Running 'onExit' for state:",
+					conversation.currentState.constructor.name
+				)
+				await execute(
+					conversation.currentState.onExit.bind(conversation.currentState)
+				)
 
-                logger.debug('Auto-transitioning...')
-                logger.debug('Will transition to:', next)
-                logger.debug(
-                    "Running 'onExit' for state:",
-                    conversation.currentState.constructor.name
-                )
-                await execute(
-                    conversation.currentState.onExit.bind(
-                        conversation.currentState
-                    )
-                )
+				conversation.transitionToState(
+					await this.stateService.createState(next)
+				)
 
-                conversation.transitionToState(
-                    this.stateFactory.create(conversation, next)
-                )
+				logger.debug(
+					"Running 'onEnter' for state:",
+					conversation.currentState.constructor.name
+				)
+				await execute(
+					conversation.currentState.onEnter.bind(conversation.currentState)
+				)
 
-                logger.debug(
-                    "Running 'onEnter' for state:",
-                    conversation.currentState.constructor.name
-                )
-                await execute(
-                    conversation.currentState.onEnter.bind(
-                        conversation.currentState
-                    )
-                )
+				await this.conversationRepository.save(conversation)
+			}
+		} catch (error) {
+			logger.error('Error processing client message:\n', error)
+			throw error
+		}
+	}
 
-                await this.conversationRepository.save(conversation)
-            }
-        } catch (error) {
-            logger.error('Error processing client message:\n', error)
-            throw error
-        }
-    }
+	private async saveMessage(
+		conversation: Conversation,
+		content: string,
+		sender: Client
+	): Promise<Message> {
+		const message = Message.create({
+			conversationId: conversation.id,
+			senderId: sender.id,
+			content,
+			senderType: SenderType.CLIENT,
+		})
 
-    private async saveMessage(
-        conversation: Conversation,
-        content: string,
-        sender: Client
-    ): Promise<Message> {
-        const message = Message.create({
-            conversationId: conversation.id,
-            conversation: conversation,
-            senderId: sender.id,
-            from: 'client',
-            content,
-            sender: sender,
-        })
+		conversation.messages.push(message)
+		await this.conversationRepository.save(conversation)
 
-        await this.messageRepository.save(message)
+		return message
+	}
 
-        return message
-    }
+	private async getOrCreateConversation(
+		company: Company,
+		user: Client
+	): Promise<['new_conversation' | 'recovered_conversation', Conversation]> {
+		let conversation = await this.findConversationByClientPhoneUseCase.execute(
+			company.id,
+			user.phone
+		)
+		let conversationType: Nullable<
+			'new_conversation' | 'recovered_conversation'
+		> = null
 
-    private async getOrCreateConversation(
-        company: Company,
-        user: Client
-    ): Promise<['new_conversation' | 'recovered_conversation', Conversation]> {
-        let conversation =
-            await this.findConversationByClientPhoneUseCase.execute(
-                company,
-                user.phone
-            )
-        let conversationType: Nullable<
-            'new_conversation' | 'recovered_conversation'
-        > = null
+		if (conversation) {
+			conversationType = 'recovered_conversation'
+		} else {
+			conversation = await this.createConversationUseCase.execute({
+				userId: user.id,
+				companyId: company.id,
+				userType: UserType.CLIENT,
+			})
+			conversationType = 'new_conversation'
+		}
 
-        if (conversation) {
-            conversationType = 'recovered_conversation'
-        } else {
-            conversation = await this.createConversationUseCase.execute({
-                userId: user.id,
-                companyId: company.id,
-            })
-            conversationType = 'new_conversation'
-        }
+		if (!conversation.currentState.getOutputPort()) {
+			logger.debug('No output port found for conversation:', conversation.id)
+		}
 
-        if (!conversation.currentState.getOutputPort()) {
-            logger.debug(
-                'No output port found for conversation:',
-                conversation.id
-            )
-        }
-
-        return [conversationType, conversation]
-    }
+		return [conversationType, conversation]
+	}
 }

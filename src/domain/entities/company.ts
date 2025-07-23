@@ -1,208 +1,110 @@
-import { Entity } from '@/core/entities/entity'
+import { BusinessHours, Day } from '@/core/value-objects/business-hours'
 import type { Manager } from './manager'
-
-export type WeekDay =
-    | 'monday'
-    | 'tuesday'
-    | 'wednesday'
-    | 'thursday'
-    | 'friday'
-    | 'saturday'
-    | 'sunday'
-
-export type TimeString = `${number}:${number}` // Formato "HH:MM"
-
-export type BusinessHours = {
-    day: WeekDay
-    openTime: TimeString
-    closeTime: TimeString
-    isActive: boolean
-}
+import { AggregateRoot } from '@/core/entities/aggregate-root'
 
 export type CompanyProps = {
-    cnpj: string
-    name: string
-    email: Nullable<string>
-    phone: string
-    website: Nullable<string>
-    description: Nullable<string>
-    businessHours: BusinessHours[]
-    managerId: string
-    manager: Manager
+	cnpj: string
+	name: string
+	email: Nullable<string>
+	phone: string
+	website: Nullable<string>
+	description: Nullable<string>
+	businessHours: BusinessHours
+	managerId: string
+	manager: Manager
 }
 
 export type CreateCompanyInput = {
-    cnpj: string
-    name: string
-    phone: string
-    managerId: string
-    manager?: Nullable<Manager>
-    email?: Nullable<string>
-    website?: Nullable<string>
-    description?: Nullable<string>
-    businessHours?: Partial<Record<WeekDay, Omit<BusinessHours, 'day'>>>
+	cnpj: string
+	name: string
+	phone: string
+	managerId: string
+	manager?: Nullable<Manager>
+	email?: Nullable<string>
+	website?: Nullable<string>
+	description?: Nullable<string>
+	businessHours?: BusinessHours
 }
 
-export class Company extends Entity<CompanyProps> {
-    private static readonly TEMPORARY_MANAGER = Symbol(
-        'TEMPORARY_MANAGER'
-    ) as unknown as Manager
-    private static DEFAULT_BUSINESS_HOURS: Record<
-        WeekDay,
-        Omit<BusinessHours, 'day'>
-    > = {
-        monday: { openTime: '08:00', closeTime: '18:00', isActive: true },
-        tuesday: { openTime: '08:00', closeTime: '18:00', isActive: true },
-        wednesday: { openTime: '08:00', closeTime: '18:00', isActive: true },
-        thursday: { openTime: '08:00', closeTime: '18:00', isActive: true },
-        friday: { openTime: '08:00', closeTime: '18:00', isActive: true },
-        saturday: { openTime: '00:00', closeTime: '00:00', isActive: false },
-        sunday: { openTime: '00:00', closeTime: '00:00', isActive: false },
-    }
+export class Company extends AggregateRoot<CompanyProps> {
+	private static readonly TEMPORARY_MANAGER = Symbol(
+		'TEMPORARY_MANAGER'
+	) as unknown as Manager
+	private static readonly DEFAULT_BUSINESS_HOURS: BusinessHours =
+		new BusinessHours([
+			new Day('monday', '08:00', '18:00'),
+			new Day('tuesday', '08:00', '18:00'),
+			new Day('wednesday', '08:00', '18:00'),
+			new Day('thursday', '08:00', '18:00'),
+			new Day('friday', '08:00', '18:00'),
+			new Day('saturday', '00:00', '00:00'),
+			new Day('sunday', '00:00', '00:00'),
+		])
 
-    static create(props: CreateCompanyInput, id?: string) {
-        const businessHours = Company.createBusinessHours(props.businessHours)
+	static create(props: CreateCompanyInput, id?: string) {
+		const company = new Company(
+			{
+				cnpj: props.cnpj,
+				name: props.name,
+				email: props.email ?? null,
+				phone: props.phone,
+				website: props.website ?? null,
+				description: props.description ?? null,
+				businessHours: props.businessHours ?? Company.DEFAULT_BUSINESS_HOURS,
+				managerId: props.managerId,
+				manager: props.manager ?? Company.TEMPORARY_MANAGER,
+			},
+			id
+		)
 
-        Company.validateBusinessHours(businessHours)
+		return company
+	}
 
-        const company = new Company(
-            {
-                cnpj: props.cnpj,
-                name: props.name,
-                email: props.email ?? null,
-                phone: props.phone,
-                website: props.website ?? null,
-                description: props.description ?? null,
-                businessHours,
-                managerId: props.managerId,
-                manager: props.manager ?? Company.TEMPORARY_MANAGER,
-            },
-            id
-        )
+	get cnpj() {
+		return this.props.cnpj
+	}
 
-        return company
-    }
+	get name() {
+		return this.props.name
+	}
 
-    private static createBusinessHours(
-        customHours?: Partial<Record<WeekDay, Omit<BusinessHours, 'day'>>>
-    ): BusinessHours[] {
-        const hours = { ...Company.DEFAULT_BUSINESS_HOURS, ...customHours }
+	get email() {
+		return this.props.email
+	}
 
-        return (Object.keys(hours) as WeekDay[]).map(day => ({
-            day,
-            ...hours[day],
-        }))
-    }
+	get phone() {
+		return this.props.phone
+	}
 
-    private static validateTimeString(time: TimeString): boolean {
-        const [hoursStr, minutesStr] = time.split(':')
-        const hours = Number.parseInt(hoursStr, 10)
-        const minutes = Number.parseInt(minutesStr, 10)
+	get website() {
+		return this.props.website
+	}
 
-        return (
-            hours >= 0 &&
-            hours <= 23 &&
-            minutes >= 0 &&
-            minutes <= 59 &&
-            time ===
-                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`
-        )
-    }
+	get description() {
+		return this.props.description
+	}
 
-    private static validateBusinessHours(hours: BusinessHours[]): void {
-        const daysPresent = hours.map(h => h.day)
-        const allDays: WeekDay[] = [
-            'monday',
-            'tuesday',
-            'wednesday',
-            'thursday',
-            'friday',
-            'saturday',
-            'sunday',
-        ]
+	get businessHours() {
+		return this.props.businessHours
+	}
 
-        if (
-            new Set(daysPresent).size !== 7 ||
-            !allDays.every(day => daysPresent.includes(day))
-        ) {
-            throw new Error(
-                'Must provide business hours for all 7 days of the week'
-            )
-        }
+	get managerId() {
+		return this.props.managerId
+	}
 
-        // Valida cada entrada
-        hours.forEach(hour => {
-            if (!Company.validateTimeString(hour.openTime)) {
-                throw new Error(
-                    `Invalid open time format for ${hour.day}. Use "HH:MM" format with valid time values`
-                )
-            }
+	get manager() {
+		if (
+			this.props.manager === Company.TEMPORARY_MANAGER ||
+			!this.props.manager
+		) {
+			throw new Error(
+				"Manager is not set. Use the setter to set the manager or use 'managerId'."
+			)
+		}
+		return this.props.manager
+	}
 
-            if (!Company.validateTimeString(hour.closeTime)) {
-                throw new Error(
-                    `Invalid close time format for ${hour.day}. Use "HH:MM" format with valid time values`
-                )
-            }
-
-            // Verifica se closeTime é depois de openTime (quando ativo)
-            if (hour.isActive) {
-                const [openH, openM] = hour.openTime.split(':').map(Number)
-                const [closeH, closeM] = hour.closeTime.split(':').map(Number)
-
-                if (closeH < openH || (closeH === openH && closeM <= openM)) {
-                    throw new Error(
-                        `Close time must be after open time for ${hour.day}`
-                    )
-                }
-            }
-        })
-    }
-
-    get cnpj() {
-        return this.props.cnpj
-    }
-
-    get name() {
-        return this.props.name
-    }
-
-    get email() {
-        return this.props.email
-    }
-
-    get phone() {
-        return this.props.phone
-    }
-
-    get website() {
-        return this.props.website
-    }
-
-    get description() {
-        return this.props.description
-    }
-
-    get businessHours() {
-        return this.props.businessHours
-    }
-
-    get managerId() {
-        return this.props.managerId
-    }
-
-    get manager() {
-        if (
-            this.props.manager === Company.TEMPORARY_MANAGER ||
-            !this.props.manager
-        ) {
-            throw new Error(
-                "Manager is not set. Use the setter to set the manager or use 'managerId'."
-            )
-        }
-        return this.props.manager
-    }
-
-    set manager(manager: Manager) {
-        this.props.manager = manager
-    }
+	set manager(manager: Manager) {
+		this.props.manager = manager
+	}
 }

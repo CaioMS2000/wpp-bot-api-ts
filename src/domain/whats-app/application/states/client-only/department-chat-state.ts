@@ -1,62 +1,70 @@
 import { logger } from '@/core/logger'
 import { OutputPort } from '@/core/output/output-port'
+import { Client } from '@/domain/entities/client'
+import { Company } from '@/domain/entities/company'
 import { Conversation } from '@/domain/entities/conversation'
 import { Department } from '@/domain/entities/department'
+import { Employee } from '@/domain/entities/employee'
 import { Message } from '@/domain/entities/message'
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
+import { AgentType } from '@/domain/whats-app/@types'
 import { execute } from '@caioms/ts-utils/functions'
+import { GetClientUseCase } from '../../use-cases/get-client-use-case'
+import { GetCompanyUseCase } from '../../use-cases/get-company-use-case'
+import { GetEmployeeUseCase } from '../../use-cases/get-employee-use-case'
 import { ConversationState } from '../conversation-state'
-import { StateTypeMapper } from '../types'
+import { StateDataType, StateTransitionIntention } from '../types'
 
 type DepartmentChatStateProps = {
-    departmentId: string
+	department: Department
+	employee: Employee
+	client: Client
 }
 
 export class DepartmentChatState extends ConversationState<DepartmentChatStateProps> {
-    constructor(
-        conversation: Conversation,
-        outputPort: OutputPort,
-        private departmentRepository: DepartmentRepository,
-        departmentId: string
-    ) {
-        super(conversation, outputPort, { departmentId })
-    }
+	constructor(
+		outputPort: OutputPort,
+		employee: Employee,
+		client: Client,
+		department: Department
+	) {
+		super(outputPort, { department, employee, client })
+	}
 
-    get departmentId() {
-        return this.props.departmentId
-    }
+	get department() {
+		return this.props.department
+	}
 
-    async handleMessage(message: Message): Promise<Nullable<StateTypeMapper>> {
-        if (this.conversation.agent && this.conversation.agent !== 'AI') {
-            await execute(this.outputPort.handle, this.conversation.agent, {
-                type: 'text',
-                content: `🔵 *[Cliente] ${this.conversation.user.name}*\n📞 *${this.conversation.user.phone}*\n\n${message.content}`,
-            })
-        }
+	get employee() {
+		return this.props.employee
+	}
 
-        return null
-    }
+	get client() {
+		return this.props.client
+	}
 
-    async onEnter() {
-        const department = await this.departmentRepository.find(
-            this.conversation.company,
-            this.departmentId
-        )
+	async handleMessage(
+		message: Message
+	): Promise<Nullable<StateTransitionIntention>> {
+		await execute(this.outputPort.handle, this.employee, {
+			type: 'text',
+			content: `🔵 *[Cliente] ${this.client.name}*\n📞 *${this.client.phone}*\n\n${message.content}`,
+		})
 
-        if (!department) {
-            throw new Error(`Department not found: ${this.departmentId}`)
-        }
+		return null
+	}
 
-        await execute(this.outputPort.handle, this.conversation.user, {
-            type: 'text',
-            content: `🔔 Você está conversando com o departamento: ${department.name}`,
-        })
-    }
+	async onEnter() {
+		await execute(this.outputPort.handle, this.client, {
+			type: 'text',
+			content: `🔔 Você está conversando com o departamento: ${this.department.name}`,
+		})
+	}
 
-    async onExit() {
-        await execute(this.outputPort.handle, this.conversation.user, {
-            type: 'text',
-            content: '🔔 *O atendimento foi encerrado*',
-        })
-    }
+	async onExit() {
+		await execute(this.outputPort.handle, this.client, {
+			type: 'text',
+			content: '🔔 *O atendimento foi encerrado*',
+		})
+	}
 }

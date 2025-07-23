@@ -1,162 +1,236 @@
 import { logger } from '@/core/logger'
 import { OutputMessage, OutputPort } from '@/core/output/output-port'
+import { Company } from '@/domain/entities/company'
 import { Conversation } from '@/domain/entities/conversation'
 import { Employee } from '@/domain/entities/employee'
 import { Message } from '@/domain/entities/message'
 import { isClient, isEmployee } from '@/utils/entity'
 import { execute } from '@caioms/ts-utils/functions'
-import { MenuOption } from '../../@types'
+import { MenuOption, User, UserType } from '../../@types'
+import { GetDepartmentByNameUseCase } from '../use-cases/get-department-by-name-use-case'
+import { GetDepartmentUseCase } from '../use-cases/get-department-use-case'
 import { StartNextClientConversationUseCase } from '../use-cases/start-next-client-conversation-use-case'
 import { ConversationState } from './conversation-state'
-import { StateTypeMapper } from './types'
+import { StateName, StateTransitionIntention } from './types'
 
-export class InitialMenuState extends ConversationState<null> {
-    constructor(
-        conversation: Conversation,
-        outputPort: OutputPort,
-        private startNextClientConversationUseCase: StartNextClientConversationUseCase
-    ) {
-        super(conversation, outputPort)
-    }
-    private menuOptions: MenuOption[] = [
-        {
-            key: '1',
-            label: 'Conversar com IA',
-            forClient: true,
-            forEmployee: true,
-        },
-        {
-            key: '2',
-            label: 'Ver Departamentos',
-            forClient: true,
-            forEmployee: false,
-        },
-        { key: '3', label: 'FAQ', forClient: true, forEmployee: true },
-        {
-            key: '4',
-            label: 'Ver fila',
-            forClient: false,
-            forEmployee: true,
-        },
-        {
-            key: '5',
-            label: 'Atender próximo',
-            forClient: false,
-            forEmployee: true,
-        },
-    ]
+export type InitialMenuStateProps = {
+	user: User
+	company: Company
+	conversation: Conversation
+}
 
-    async handleMessage(message: Message): Promise<Nullable<StateTypeMapper>> {
-        logger.debug('[InitialMenuState.handleMessage]\n', {
-            message,
-        })
-        let res: Nullable<StateTypeMapper> = null
+export class InitialMenuState extends ConversationState<InitialMenuStateProps> {
+	constructor(
+		outputPort: OutputPort,
+		user: User,
+		company: Company,
+		conversation: Conversation,
+		private startNextClientConversationUseCase: StartNextClientConversationUseCase,
+		private getDepartmentUseCase: GetDepartmentUseCase
+	) {
+		super(outputPort, { user, company, conversation })
+	}
 
-        if (isClient(this.conversation.user)) {
-            res = this.handleClientMessage(message)
-        }
+	get user() {
+		return this.props.user
+	}
 
-        if (isEmployee(this.conversation.user)) {
-            res = await this.handleEmployeeMessage(
-                this.conversation.user,
-                message
-            )
-        }
+	get company() {
+		return this.props.company
+	}
 
-        if (!res) {
-            await execute(this.outputPort.handle, this.conversation.user, {
-                type: 'text',
-                content: '‼️ *Opção inválida*',
-            })
-            await this.sendSelectionMessage()
-        }
+	get conversation() {
+		return this.props.conversation
+	}
 
-        return res
-    }
+	private menuOptions: MenuOption[] = [
+		{
+			key: '1',
+			label: 'Conversar com IA',
+			forClient: true,
+			forEmployee: true,
+		},
+		{
+			key: '2',
+			label: 'Ver Departamentos',
+			forClient: true,
+			forEmployee: false,
+		},
+		{ key: '3', label: 'FAQ', forClient: true, forEmployee: true },
+		{
+			key: '4',
+			label: 'Ver fila',
+			forClient: false,
+			forEmployee: true,
+		},
+		{
+			key: '5',
+			label: 'Atender próximo',
+			forClient: false,
+			forEmployee: true,
+		},
+	]
 
-    async onEnter() {
-        await this.sendSelectionMessage()
-    }
+	async handleMessage(
+		message: Message
+	): Promise<Nullable<StateTransitionIntention>> {
+		logger.debug('[InitialMenuState.handleMessage]\n', {
+			message,
+		})
+		let res: Nullable<StateTransitionIntention> = null
 
-    private async sendSelectionMessage() {
-        const availableOptions = this.menuOptions.filter(opt => {
-            if (isClient(this.conversation.user)) return opt.forClient
-            return opt.forEmployee
-        })
+		if (isClient(this.user)) {
+			res = this.handleClientMessage(message)
+		}
 
-        const listOutput: OutputMessage = {
-            type: 'list',
-            text: 'Escolha uma das opções abaixo:',
-            buttonText: 'Menu',
-            sections: [
-                {
-                    title: 'Menu principal',
-                    rows: availableOptions.map(opt => ({
-                        id: opt.key,
-                        title: opt.label,
-                    })),
-                },
-            ],
-        } as const
+		if (isEmployee(this.user)) {
+			res = await this.handleEmployeeMessage(this.user, message)
+		}
 
-        await execute(
-            this.outputPort.handle,
-            this.conversation.user,
-            listOutput
-        )
-    }
+		if (!res) {
+			await execute(this.outputPort.handle, this.user, {
+				type: 'text',
+				content: '‼️ *Opção inválida*',
+			})
+			await this.sendSelectionMessage()
+		}
 
-    private handleClientMessage(message: Message): Nullable<StateTypeMapper> {
-        if (message.content === 'Conversar com IA') {
-            return { stateName: 'AIChatState' }
-        }
+		return res
+	}
 
-        if (message.content === 'Ver Departamentos') {
-            return { stateName: 'DepartmentSelectionState' }
-        }
+	async onEnter() {
+		await this.sendSelectionMessage()
+	}
 
-        if (message.content === 'FAQ') {
-            return { stateName: 'FAQCategoriesState' }
-        }
+	private async sendSelectionMessage() {
+		const availableOptions = this.menuOptions.filter(opt => {
+			if (isClient(this.user)) return opt.forClient
+			return opt.forEmployee
+		})
 
-        return null
-    }
+		const listOutput: OutputMessage = {
+			type: 'list',
+			text: 'Escolha uma das opções abaixo:',
+			buttonText: 'Menu',
+			sections: [
+				{
+					title: 'Menu principal',
+					rows: availableOptions.map(opt => ({
+						id: opt.key,
+						title: opt.label,
+					})),
+				},
+			],
+		} as const
 
-    private async handleEmployeeMessage(
-        employee: Employee,
-        message: Message
-    ): Promise<Nullable<StateTypeMapper>> {
-        if (message.content === 'FAQ') {
-            return { stateName: 'FAQCategoriesState' }
-        }
+		await execute(this.outputPort.handle, this.user, listOutput)
+	}
 
-        if (message.content === 'Ver fila') {
-            if (!employee.department) {
-                return null
-            }
-            return {
-                stateName: 'ListDepartmentQueueState',
-                params: { departmentId: employee.department.id },
-            }
-        }
+	private handleClientMessage(
+		message: Message
+	): Nullable<StateTransitionIntention> {
+		if (message.content === 'Conversar com IA') {
+			return {
+				target: StateName.AIChatState,
+				context: {
+					userId: this.user.id,
+					userType: UserType.CLIENT,
+					companyId: this.user.companyId,
+				},
+			}
+		}
 
-        if (message.content === 'Atender próximo') {
-            if (!employee.department) {
-                return null
-            }
+		if (message.content === 'Ver Departamentos') {
+			return {
+				target: StateName.DepartmentSelectionState,
+				context: {
+					clientPhone: this.user.phone,
+					companyId: this.user.companyId,
+				},
+			}
+		}
 
-            const nextClient =
-                await this.startNextClientConversationUseCase.execute(
-                    this.conversation,
-                    employee.department.id
-                )
+		if (message.content === 'FAQ') {
+			return {
+				target: StateName.FAQCategoriesState,
+				context: {
+					userId: this.user.id,
+					userType: UserType.CLIENT,
+					companyId: this.user.companyId,
+				},
+			}
+		}
 
-            return {
-                stateName: 'ChatWithClientState',
-                params: { clientPhoneNumber: nextClient.phone },
-            }
-        }
+		return null
+	}
 
-        return null
-    }
+	private async handleEmployeeMessage(
+		employee: Employee,
+		message: Message
+	): Promise<Nullable<StateTransitionIntention>> {
+		if (message.content === 'FAQ') {
+			if (isClient(this.user)) {
+				return {
+					target: StateName.FAQCategoriesState,
+					context: {
+						userId: this.user.id,
+						userType: UserType.CLIENT,
+						companyId: this.user.companyId,
+					},
+				}
+			} else if (isEmployee(this.user)) {
+				return {
+					target: StateName.FAQCategoriesState,
+					context: {
+						userId: this.user.id,
+						userType: UserType.EMPLOYEE,
+						companyId: this.user.companyId,
+					},
+				}
+			}
+			throw new Error('Invalid user type')
+		}
+
+		if (message.content === 'Ver fila') {
+			if (!employee.departmentId) {
+				return null
+			}
+
+			const department = await this.getDepartmentUseCase.execute(
+				this.company.id,
+				employee.departmentId
+			)
+
+			return {
+				target: StateName.ListDepartmentQueueState,
+				context: { departmentId: department.id, companyId: this.company.id },
+			}
+		}
+
+		if (message.content === 'Atender próximo') {
+			if (!employee.departmentId) {
+				return null
+			}
+
+			const department = await this.getDepartmentUseCase.execute(
+				this.company.id,
+				employee.departmentId
+			)
+			const nextClient = await this.startNextClientConversationUseCase.execute(
+				this.company,
+				department.id
+			)
+
+			return {
+				target: StateName.ChatWithClientState,
+				context: {
+					clientPhone: nextClient.phone,
+					departmentId: department.id,
+					companyId: this.company.id,
+				},
+			}
+		}
+
+		return null
+	}
 }

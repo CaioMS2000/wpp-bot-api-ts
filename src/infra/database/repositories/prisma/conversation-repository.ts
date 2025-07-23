@@ -11,261 +11,226 @@ import { ConversationMapper } from '../../mappers/conversation-mapper'
 import { MessageMapper } from '../../mappers/message-mapper'
 import { PrismaStateDataParser } from '../../state-data-parser/prisma/prisma-state-data-parser'
 import { stateNameToPrismaEnum } from '../../utils/enumTypeMapping'
+import { SenderType } from '@/domain/whats-app/@types'
 
 export class PrismaConversationRepository extends ConversationRepository {
-    private _prismaStateDataParser!: PrismaStateDataParser
-    private _clientRepository!: ClientRepository
-    private _employeeRepository!: EmployeeRepository
-    private _companyRepository!: CompanyRepository
+	private _prismaStateDataParser!: PrismaStateDataParser
+	private _clientRepository!: ClientRepository
+	private _employeeRepository!: EmployeeRepository
+	private _companyRepository!: CompanyRepository
 
-    set prismaStateDataParser(prismaStateDataParser: PrismaStateDataParser) {
-        this._prismaStateDataParser = prismaStateDataParser
-    }
+	set prismaStateDataParser(prismaStateDataParser: PrismaStateDataParser) {
+		this._prismaStateDataParser = prismaStateDataParser
+	}
 
-    get prismaStateDataParser() {
-        return this._prismaStateDataParser
-    }
+	get prismaStateDataParser() {
+		return this._prismaStateDataParser
+	}
 
-    set clientRepository(clientRepository: ClientRepository) {
-        this._clientRepository = clientRepository
-    }
+	set clientRepository(clientRepository: ClientRepository) {
+		this._clientRepository = clientRepository
+	}
 
-    get clientRepository() {
-        return this._clientRepository
-    }
+	get clientRepository() {
+		return this._clientRepository
+	}
 
-    set employeeRepository(employeeRepository: EmployeeRepository) {
-        this._employeeRepository = employeeRepository
-    }
+	set employeeRepository(employeeRepository: EmployeeRepository) {
+		this._employeeRepository = employeeRepository
+	}
 
-    get employeeRepository() {
-        return this._employeeRepository
-    }
+	get employeeRepository() {
+		return this._employeeRepository
+	}
 
-    set companyRepository(companyRepository: CompanyRepository) {
-        this._companyRepository = companyRepository
-    }
+	set companyRepository(companyRepository: CompanyRepository) {
+		this._companyRepository = companyRepository
+	}
 
-    get companyRepository() {
-        return this._companyRepository
-    }
+	get companyRepository() {
+		return this._companyRepository
+	}
 
-    async save(conversation: Conversation): Promise<void> {
-        const data = ConversationMapper.toModel(conversation)
-        const stateName =
-            stateNameToPrismaEnum[conversation.currentState.constructor.name]
+	async save(conversation: Conversation): Promise<void> {
+		const data = ConversationMapper.toModel(conversation)
+		const stateName =
+			stateNameToPrismaEnum[conversation.currentState.constructor.name]
 
-        if (!stateName) {
-            throw new Error(
-                `State name ${conversation.currentState.constructor.name} not found in stateNameToPrismaEnum`
-            )
-        }
+		if (!stateName) {
+			throw new Error(
+				`State name ${conversation.currentState.constructor.name} not found in stateNameToPrismaEnum`
+			)
+		}
 
-        await prisma.conversation.upsert({
-            where: { id: conversation.id },
-            update: {
-                ...data,
-                currentState: stateName,
-                stateData: this.prismaStateDataParser.serialize(conversation),
-            },
-            create: {
-                ...data,
-                currentState: stateName,
-                stateData: this.prismaStateDataParser.serialize(conversation),
-                id: conversation.id,
-            },
-        })
-    }
+		await prisma.conversation.upsert({
+			where: { id: conversation.id },
+			update: {
+				...data,
+				currentState: stateName,
+				stateData: this.prismaStateDataParser.serialize(conversation),
+			},
+			create: {
+				...data,
+				currentState: stateName,
+				stateData: this.prismaStateDataParser.serialize(conversation),
+				id: conversation.id,
+			},
+		})
+	}
 
-    async findOrThrow(id: string): Promise<Conversation> {
-        const raw = await prisma.conversation.findUnique({
-            where: { id },
-            include: {
-                client: true,
-                employee: true,
-                messages: true,
-            },
-        })
+	async findOrThrow(id: string): Promise<Conversation> {
+		const raw = await prisma.conversation.findUnique({
+			where: { id },
+			include: {
+				client: true,
+				employee: true,
+				messages: true,
+			},
+		})
 
-        if (!raw) {
-            throw new Error(`Conversation with id ${id} not found`)
-        }
+		if (!raw) {
+			throw new Error(`Conversation with id ${id} not found`)
+		}
 
-        const conversation = ConversationMapper.toEntity(raw)
-        const company = await this.companyRepository.findOrThrow(raw.companyId)
-        conversation.company = company
-        let clientUser: Nullable<Client> = null
-        let employeeUser: Nullable<Employee> = null
+		const conversation = ConversationMapper.toEntity(raw)
 
-        if (raw.userType === 'CLIENT' && raw.clientId) {
-            clientUser = await this.clientRepository.findOrThrow(
-                company,
-                raw.clientId
-            )
-        } else if (raw.userType === 'EMPLOYEE' && raw.employeeId) {
-            employeeUser = await this.employeeRepository.findOrThrow(
-                raw.employeeId
-            )
-        }
+		for (const rawMessage of raw.messages) {
+			const message = MessageMapper.toEntity(rawMessage)
 
-        const resolvedUser = clientUser ?? employeeUser
+			conversation.messages.push(message)
+		}
 
-        if (!resolvedUser) {
-            throw new Error(`User not found for conversation ${id}`)
-        }
+		conversation.currentState = await this.prismaStateDataParser.restoreState(
+			conversation,
+			raw
+		)
 
-        conversation.user = resolvedUser
+		return conversation
+	}
 
-        if (raw.agentType === 'EMPLOYEE' && raw.agentId) {
-            const employee = await this.employeeRepository.findOrThrow(
-                raw.agentId
-            )
-            conversation.agent = employee
-        } else if (raw.agentType === 'AI') {
-            conversation.agent = 'AI'
-        }
+	async findActiveByClientPhone(
+		companyId: string,
+		clientPhone: string
+	): Promise<Nullable<Conversation>> {
+		const existingConversation = await prisma.conversation.findFirst({
+			where: {
+				companyId,
+				endedAt: null,
+				client: {
+					phone: clientPhone,
+				},
+			},
+		})
 
-        const inMemoryEmployeeCache: Employee[] = []
-        const inMemoryClientCache: Client[] = []
+		if (!existingConversation) return null
 
-        for (const rawMessage of raw.messages) {
-            const message = MessageMapper.toEntity(rawMessage)
-            message.conversation = conversation
-            let sender: Nullable<Client | Employee> = null
+		try {
+			const conversation = await this.findOrThrow(existingConversation.id)
+			return conversation
+		} catch (error) {
+			return null
+		}
+	}
 
-            if (message.from === 'client' && message.senderId) {
-                const clientInCache = inMemoryClientCache.find(
-                    client => client.id === message.senderId
-                )
+	async findActiveByEmployeePhone(
+		companyId: string,
+		employeePhone: string
+	): Promise<Nullable<Conversation>> {
+		const existingConversation = await prisma.conversation.findFirst({
+			where: {
+				companyId,
+				endedAt: null,
+				employee: {
+					phone: employeePhone,
+				},
+			},
+		})
 
-                if (clientInCache) {
-                    sender = clientInCache
-                } else {
-                    const clientSender =
-                        await this.clientRepository.findOrThrow(
-                            company,
-                            message.senderId
-                        )
-                    sender = clientSender
+		if (!existingConversation) return null
 
-                    inMemoryClientCache.push(clientSender)
-                }
-            }
+		try {
+			const conversation = await this.findOrThrow(existingConversation.id)
+			return conversation
+		} catch (error) {
+			return null
+		}
+	}
 
-            if (message.from === 'employee' && message.senderId) {
-                const employeeInCache = inMemoryEmployeeCache.find(
-                    employee => employee.id === message.senderId
-                )
+	async findActiveByEmployeePhoneOrThrow(
+		companyId: string,
+		employeePhone: string
+	): Promise<Conversation> {
+		const conversation = await this.findActiveByEmployeePhone(
+			companyId,
+			employeePhone
+		)
 
-                if (employeeInCache) {
-                    sender = employeeInCache
-                } else {
-                    const employeeSender =
-                        await this.employeeRepository.findOrThrow(
-                            message.senderId
-                        )
-                    sender = employeeSender
+		if (!conversation) {
+			throw new Error(
+				`Active conversation not found for employee with phone ${employeePhone}`
+			)
+		}
 
-                    inMemoryEmployeeCache.push(employeeSender)
-                }
-            }
+		return conversation
+	}
 
-            if (sender) {
-                message.sender = sender
-            }
+	async findActiveByClientPhoneOrThrow(
+		companyId: string,
+		clientPhone: string
+	): Promise<Conversation> {
+		const conversation = await this.findActiveByClientPhone(
+			companyId,
+			clientPhone
+		)
 
-            conversation.messages.push(message)
-        }
+		if (!conversation) {
+			throw new Error(
+				`Active conversation not found for client with phone ${clientPhone}`
+			)
+		}
 
-        conversation.currentState = this.prismaStateDataParser.restoreState(
-            conversation,
-            raw
-        )
+		return conversation
+	}
 
-        return conversation
-    }
+	async findActiveByEmployeeOrThrow(
+		companyId: string,
+		employeeId: string
+	): Promise<Conversation> {
+		const raw = await prisma.conversation.findFirst({
+			where: {
+				companyId,
+				endedAt: null,
+				employeeId,
+			},
+		})
 
-    async findActiveByClientPhone(
-        company: Company,
-        clientPhone: string
-    ): Promise<Nullable<Conversation>> {
-        const existingConversation = await prisma.conversation.findFirst({
-            where: {
-                companyId: company.id,
-                endedAt: null,
-                client: {
-                    phone: clientPhone,
-                },
-            },
-        })
+		if (!raw) {
+			throw new Error(
+				`Active conversation not found for employee with id ${employeeId}`
+			)
+		}
 
-        if (!existingConversation) return null
+		return this.findOrThrow(raw.id)
+	}
 
-        try {
-            const conversation = await this.findOrThrow(existingConversation.id)
-            return conversation
-        } catch (error) {
-            return null
-        }
-    }
+	async findActiveByClientOrThrow(
+		companyId: string,
+		clientId: string
+	): Promise<Conversation> {
+		const raw = await prisma.conversation.findFirst({
+			where: {
+				companyId,
+				endedAt: null,
+				clientId,
+			},
+		})
 
-    async findActiveByEmployeePhone(
-        company: Company,
-        employeePhone: string
-    ): Promise<Nullable<Conversation>> {
-        const existingConversation = await prisma.conversation.findFirst({
-            where: {
-                companyId: company.id,
-                endedAt: null,
-                employee: {
-                    phone: employeePhone,
-                },
-            },
-        })
+		if (!raw) {
+			throw new Error(
+				`Active conversation not found for client with id ${clientId}`
+			)
+		}
 
-        if (!existingConversation) return null
-
-        try {
-            const conversation = await this.findOrThrow(existingConversation.id)
-            return conversation
-        } catch (error) {
-            return null
-        }
-    }
-
-    async findActiveByEmployeePhoneOrThrow(
-        company: Company,
-        employeePhone: string
-    ): Promise<Conversation> {
-        const conversation = await this.findActiveByEmployeePhone(
-            company,
-            employeePhone
-        )
-
-        if (!conversation) {
-            throw new Error(
-                `Active conversation not found for employee with phone ${employeePhone}`
-            )
-        }
-
-        return conversation
-    }
-
-    async findActiveByClientPhoneOrThrow(
-        company: Company,
-        clientPhone: string
-    ): Promise<Conversation> {
-        const conversation = await this.findActiveByClientPhone(
-            company,
-            clientPhone
-        )
-
-        if (!conversation) {
-            throw new Error(
-                `Active conversation not found for client with phone ${clientPhone}`
-            )
-        }
-
-        return conversation
-    }
+		return this.findOrThrow(raw.id)
+	}
 }

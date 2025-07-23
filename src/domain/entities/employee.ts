@@ -1,62 +1,45 @@
-import { Entity } from '@/core/entities/entity'
-import { Company } from './company'
-import { Department } from './department'
+import { AggregateRoot } from '@/core/entities/aggregate-root'
 
 export type EmployeeProps = {
-    name: string
-    phone: string
-    companyId: string
-    company: Company
-    department: Nullable<Department>
+	name: string
+	phone: string
+	companyId: string
+	departmentId: Nullable<string>
 }
 
 export type CreateEmployeeInput = RequireOnly<
-    EmployeeProps,
-    'phone' | 'name' | 'companyId'
+	EmployeeProps,
+	'phone' | 'name' | 'companyId'
 >
 
-export class Employee extends Entity<EmployeeProps> {
-    private static readonly TEMPORARY_COMPANY = Symbol(
-        'TEMPORARY_COMPANY'
-    ) as unknown as Company
-    static create(props: CreateEmployeeInput, id?: string) {
-        const defaults: Omit<EmployeeProps, 'phone' | 'name' | 'companyId'> = {
-            department: null,
-            company: Employee.TEMPORARY_COMPANY,
-        }
-        const employee = new Employee({ ...defaults, ...props }, id)
-        return employee
-    }
+export class Employee extends AggregateRoot<EmployeeProps> {
+	public readonly __name__ = 'Employee' as const
 
-    get name() {
-        return this.props.name
-    }
+	static create(props: CreateEmployeeInput, id?: string) {
+		const defaults: Omit<EmployeeProps, 'phone' | 'name' | 'companyId'> = {
+			departmentId: null,
+		}
+		const employee = new Employee({ ...defaults, ...props }, id)
+		return employee
+	}
 
-    get phone() {
-        return this.props.phone
-    }
+	get name() {
+		return this.props.name
+	}
 
-    get department() {
-        return this.props.department
-    }
+	get phone() {
+		return this.props.phone
+	}
 
-    get company() {
-        if (
-            this.props.company === Employee.TEMPORARY_COMPANY ||
-            !this.props.company
-        ) {
-            throw new Error(
-                "Company is not set. Use the setter to set the company or use 'companyId'."
-            )
-        }
-        return this.props.company
-    }
+	get departmentId() {
+		return this.props.departmentId
+	}
 
-    set department(department: Nullable<Department>) {
-        this.props.department = department
-    }
+	get companyId() {
+		return this.props.companyId
+	}
 
-    set company(company: Company) {
-        this.props.company = company
-    }
+	set departmentId(departmentId: Nullable<string>) {
+		this.props.departmentId = departmentId
+	}
 }

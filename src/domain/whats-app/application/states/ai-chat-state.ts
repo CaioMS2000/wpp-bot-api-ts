@@ -4,53 +4,71 @@ import { Conversation } from '@/domain/entities/conversation'
 import { Message } from '@/domain/entities/message'
 import { AIService } from '@/domain/whats-app/application/services/ai-service'
 import { execute } from '@caioms/ts-utils/functions'
+import { User } from '../../@types'
 import { ConversationState } from './conversation-state'
-import { StateTypeMapper } from './types'
+import { StateTransitionIntention } from './types'
 
-export class AIChatState extends ConversationState<null> {
-    constructor(
-        conversation: Conversation,
-        outputPort: OutputPort,
-        private aiService: AIService
-    ) {
-        super(conversation, outputPort)
-    }
-    async handleMessage(message: Message): Promise<Nullable<StateTypeMapper>> {
-        try {
-            const response = await this.aiService.makeResponse(
-                this.conversation,
-                message
-            )
+type AIChatStateProps = {
+	conversation: Conversation
+	user: User
+}
 
-            await execute(this.outputPort.handle, this.conversation.user, {
-                type: 'text',
-                content: `*Evo*\n${response.content}`,
-            })
+export class AIChatState extends ConversationState<AIChatStateProps> {
+	constructor(
+		outputPort: OutputPort,
+		conversation: Conversation,
+		user: User,
+		private aiService: AIService
+	) {
+		super(outputPort, { conversation, user })
+	}
 
-            return null
-        } catch (error) {
-            logger.error(error)
-            throw error
-        }
-    }
+	get conversation() {
+		return this.props.conversation
+	}
 
-    async onEnter() {
-        await execute(this.outputPort.handle, this.conversation.user, {
-            type: 'text',
-            content: `*Evo*\nOlá, eu sou a EVO, a Inteligência Artificial da Evolight e estou aqui para te ajudar. Que tal começar enviando uma fatura de energia para análise ou perguntando sobre a Evolight? 
+	get user() {
+		return this.props.user
+	}
+
+	async handleMessage(
+		message: Message
+	): Promise<Nullable<StateTransitionIntention>> {
+		try {
+			const response = await this.aiService.makeResponse(
+				this.conversation,
+				message
+			)
+
+			await execute(this.outputPort.handle, this.user, {
+				type: 'text',
+				content: `*Evo*\n${response.content}`,
+			})
+
+			return null
+		} catch (error) {
+			logger.error(error)
+			throw error
+		}
+	}
+
+	async onEnter() {
+		await execute(this.outputPort.handle, this.user, {
+			type: 'text',
+			content: `*Evo*\nOlá, eu sou a EVO, a Inteligência Artificial da Evolight e estou aqui para te ajudar. Que tal começar enviando uma fatura de energia para análise ou perguntando sobre a Evolight? 
 
 Para finalizar a conversa, basta enviar "Finalizar".
 
   -As respostas podem levar algum tempo para ser geradas.
   -Aguarde a resposta antes de enviar outra mensagem.
   -Essa funcionalidade ainda está em fase de testes, eventuais erros podem ocorrer.`,
-        })
-    }
+		})
+	}
 
-    async onExit() {
-        await execute(this.outputPort.handle, this.conversation.user, {
-            type: 'text',
-            content: '*Conversa finalizada.*',
-        })
-    }
+	async onExit() {
+		await execute(this.outputPort.handle, this.user, {
+			type: 'text',
+			content: '*Conversa finalizada.*',
+		})
+	}
 }

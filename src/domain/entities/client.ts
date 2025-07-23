@@ -1,56 +1,38 @@
-import { Entity } from '@/core/entities/entity'
-import { Company } from './company'
+import { AggregateRoot } from '@/core/entities/aggregate-root'
 
 export type ClientProps = {
-    phone: string
-    name: string
-    companyId: string
-    company: Company
+	phone: string
+	name: string
+	companyId: string
 }
 
 export type CreateClientInput = RequireOnly<ClientProps, 'phone' | 'companyId'>
 
-export class Client extends Entity<ClientProps> {
-    private static readonly TEMPORARY_COMPANY = Symbol(
-        'TEMPORARY_COMPANY'
-    ) as unknown as Company
-    static create(props: CreateClientInput, id?: string) {
-        const defaults: Omit<ClientProps, 'phone' | 'company' | 'companyId'> = {
-            name: `Cliente-${props.phone}`,
-        }
-        const company = props.company ?? Client.TEMPORARY_COMPANY
-        const client = new Client(
-            {
-                ...props,
-                name: props.name ?? defaults.name,
-                company,
-            },
-            id
-        )
-        return client
-    }
+export class Client extends AggregateRoot<ClientProps> {
+	public readonly __name__ = 'Client' as const
 
-    get phone() {
-        return this.props.phone
-    }
+	static create(props: CreateClientInput, id?: string) {
+		const defaults: Omit<ClientProps, 'phone' | 'companyId'> = {
+			name: `Cliente-${props.phone}`,
+		}
+		const client = new Client(
+			{
+				...props,
+				name: props.name ?? defaults.name,
+			},
+			id
+		)
+		return client
+	}
 
-    get company() {
-        if (
-            this.props.company === Client.TEMPORARY_COMPANY ||
-            !this.props.company
-        ) {
-            throw new Error(
-                'Company não foi definida. Use o setter para definir a company.'
-            )
-        }
-        return this.props.company
-    }
+	get phone() {
+		return this.props.phone
+	}
 
-    get name() {
-        return this.props.name
-    }
-
-    set company(company: Company) {
-        this.props.company = company
-    }
+	get name() {
+		return this.props.name
+	}
+	get companyId() {
+		return this.props.companyId
+	}
 }

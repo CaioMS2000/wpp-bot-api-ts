@@ -5,104 +5,90 @@ import { EmployeeMapper } from '../../mappers/employee-mapper'
 import { CompanyRepository } from '@/domain/repositories/company-repository'
 
 export class PrismaEmployeeRepository extends EmployeeRepository {
-    private _companyRepository!: CompanyRepository
+	async save(employee: Employee): Promise<void> {
+		const data = EmployeeMapper.toModel(employee)
 
-    set companyRepository(companyRepository: CompanyRepository) {
-        this._companyRepository = companyRepository
-    }
+		await prisma.employee.upsert({
+			where: { id: employee.id },
+			update: data,
+			create: {
+				...data,
+				id: employee.id,
+			},
+		})
+	}
 
-    get companyRepository() {
-        return this._companyRepository
-    }
+	async findByPhone(phone: string): Promise<Nullable<Employee>> {
+		const raw = await prisma.employee.findUnique({
+			where: { phone },
+			include: {
+				company: {
+					include: {
+						manager: true,
+						businessHours: true,
+					},
+				},
+				department: {
+					include: {
+						company: {
+							include: {
+								manager: true,
+								businessHours: true,
+							},
+						},
+						employees: true,
+						queue: true,
+					},
+				},
+			},
+		})
 
-    async save(employee: Employee): Promise<void> {
-        const data = EmployeeMapper.toModel(employee)
+		if (!raw) return null
 
-        await prisma.employee.upsert({
-            where: { id: employee.id },
-            update: data,
-            create: {
-                ...data,
-                id: employee.id,
-            },
-        })
-    }
+		const employee = EmployeeMapper.toEntity(raw)
 
-    async findByPhone(phone: string): Promise<Nullable<Employee>> {
-        const raw = await prisma.employee.findUnique({
-            where: { phone },
-            include: {
-                company: {
-                    include: {
-                        manager: true,
-                        businessHours: true,
-                    },
-                },
-                department: {
-                    include: {
-                        company: {
-                            include: {
-                                manager: true,
-                                businessHours: true,
-                            },
-                        },
-                        employees: true,
-                        queue: true,
-                    },
-                },
-            },
-        })
+		return employee
+	}
 
-        if (!raw) return null
+	async find(id: string): Promise<Nullable<Employee>> {
+		const raw = await prisma.employee.findUnique({
+			where: { id },
+			include: {
+				company: {
+					include: {
+						manager: true,
+						businessHours: true,
+					},
+				},
+				department: {
+					include: {
+						company: {
+							include: {
+								manager: true,
+								businessHours: true,
+							},
+						},
+						employees: true,
+						queue: true,
+					},
+				},
+			},
+		})
 
-        const company = await this.companyRepository.findOrThrow(raw.companyId)
-        const employee = EmployeeMapper.toEntity(raw)
-        employee.company = company
+		if (!raw) return null
 
-        return employee
-    }
+		const employee = EmployeeMapper.toEntity(raw)
 
-    async find(id: string): Promise<Nullable<Employee>> {
-        const raw = await prisma.employee.findUnique({
-            where: { id },
-            include: {
-                company: {
-                    include: {
-                        manager: true,
-                        businessHours: true,
-                    },
-                },
-                department: {
-                    include: {
-                        company: {
-                            include: {
-                                manager: true,
-                                businessHours: true,
-                            },
-                        },
-                        employees: true,
-                        queue: true,
-                    },
-                },
-            },
-        })
+		return employee
+	}
 
-        if (!raw) return null
+	async findOrThrow(id: string): Promise<Employee> {
+		const entity = await this.find(id)
 
-        const company = await this.companyRepository.findOrThrow(raw.companyId)
-        const employee = EmployeeMapper.toEntity(raw)
-        employee.company = company
+		if (!entity) {
+			throw new Error('Employee not found')
+		}
 
-        return employee
-    }
-
-    async findOrThrow(id: string): Promise<Employee> {
-        const entity = await this.find(id)
-
-        if (!entity) {
-            throw new Error('Employee not found')
-        }
-
-        return entity
-    }
+		return entity
+	}
 }
