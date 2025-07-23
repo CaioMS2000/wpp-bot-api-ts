@@ -8,6 +8,7 @@ export class EmployeeMapper {
 				name: raw.name,
 				phone: raw.phone,
 				companyId: raw.companyId,
+				departmentId: raw.departmentId,
 			},
 			raw.id
 		)

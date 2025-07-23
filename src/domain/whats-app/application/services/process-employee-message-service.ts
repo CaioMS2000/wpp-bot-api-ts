@@ -45,7 +45,7 @@ export class ProcessEmployeeMessageService {
 				"Running 'onEnter' for state:\n",
 				conversation.currentState.constructor.name
 			)
-			await execute(
+			return await execute(
 				conversation.currentState.onEnter.bind(conversation.currentState)
 			)
 		}
@@ -81,6 +81,14 @@ export class ProcessEmployeeMessageService {
 			if (!next) {
 				break
 			}
+
+			logger.debug(
+				'[ProcessEmployeeMessageService.process]\ni am in this state and this is the next:\n',
+				{
+					currentState: conversation.currentState,
+					next,
+				}
+			)
 
 			logger.debug('Auto-transitioning...')
 			logger.debug('will transit to:\n', next)

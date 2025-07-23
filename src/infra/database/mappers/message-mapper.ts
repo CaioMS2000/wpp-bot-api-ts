@@ -2,9 +2,13 @@ import { Message } from '@/domain/entities/message'
 import { SenderType } from '@/domain/whats-app/@types'
 import { Message as PrismaMessage } from 'ROOT/prisma/generated'
 import { toPrismaFromType } from '../utils/enumTypeMapping'
+import { logger } from '@/core/logger'
 
 export class MessageMapper {
 	static toEntity(raw: PrismaMessage): Message {
+		logger.debug('[MessageMapper.toEntity]\n', {
+			raw,
+		})
 		if (raw.from === 'AI' && raw.aiResponseId) {
 			return Message.create(
 				{
@@ -27,7 +31,12 @@ export class MessageMapper {
 				resolvedSenderId = raw.employeeId
 			}
 
-			if (!resolvedFrom || !resolvedSenderId) {
+			if (resolvedFrom === null || resolvedSenderId === null) {
+				logger.error('[MessageMapper.toEntity]\n', {
+					raw,
+					resolvedFrom,
+					resolvedSenderId,
+				})
 				throw new Error('Cannot resolve message origin')
 			}
 
@@ -44,21 +53,23 @@ export class MessageMapper {
 		throw new Error('Cannot resolve message from')
 	}
 
-	static toModel(entity: Message): Omit<PrismaMessage, 'id'> {
+	static toModel(entity: Message): PrismaMessage {
+		let aux = 'dono não detectado'
 		let clientId: string | null = null
 		let employeeId: string | null = null
 
-		if (entity.senderType) {
-			if (entity.senderType === SenderType.EMPLOYEE) {
-				// É um Employee
-				employeeId = entity.senderId
-			} else {
-				// É um Client
-				clientId = entity.senderId
-			}
+		if (entity.senderType === SenderType.EMPLOYEE) {
+			// É um Employee
+			aux = 'mensagem de: EMPLOYEE'
+			employeeId = entity.senderId
+		} else {
+			// É um Client
+			aux = 'mensagem de: CLIENT'
+			clientId = entity.senderId
 		}
 
-		return {
+		const model = {
+			id: entity.id,
 			content: entity.content,
 			from: toPrismaFromType(entity.senderType),
 			timestamp: entity.timestamp,
@@ -67,5 +78,15 @@ export class MessageMapper {
 			clientId,
 			employeeId,
 		}
+		logger.debug(
+			'[MessageMapper.toModel]\n',
+			{
+				aux,
+				entity,
+				model,
+			},
+			`\nalvo de comparação 'SenderType.EMPLOYEE': ${SenderType.EMPLOYEE}`
+		)
+		return model
 	}
 }

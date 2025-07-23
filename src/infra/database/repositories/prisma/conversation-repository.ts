@@ -12,6 +12,7 @@ import { MessageMapper } from '../../mappers/message-mapper'
 import { PrismaStateDataParser } from '../../state-data-parser/prisma/prisma-state-data-parser'
 import { stateNameToPrismaEnum } from '../../utils/enumTypeMapping'
 import { SenderType } from '@/domain/whats-app/@types'
+import { logger } from '@/core/logger'
 
 export class PrismaConversationRepository extends ConversationRepository {
 	private _prismaStateDataParser!: PrismaStateDataParser
@@ -61,6 +62,20 @@ export class PrismaConversationRepository extends ConversationRepository {
 				`State name ${conversation.currentState.constructor.name} not found in stateNameToPrismaEnum`
 			)
 		}
+
+		const dbMessages = conversation.messages.map(message =>
+			MessageMapper.toModel(message)
+		)
+
+		await Promise.all(
+			dbMessages.map(message =>
+				prisma.message.upsert({
+					where: { id: message.id },
+					update: message,
+					create: message,
+				})
+			)
+		)
 
 		await prisma.conversation.upsert({
 			where: { id: conversation.id },
@@ -112,6 +127,7 @@ export class PrismaConversationRepository extends ConversationRepository {
 		companyId: string,
 		clientPhone: string
 	): Promise<Nullable<Conversation>> {
+		const allConversations = await prisma.conversation.findMany({})
 		const existingConversation = await prisma.conversation.findFirst({
 			where: {
 				companyId,
@@ -126,8 +142,21 @@ export class PrismaConversationRepository extends ConversationRepository {
 
 		try {
 			const conversation = await this.findOrThrow(existingConversation.id)
+			logger.debug('[PrismaConversationRepository.findActiveByClientPhone]\n', {
+				companyId,
+				clientPhone,
+				allConversations,
+				conversation,
+			})
 			return conversation
 		} catch (error) {
+			logger.debug('[PrismaConversationRepository.findActiveByClientPhone]\n', {
+				companyId,
+				clientPhone,
+				allConversations,
+				conversation: 'deu erro no truque, retornando null...',
+			})
+			logger.error(error)
 			return null
 		}
 	}

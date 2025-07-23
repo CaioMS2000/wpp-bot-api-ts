@@ -45,15 +45,20 @@ export class PrismaStateDataParser {
 		private repositoryFactory: RepositoryFactory,
 		private useCaseFactory: UseCaseFactory
 	) {
-		this.initializeRepositories()
+		this.initializeDependencies()
 	}
 
-	private initializeRepositories() {
+	private initializeDependencies() {
 		this.faqRepository = this.repositoryFactory.getFAQRepository()
 		this.departmentRepository = this.repositoryFactory.getDepartmentRepository()
 		this.getClientUseCase = this.useCaseFactory.getGetClientUseCase()
 		this.getEmployeeUseCase = this.useCaseFactory.getGetEmployeeUseCase()
 		this.getCompanyUseCase = this.useCaseFactory.getGetCompanyUseCase()
+		this.getDepartmentUseCase = this.useCaseFactory.getGetDepartmentUseCase()
+		this.getDepartmentEmployeeUseCase =
+			this.useCaseFactory.getGetDepartmentEmployeeUseCase()
+		this.getClientByPhoneUseCase =
+			this.useCaseFactory.getGetClientByPhoneUseCase()
 	}
 
 	private async resolveUser(

@@ -168,6 +168,10 @@ export class InitialMenuState extends ConversationState<InitialMenuStateProps> {
 		employee: Employee,
 		message: Message
 	): Promise<Nullable<StateTransitionIntention>> {
+		logger.debug('[InitialMenuState.handleEmployeeMessage]\n', {
+			employee,
+			message,
+		})
 		if (message.content === 'FAQ') {
 			if (isClient(this.user)) {
 				return {

@@ -7,6 +7,7 @@ import { DepartmentRepository } from '@/domain/repositories/department-repositor
 import { EmployeeRepository } from '@/domain/repositories/employee-repository'
 import { prisma } from '@/lib/prisma'
 import { DepartmentMapper } from '../../mappers/department-mapper'
+import { logger } from '@/core/logger'
 
 export class PrismaDepartmentRepository extends DepartmentRepository {
 	async save(department: Department): Promise<void> {
@@ -149,13 +150,38 @@ export class PrismaDepartmentRepository extends DepartmentRepository {
 		department: Department,
 		client: Client
 	): Promise<void> {
+		logger.debug(
+			'[PrismaDepartmentRepository.insertClientIntoQueue]\nparams:\n',
+			{
+				department: await prisma.department.findFirst({
+					where: {
+						id: department.id,
+					},
+				}),
+				client: await prisma.client.findFirst({
+					where: {
+						id: client.id,
+					},
+				}),
+			}
+		)
 		await prisma.department.update({
 			where: {
 				id: department.id,
 			},
 			data: {
 				queue: {
-					connect: { id: client.id },
+					connectOrCreate: {
+						where: {
+							departmentId_clientId: {
+								departmentId: department.id,
+								clientId: client.id,
+							},
+						},
+						create: {
+							clientId: client.id,
+						},
+					},
 				},
 			},
 		})

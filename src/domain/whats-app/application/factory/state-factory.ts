@@ -76,7 +76,8 @@ export class StateFactory {
 				return new DepartmentSelectionState(
 					this.outputPort,
 					client,
-					activeDepartments
+					activeDepartments,
+					this.useCaseFactory.getInsertClientIntoDepartmentQueue()
 				)
 			}
 			case StateName.DepartmentChatState: {

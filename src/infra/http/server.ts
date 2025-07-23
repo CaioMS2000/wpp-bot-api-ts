@@ -33,7 +33,7 @@ async function softDBClear() {
 	})
 }
 async function main() {
-	// await softDBClear()
+	await softDBClear()
 	const outputPort = new WhatsAppOutputPort()
 	const aiServiceFactory = new AIServiceFactory()
 	const stateFactory = new StateFactory(outputPort, aiServiceFactory)

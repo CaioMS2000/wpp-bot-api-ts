@@ -12,6 +12,7 @@ import { GetCompanyUseCase } from '../../use-cases/get-company-use-case'
 import { ListActiveDepartmentsUseCase } from '../../use-cases/list-active-departments-use-case'
 import { ConversationState } from '../conversation-state'
 import { StateDataType, StateName, StateTransitionIntention } from '../types'
+import { InsertClientIntoDepartmentQueue } from '../../use-cases/insert-client-into-department-queue'
 
 type DepartmentSelectionStateProps = {
 	activeDepartments: Department[]
@@ -22,7 +23,8 @@ export class DepartmentSelectionState extends ConversationState<DepartmentSelect
 	constructor(
 		outputPort: OutputPort,
 		client: Client,
-		activeDepartments: Department[]
+		activeDepartments: Department[],
+		private insertClientIntoDepartmentQueue: InsertClientIntoDepartmentQueue
 	) {
 		super(outputPort, { activeDepartments, client })
 	}
@@ -51,8 +53,18 @@ export class DepartmentSelectionState extends ConversationState<DepartmentSelect
 		const correspondingDepartment = this.activeDepartments.find(
 			dept => dept.name === message.content
 		)
+		logger.debug('[DepartmentSelectionState.handleMessage]\n', {
+			activeDepartments: this.activeDepartments,
+			correspondingDepartment,
+			message,
+		})
 
 		if (correspondingDepartment) {
+			await this.insertClientIntoDepartmentQueue.execute(
+				correspondingDepartment,
+				this.client
+			)
+
 			return {
 				target: StateName.DepartmentQueueState,
 				context: {
