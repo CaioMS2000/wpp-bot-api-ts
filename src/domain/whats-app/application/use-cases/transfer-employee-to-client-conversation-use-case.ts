@@ -22,7 +22,7 @@ export class TransferEmployeeToClientConversationUseCase {
 			throw new Error('Department queue is empty')
 		}
 
-		const client = await this.getClientUseCase.execute(employee.id, clientId)
+		const client = await this.getClientUseCase.execute(company.id, clientId)
 
 		logger.debug(
 			'looking for client conversation with client phone: ',

@@ -57,9 +57,9 @@ export class ChatWithClientState extends ConversationState<ChatWithClientStatePr
 	async handleMessage(
 		message: Message
 	): Promise<Nullable<StateTransitionIntention>> {
-		await execute(this.outputPort.handle, this.employee, {
+		await execute(this.outputPort.handle, this.client, {
 			type: 'text',
-			content: `🔵 *[Cliente] ${this.client.name}*\n📞 *${this.client.phone}*\n\n${message.content}`,
+			content: `🔵 *[Funcionário] ${this.employee.name}*\n🚩 *${this.department.name}*\n\n${message.content}`,
 		})
 
 		return null

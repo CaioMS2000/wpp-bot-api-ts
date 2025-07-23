@@ -42,8 +42,9 @@ export class CompanyMapper {
 		return entity
 	}
 
-	static toModel(entity: Company): Omit<PrismaCompany, 'id'> {
+	static toModel(entity: Company): PrismaCompany {
 		return {
+			id: entity.id,
 			cnpj: entity.cnpj,
 			name: entity.name,
 			email: entity.email,

@@ -191,14 +191,16 @@ export class PrismaDepartmentRepository extends DepartmentRepository {
 		department: Department,
 		client: Client
 	): Promise<void> {
-		await prisma.department.update({
+		await prisma.departmentQueue.update({
 			where: {
-				id: department.id,
+				departmentId_clientId: {
+					clientId: client.id,
+					departmentId: department.id,
+				},
+				leftAt: null,
 			},
 			data: {
-				queue: {
-					disconnect: { id: client.id },
-				},
+				leftAt: new Date(),
 			},
 		})
 	}

@@ -29,11 +29,11 @@ logger.debug(`Response file initialized at ${responseFilePath}`)
 async function softDBClear() {
 	await prisma.$transaction(async tx => {
 		logger.debug('Clearing database collections')
-		await clearDatabase(tx, ['message', 'conversation', 'department_queue'])
+		await clearDatabase(tx, ['message', 'conversation', 'departmentQueue'])
 	})
 }
 async function main() {
-	await softDBClear()
+	// await softDBClear()
 	const outputPort = new WhatsAppOutputPort()
 	const aiServiceFactory = new AIServiceFactory()
 	const stateFactory = new StateFactory(outputPort, aiServiceFactory)
