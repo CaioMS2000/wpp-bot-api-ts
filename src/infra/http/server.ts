@@ -60,6 +60,7 @@ async function main() {
 	repositoryFactory.setPrismaStateDataParser(prismaStateDataParser)
 	stateFactory.setUseCaseFactory(useCaseFactory)
 	aiServiceFactory.setRepositoryFactory(repositoryFactory)
+	aiServiceFactory.setUseCaseFactory(useCaseFactory)
 
 	const processClientMessageServiceFactory =
 		new ProcessClientMessageServiceFactory(
