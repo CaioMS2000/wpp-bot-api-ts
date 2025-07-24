@@ -43,6 +43,14 @@ export async function authenticateWithPassword(
 				}
 			)
 
+			reply.setCookie('token', token, {
+				httpOnly: true,
+				secure: process.env.NODE_ENV === 'production',
+				sameSite: 'lax',
+				path: '/',
+				maxAge: 60 * 60 * 24 * 7,
+			})
+
 			return reply.status(200).send({
 				token,
 			})

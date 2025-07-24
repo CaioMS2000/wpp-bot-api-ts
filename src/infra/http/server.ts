@@ -22,6 +22,8 @@ import { authenticateWithPassword } from './routes/api/auth/authenticate-with-pa
 import { AuthService } from '@/domain/web-api/services/auth-service'
 import { AuthServiceFactory } from '@/domain/web-api/factories/auth-service-factory'
 import { register } from './routes/api/auth/register-manager'
+import { ApiServiceFactory } from '@/domain/web-api/factories/api-service-factory'
+import { logout } from './routes/api/auth/logout'
 // console.clear()
 logger.info('Starting server setup')
 
@@ -62,6 +64,10 @@ async function main() {
 		stateFactory
 	)
 	const authServiceFactory = new AuthServiceFactory(repositoryFactory)
+	const apiServiceFactory = new ApiServiceFactory(
+		repositoryFactory,
+		useCaseFactory
+	)
 
 	repositoryFactory.setPrismaStateDataParser(prismaStateDataParser)
 	stateFactory.setUseCaseFactory(useCaseFactory)
@@ -91,6 +97,7 @@ async function main() {
 
 	const whatsAppMessageService = whatsAppMessageServiceFactory.getService()
 	const authService = authServiceFactory.getService()
+	const apiService = apiServiceFactory.getService()
 
 	// WhatsApp
 	app.register(webhook)
@@ -100,6 +107,7 @@ async function main() {
 	app.register(createCompany)
 	app.register(authenticateWithPassword, { authService })
 	app.register(register, { authService })
+	app.register(logout)
 
 	logger.debug('Routes registered')
 

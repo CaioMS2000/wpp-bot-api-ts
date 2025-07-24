@@ -1,1 +1,1 @@
-export class ApiService {}
+export class APIService {}
