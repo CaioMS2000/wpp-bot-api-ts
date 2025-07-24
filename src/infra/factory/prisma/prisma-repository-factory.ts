@@ -12,6 +12,8 @@ import { PrismaEmployeeRepository } from '../../database/repositories/prisma/emp
 import { PrismaFAQRepository } from '../../database/repositories/prisma/faq-repository'
 import { PrismaStateDataParser } from '@/infra/database/state-data-parser/prisma/prisma-state-data-parser'
 import { RepositoryFactory } from '@/domain/whats-app/application/factory/repository-factory'
+import { ManagerRepository } from '@/domain/repositories/manager-repository'
+import { PrismaManagerRepository } from '@/infra/database/repositories/prisma/manager-repository'
 
 export class PrismaRepositoryFactory implements RepositoryFactory {
 	private clientRepository!: PrismaClientRepository
@@ -20,6 +22,7 @@ export class PrismaRepositoryFactory implements RepositoryFactory {
 	private departmentRepository!: PrismaDepartmentRepository
 	private fAQRepository!: PrismaFAQRepository
 	private companyRepository!: PrismaCompanyRepository
+	private managerRepository!: PrismaManagerRepository
 	private prismaStateDataParser!: PrismaStateDataParser
 
 	constructor() {
@@ -34,6 +37,7 @@ export class PrismaRepositoryFactory implements RepositoryFactory {
 		this.departmentRepository = new PrismaDepartmentRepository()
 		this.fAQRepository = new PrismaFAQRepository()
 		this.companyRepository = new PrismaCompanyRepository()
+		this.managerRepository = new PrismaManagerRepository()
 	}
 
 	private wireDependencies() {
@@ -72,5 +76,9 @@ export class PrismaRepositoryFactory implements RepositoryFactory {
 
 	getCompanyRepository(): CompanyRepository {
 		return this.companyRepository
+	}
+
+	getManagerRepository(): ManagerRepository {
+		return this.managerRepository
 	}
 }

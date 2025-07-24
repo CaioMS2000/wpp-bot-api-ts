@@ -8,7 +8,7 @@ export async function createCompany(app: FastifyInstance) {
 		.withTypeProvider<ZodTypeProvider>()
 		.register(auth)
 		.post(
-			'/company',
+			'/api/company',
 			{
 				schema: {
 					tags: ['Companys'],

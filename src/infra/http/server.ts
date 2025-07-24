@@ -17,6 +17,11 @@ import { DepartmentQueueServiceFactory } from '@/domain/whats-app/application/fa
 import { clearDatabase } from 'ROOT/clear-database'
 import { StateServiceFactory } from '@/domain/whats-app/application/factory/state-service-factory'
 import { PrismaStateDataParser } from '../database/state-data-parser/prisma/prisma-state-data-parser'
+import { createCompany } from './routes/api/company/create-company'
+import { authenticateWithPassword } from './routes/api/auth/authenticate-with-password'
+import { AuthService } from '@/domain/web-api/services/auth-service'
+import { AuthServiceFactory } from '@/domain/web-api/factories/auth-service-factory'
+import { register } from './routes/api/auth/register-manager'
 // console.clear()
 logger.info('Starting server setup')
 
@@ -56,6 +61,7 @@ async function main() {
 		useCaseFactory,
 		stateFactory
 	)
+	const authServiceFactory = new AuthServiceFactory(repositoryFactory)
 
 	repositoryFactory.setPrismaStateDataParser(prismaStateDataParser)
 	stateFactory.setUseCaseFactory(useCaseFactory)
@@ -80,12 +86,20 @@ async function main() {
 		processClientMessageServiceFactory,
 		processEmployeeMessageServiceFactory
 	)
-	logger.debug('Creating WhatsApp message service')
+
+	logger.debug('Creating services')
 
 	const whatsAppMessageService = whatsAppMessageServiceFactory.getService()
+	const authService = authServiceFactory.getService()
 
+	// WhatsApp
 	app.register(webhook)
 	app.register(whatsAppWebhook, { whatsAppMessageService })
+
+	// API
+	app.register(createCompany)
+	app.register(authenticateWithPassword, { authService })
+	app.register(register, { authService })
 
 	logger.debug('Routes registered')
 

@@ -34,7 +34,7 @@ export class AuthService {
 		name: string,
 		email: string,
 		password: string,
-		phone: Nullable<string>
+		phone: Nullable<string> = null
 	) {
 		const existingManager = await this.managerRepository.findByEmail(email)
 

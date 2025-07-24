@@ -12,6 +12,7 @@ export async function clearDatabase(
 	const orderedModels = [
 		'message',
 		'conversation',
+		'departmentQueue',
 		'client',
 		'employee',
 		'department',
