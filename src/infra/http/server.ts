@@ -81,18 +81,17 @@ async function main() {
 		processEmployeeMessageServiceFactory
 	)
 	logger.debug('Creating WhatsApp message service')
+
 	const whatsAppMessageService = whatsAppMessageServiceFactory.getService()
 
 	app.register(webhook)
-	// app.register(receiveMessage, { whatsAppMessageService })
 	app.register(whatsAppWebhook, { whatsAppMessageService })
 
 	logger.debug('Routes registered')
+
 	const serverAddress = await app.listen({ port: 8000 })
 
 	logger.info(`Server running on -> ${serverAddress}`)
-
-	// await interactionMock()
 }
 
 main()
