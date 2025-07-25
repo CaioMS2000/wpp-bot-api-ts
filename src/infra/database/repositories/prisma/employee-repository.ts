@@ -91,4 +91,12 @@ export class PrismaEmployeeRepository extends EmployeeRepository {
 
 		return entity
 	}
+
+	async findAllByCompany(companyId: string): Promise<Employee[]> {
+		const raw = await prisma.employee.findMany({
+			where: { companyId },
+		})
+
+		return raw.map(EmployeeMapper.toEntity)
+	}
 }

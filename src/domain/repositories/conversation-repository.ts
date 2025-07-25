@@ -27,4 +27,5 @@ export abstract class ConversationRepository {
 		companyId: string,
 		clientId: string
 	): Promise<Conversation>
+	abstract findAllBelongingToClient(companyId: string): Promise<Conversation[]>
 }

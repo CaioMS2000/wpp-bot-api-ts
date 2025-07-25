@@ -1,9 +1,29 @@
+import {
+	APIService,
+	businessHoursSchema,
+} from '@/domain/web-api/services/api-service'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
 
-export async function createCompany(app: FastifyInstance) {
+type Resources = {
+	apiService: APIService
+}
+export const createCompanySchema = z.object({
+	name: z.string(),
+	phone: z.string(),
+	cnpj: z.string(),
+	email: z.string().optional(),
+	website: z.string().optional(),
+	description: z.string().optional(),
+	businessHours: businessHoursSchema,
+})
+
+export async function createCompany(
+	app: FastifyInstance,
+	resources: Resources
+) {
 	app
 		.withTypeProvider<ZodTypeProvider>()
 		.register(auth)
@@ -11,12 +31,10 @@ export async function createCompany(app: FastifyInstance) {
 			'/api/company',
 			{
 				schema: {
-					tags: ['Companys'],
+					tags: ['Companies'],
 					summary: 'Create a new company',
 					security: [{ bearerAuth: [] }],
-					body: z.object({
-						name: z.string(),
-					}),
+					body: createCompanySchema,
 					// response: {
 					//   201: z.object({
 					//     companyId: z.string().uuid(),
@@ -25,14 +43,29 @@ export async function createCompany(app: FastifyInstance) {
 				},
 			},
 			async (request, reply) => {
+				const { apiService } = resources
 				const userId = await request.getCurrentUserID()
 
-				const { name } = request.body
+				const {
+					name,
+					phone,
+					cnpj,
+					email,
+					website,
+					description,
+					businessHours,
+				} = request.body
 
-				console.log(
-					'We need to create a company with the following name:',
-					name
-				)
+				await apiService.createCompany({
+					name,
+					phone,
+					cnpj,
+					email,
+					website,
+					description,
+					managerId: userId,
+					businessHours,
+				})
 
 				return reply.status(201).send({
 					message: 'Company created successfully',

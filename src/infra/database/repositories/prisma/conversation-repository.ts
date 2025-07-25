@@ -13,6 +13,7 @@ import { PrismaStateDataParser } from '../../state-data-parser/prisma/prisma-sta
 import { stateNameToPrismaEnum } from '../../utils/enumTypeMapping'
 import { SenderType } from '@/domain/whats-app/@types'
 import { logger } from '@/core/logger'
+import { UserType as PrismaUserType } from 'ROOT/prisma/generated'
 
 export class PrismaConversationRepository extends ConversationRepository {
 	private _prismaStateDataParser!: PrismaStateDataParser
@@ -250,5 +251,13 @@ export class PrismaConversationRepository extends ConversationRepository {
 		}
 
 		return this.findOrThrow(raw.id)
+	}
+
+	async findAllBelongingToClient(companyId: string): Promise<Conversation[]> {
+		const raw = await prisma.conversation.findMany({
+			where: { companyId, userType: PrismaUserType.CLIENT },
+		})
+
+		return raw.map(ConversationMapper.toEntity)
 	}
 }
