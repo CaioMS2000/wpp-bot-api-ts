@@ -5,7 +5,7 @@ import { DepartmentQueueService } from '../services/department-queue-service'
 import { TransferEmployeeToClientConversationUseCase } from './transfer-employee-to-client-conversation-use-case'
 import { Company } from '@/domain/entities/company'
 import { StateName } from '../states/types'
-import { GetDepartmentEmployeeUseCase } from './get-department-employee'
+import { DepartmentService } from '../services/department-service'
 
 export class StartNextClientConversationUseCase {
 	constructor(
@@ -14,7 +14,7 @@ export class StartNextClientConversationUseCase {
 		private conversationRepository: ConversationRepository,
 		private departmentRepository: DepartmentRepository,
 		private transferEmployeeToClientConversationUseCase: TransferEmployeeToClientConversationUseCase,
-		private getDepartmentEmployeeUseCase: GetDepartmentEmployeeUseCase
+		private departmentService: DepartmentService
 	) {}
 
 	async execute(company: Company, departmentId: string) {
@@ -41,7 +41,7 @@ export class StartNextClientConversationUseCase {
 			throw new Error(`Department not found: ${departmentId}`)
 		}
 
-		const employee = await this.getDepartmentEmployeeUseCase.execute(
+		const employee = await this.departmentService.getFirstEmployee(
 			company.id,
 			departmentId
 		)

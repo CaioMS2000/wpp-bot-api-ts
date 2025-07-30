@@ -94,9 +94,9 @@ export class PrismaConversationRepository extends ConversationRepository {
 		})
 	}
 
-	async findOrThrow(id: string): Promise<Conversation> {
+	async findOrThrow(companyId: string, id: string): Promise<Conversation> {
 		const raw = await prisma.conversation.findUnique({
-			where: { id },
+			where: { id, companyId },
 			include: {
 				client: true,
 				employee: true,
@@ -128,7 +128,6 @@ export class PrismaConversationRepository extends ConversationRepository {
 		companyId: string,
 		clientPhone: string
 	): Promise<Nullable<Conversation>> {
-		const allConversations = await prisma.conversation.findMany({})
 		const existingConversation = await prisma.conversation.findFirst({
 			where: {
 				companyId,
@@ -142,7 +141,10 @@ export class PrismaConversationRepository extends ConversationRepository {
 		if (!existingConversation) return null
 
 		try {
-			const conversation = await this.findOrThrow(existingConversation.id)
+			const conversation = await this.findOrThrow(
+				companyId,
+				existingConversation.id
+			)
 
 			return conversation
 		} catch (error) {
@@ -168,7 +170,10 @@ export class PrismaConversationRepository extends ConversationRepository {
 		if (!existingConversation) return null
 
 		try {
-			const conversation = await this.findOrThrow(existingConversation.id)
+			const conversation = await this.findOrThrow(
+				companyId,
+				existingConversation.id
+			)
 			return conversation
 		} catch (error) {
 			return null
@@ -229,7 +234,7 @@ export class PrismaConversationRepository extends ConversationRepository {
 			)
 		}
 
-		return this.findOrThrow(raw.id)
+		return this.findOrThrow(companyId, raw.id)
 	}
 
 	async findActiveByClientOrThrow(
@@ -250,12 +255,25 @@ export class PrismaConversationRepository extends ConversationRepository {
 			)
 		}
 
-		return this.findOrThrow(raw.id)
+		return this.findOrThrow(companyId, raw.id)
 	}
 
 	async findAllBelongingToClient(companyId: string): Promise<Conversation[]> {
 		const raw = await prisma.conversation.findMany({
 			where: { companyId, userType: PrismaUserType.CLIENT },
+		})
+
+		return raw.map(ConversationMapper.toEntity)
+	}
+
+	async findRecentBelongingToClient(
+		companyId: string,
+		limit: number
+	): Promise<Conversation[]> {
+		const raw = await prisma.conversation.findMany({
+			where: { companyId, userType: PrismaUserType.CLIENT },
+			orderBy: { startedAt: 'desc' },
+			take: limit,
 		})
 
 		return raw.map(ConversationMapper.toEntity)

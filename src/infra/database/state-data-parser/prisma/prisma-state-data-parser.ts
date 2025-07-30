@@ -7,6 +7,7 @@ import { User, UserType } from '@/domain/whats-app/@types'
 import { RepositoryFactory } from '@/domain/whats-app/application/factory/repository-factory'
 import { StateFactory } from '@/domain/whats-app/application/factory/state-factory'
 import { UseCaseFactory } from '@/domain/whats-app/application/factory/use-case-factory'
+import { DepartmentService } from '@/domain/whats-app/application/services/department-service'
 import { AIChatState } from '@/domain/whats-app/application/states/ai-chat-state'
 import { DepartmentChatState } from '@/domain/whats-app/application/states/client-only/department-chat-state'
 import { DepartmentQueueState } from '@/domain/whats-app/application/states/client-only/department-queue-state'
@@ -21,7 +22,6 @@ import { StateName } from '@/domain/whats-app/application/states/types'
 import { GetClientByPhoneUseCase } from '@/domain/whats-app/application/use-cases/get-client-by-phone-use-case'
 import { GetClientUseCase } from '@/domain/whats-app/application/use-cases/get-client-use-case'
 import { GetCompanyUseCase } from '@/domain/whats-app/application/use-cases/get-company-use-case'
-import { GetDepartmentEmployeeUseCase } from '@/domain/whats-app/application/use-cases/get-department-employee'
 import { GetDepartmentUseCase } from '@/domain/whats-app/application/use-cases/get-department-use-case'
 import { GetEmployeeUseCase } from '@/domain/whats-app/application/use-cases/get-employee-use-case'
 import {
@@ -37,13 +37,13 @@ export class PrismaStateDataParser {
 	private getEmployeeUseCase!: GetEmployeeUseCase
 	private getCompanyUseCase!: GetCompanyUseCase
 	private getDepartmentUseCase!: GetDepartmentUseCase
-	private getDepartmentEmployeeUseCase!: GetDepartmentEmployeeUseCase
 	private getClientByPhoneUseCase!: GetClientByPhoneUseCase
 
 	constructor(
 		private stateFactory: StateFactory,
 		private repositoryFactory: RepositoryFactory,
-		private useCaseFactory: UseCaseFactory
+		private useCaseFactory: UseCaseFactory,
+		private departmentService: DepartmentService
 	) {
 		this.initializeDependencies()
 	}
@@ -55,8 +55,6 @@ export class PrismaStateDataParser {
 		this.getEmployeeUseCase = this.useCaseFactory.getGetEmployeeUseCase()
 		this.getCompanyUseCase = this.useCaseFactory.getGetCompanyUseCase()
 		this.getDepartmentUseCase = this.useCaseFactory.getGetDepartmentUseCase()
-		this.getDepartmentEmployeeUseCase =
-			this.useCaseFactory.getGetDepartmentEmployeeUseCase()
 		this.getClientByPhoneUseCase =
 			this.useCaseFactory.getGetClientByPhoneUseCase()
 	}
@@ -71,7 +69,7 @@ export class PrismaStateDataParser {
 		if (userType === UserType.CLIENT) {
 			user = await this.getClientUseCase.execute(companyId, userId)
 		} else if (userType === UserType.EMPLOYEE) {
-			user = await this.getEmployeeUseCase.execute(userId)
+			user = await this.getEmployeeUseCase.execute(companyId, userId)
 		}
 
 		if (!user) {
@@ -192,7 +190,7 @@ export class PrismaStateDataParser {
 					throw new Error('Invalid user')
 				}
 
-				const activeDepartments = await this.departmentRepository.findAllActive(
+				const activeDepartments = await this.departmentRepository.findAll(
 					conversation.companyId
 				)
 
@@ -269,7 +267,7 @@ export class PrismaStateDataParser {
 					conversation.companyId,
 					departmentId
 				)
-				const employee = await this.getDepartmentEmployeeUseCase.execute(
+				const employee = await this.departmentService.getFirstEmployee(
 					conversation.companyId,
 					departmentId
 				)
@@ -291,7 +289,7 @@ export class PrismaStateDataParser {
 					conversation.companyId,
 					departmentId
 				)
-				const employee = await this.getDepartmentEmployeeUseCase.execute(
+				const employee = await this.departmentService.getFirstEmployee(
 					conversation.companyId,
 					departmentId
 				)

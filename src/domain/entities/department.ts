@@ -1,13 +1,12 @@
-import type { Client } from './client'
-import type { Employee } from './employee'
 import { AggregateRoot } from '@/core/entities/aggregate-root'
+import type { Client } from './client'
+import { Employee } from './employee'
 
 export type DepartmentProps = {
 	name: string
 	description: string
 	companyId: string
 	queue: Client['id'][]
-	employees: Employee['id'][]
 }
 
 export class Department extends AggregateRoot<DepartmentProps> {
@@ -17,7 +16,6 @@ export class Department extends AggregateRoot<DepartmentProps> {
 	) {
 		const defaults: Omit<DepartmentProps, 'name' | 'companyId'> = {
 			queue: [],
-			employees: [],
 			description: '',
 		}
 		const department = new Department({ ...defaults, ...props }, id)
@@ -32,10 +30,6 @@ export class Department extends AggregateRoot<DepartmentProps> {
 		return this.props.queue
 	}
 
-	get employees() {
-		return this.props.employees
-	}
-
 	get description() {
 		return this.props.description
 	}
@@ -46,9 +40,5 @@ export class Department extends AggregateRoot<DepartmentProps> {
 
 	set queue(value: Client['id'][]) {
 		this.props.queue = value
-	}
-
-	set employees(value: Employee['id'][]) {
-		this.props.employees = value
 	}
 }

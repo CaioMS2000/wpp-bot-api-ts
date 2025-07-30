@@ -1,3 +1,4 @@
+import { logger } from '@/core/logger'
 import { Manager } from '@/domain/entities/manager'
 import { CompanyRepository } from '@/domain/repositories/company-repository'
 import { ManagerRepository } from '@/domain/repositories/manager-repository'
@@ -22,10 +23,13 @@ export class AuthService {
 			throw new Error('Invalid password')
 		}
 
+		const company = await this.companyRepository.findByManagerId(manager.id)
+
 		return {
 			name: manager.name,
 			email: manager.email,
 			phone: manager.phone,
+			managedCompanyCNPJ: company ? company.cnpj : null,
 			id: manager.id,
 		}
 	}
@@ -62,7 +66,6 @@ export class AuthService {
 
 	async getManagerMembership(companyCNPJ: string, managerId: string) {
 		const manager = await this.managerRepository.findOrThrow(managerId)
-
 		const company = await this.companyRepository.findByCNPJ(companyCNPJ)
 
 		if (!company) {

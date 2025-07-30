@@ -1,20 +1,20 @@
+import { Conversation } from '@/domain/entities/conversation'
+import { ConversationRepository } from '@/domain/repositories/conversation-repository'
+import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { FAQRepository } from '@/domain/repositories/faq-repository'
 import { User, UserType } from '../../@types'
+import { type StateFactory } from '../factory/state-factory'
 import {
 	StateDataType,
 	StateName,
 	StateTransitionIntention,
 } from '../states/types'
+import { GetClientByPhoneUseCase } from '../use-cases/get-client-by-phone-use-case'
 import { GetClientUseCase } from '../use-cases/get-client-use-case'
+import { GetCompanyUseCase } from '../use-cases/get-company-use-case'
 import { GetEmployeeUseCase } from '../use-cases/get-employee-use-case'
 import { GetFAQCategoryUseCase } from '../use-cases/get-faq-category-use-case'
-import { ConversationRepository } from '@/domain/repositories/conversation-repository'
-import { Conversation } from '@/domain/entities/conversation'
-import { GetCompanyUseCase } from '../use-cases/get-company-use-case'
-import { GetClientByPhoneUseCase } from '../use-cases/get-client-by-phone-use-case'
-import { DepartmentRepository } from '@/domain/repositories/department-repository'
-import { GetDepartmentEmployeeUseCase } from '../use-cases/get-department-employee'
-import { type StateFactory } from '../factory/state-factory'
+import { DepartmentService } from './department-service'
 
 type ParamsOfState<S extends StateName> = Extract<
 	StateDataType,
@@ -32,7 +32,7 @@ export class StateService {
 		private getEmployeeUseCase: GetEmployeeUseCase,
 		private getFAQCategoryUseCase: GetFAQCategoryUseCase,
 		private getCompanyUseCase: GetCompanyUseCase,
-		private getDepartmentEmployeeUseCase: GetDepartmentEmployeeUseCase
+		private departmentService: DepartmentService
 	) {}
 
 	private async resolveUser(
@@ -45,7 +45,7 @@ export class StateService {
 		if (userType === UserType.CLIENT) {
 			user = await this.getClientUseCase.execute(companyId, userId)
 		} else if (userType === UserType.EMPLOYEE) {
-			user = await this.getEmployeeUseCase.execute(userId)
+			user = await this.getEmployeeUseCase.execute(companyId, userId)
 		}
 
 		if (!user) {
@@ -171,14 +171,13 @@ export class StateService {
 					companyId,
 					departmentId
 				)
-				const employee = await this.getDepartmentEmployeeUseCase.execute(
-					companyId,
-					departmentId
-				)
 				const paramsObject: ParamsOfState<typeof target> = {
 					client,
 					department,
-					employee,
+					employee: await this.departmentService.getFirstEmployee(
+						companyId,
+						departmentId
+					),
 				}
 
 				return {
@@ -213,7 +212,7 @@ export class StateService {
 					clientPhone
 				)
 				const activeDepartments =
-					await this.departmentRepository.findAllActive(companyId)
+					await this.departmentRepository.findAll(companyId)
 				const paramsObject: ParamsOfState<typeof target> = {
 					activeDepartments,
 					client,
@@ -237,7 +236,7 @@ export class StateService {
 					companyId,
 					departmentId
 				)
-				const employee = await this.getDepartmentEmployeeUseCase.execute(
+				const employee = await this.departmentService.getFirstEmployee(
 					companyId,
 					departmentId
 				)
@@ -259,7 +258,7 @@ export class StateService {
 					companyId,
 					departmentId
 				)
-				const employee = await this.getDepartmentEmployeeUseCase.execute(
+				const employee = await this.departmentService.getFirstEmployee(
 					companyId,
 					departmentId
 				)

@@ -10,8 +10,6 @@ import { MessageHandlerFactory } from '../factory/message-handler-factory'
 import { MessageHandler } from '../handler/message-handler'
 import { ResolveSenderContextUseCase } from '../use-cases/resolve-sender-context-use-case'
 
-const tempOutput = new WhatsAppOutputPort()
-const testPhones = ['556292476996', '556293765723']
 export class WhatsAppMessageService {
 	private messageHandlers: Record<string, MessageHandler>
 
@@ -40,14 +38,6 @@ export class WhatsAppMessageService {
 					toPhone,
 					userName
 				)
-
-			if (!testPhones.includes(fromPhone)) {
-				return await tempOutput.handle(client ?? employee!, {
-					type: 'text',
-					content:
-						'Nosso atendimento online está passando por manutenção. Em breve retornaremos com mais informações. Agradecemos a compreensão.',
-				})
-			}
 
 			const user: User = type === 'client' ? client! : employee!
 			const messageHandler = this.getHandlerForUser(user)

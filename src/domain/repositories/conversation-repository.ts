@@ -2,7 +2,7 @@ import { Conversation } from '../entities/conversation'
 
 export abstract class ConversationRepository {
 	abstract save(conversation: Conversation): Promise<void>
-	abstract findOrThrow(id: string): Promise<Conversation>
+	abstract findOrThrow(companyId: string, id: string): Promise<Conversation>
 	abstract findActiveByClientPhone(
 		companyId: string,
 		clientPhone: string
@@ -28,4 +28,8 @@ export abstract class ConversationRepository {
 		clientId: string
 	): Promise<Conversation>
 	abstract findAllBelongingToClient(companyId: string): Promise<Conversation[]>
+	abstract findRecentBelongingToClient(
+		companyId: string,
+		limit: number
+	): Promise<Conversation[]>
 }

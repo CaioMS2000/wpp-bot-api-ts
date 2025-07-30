@@ -33,7 +33,10 @@ export class CreateConversationUseCase {
 			)
 			user = existingClient
 		} else if (userType === UserType.EMPLOYEE) {
-			const existingEmployee = await this.employeeRepository.findOrThrow(userId)
+			const existingEmployee = await this.employeeRepository.findOrThrow(
+				companyId,
+				userId
+			)
 			user = existingEmployee
 		}
 

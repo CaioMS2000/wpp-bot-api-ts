@@ -1,4 +1,5 @@
 import { StateService } from '../services/state-service'
+import { DepartmentServiceFactory } from './department-service-factory'
 import { RepositoryFactory } from './repository-factory'
 import { StateFactory } from './state-factory'
 import { UseCaseFactory } from './use-case-factory'
@@ -7,7 +8,8 @@ export class StateServiceFactory {
 	constructor(
 		private repositoryFactory: RepositoryFactory,
 		private useCaseFactory: UseCaseFactory,
-		private stateFactory: StateFactory
+		private stateFactory: StateFactory,
+		private departmentServiceFactory: DepartmentServiceFactory
 	) {}
 
 	getService() {
@@ -21,7 +23,7 @@ export class StateServiceFactory {
 			this.useCaseFactory.getGetEmployeeUseCase(),
 			this.useCaseFactory.getGetFAQCategoryUseCase(),
 			this.useCaseFactory.getGetCompanyUseCase(),
-			this.useCaseFactory.getGetDepartmentEmployeeUseCase()
+			this.departmentServiceFactory.getService()
 		)
 	}
 }

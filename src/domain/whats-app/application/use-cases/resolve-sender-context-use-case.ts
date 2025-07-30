@@ -36,7 +36,10 @@ export class ResolveSenderContextUseCase {
 			throw new Error(`Empresa com número ${toPhone} não encontrada.`)
 		}
 
-		const employee = await this.findEmployeeByPhoneUseCase.execute(fromPhone)
+		const employee = await this.findEmployeeByPhoneUseCase.execute(
+			company.id,
+			fromPhone
+		)
 
 		if (employee) {
 			return { type: 'employee', company, employee, client: null }

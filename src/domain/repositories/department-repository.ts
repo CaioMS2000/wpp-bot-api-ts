@@ -14,7 +14,7 @@ export abstract class DepartmentRepository {
 		companyId: string,
 		name: string
 	): Promise<Department>
-	abstract findAllActive(companyId: string): Promise<Department[]>
+	abstract findAll(companyId: string): Promise<Department[]>
 	abstract insertClientIntoQueue(
 		department: Department,
 		client: Client

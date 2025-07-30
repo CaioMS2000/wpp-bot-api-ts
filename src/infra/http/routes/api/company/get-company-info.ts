@@ -1,7 +1,4 @@
-import {
-	APIService,
-	businessHoursSchema,
-} from '@/domain/web-api/services/api-service'
+import { APIService } from '@/domain/web-api/services/api-service'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -11,7 +8,7 @@ type Resources = {
 	apiService: APIService
 }
 
-export async function getAllEmployees(
+export async function getCompanyInfo(
 	app: FastifyInstance,
 	resources: Resources
 ) {
@@ -19,11 +16,11 @@ export async function getAllEmployees(
 		.withTypeProvider<ZodTypeProvider>()
 		.register(auth)
 		.get(
-			'/api/company/:cnpj/employees',
+			'/api/company/:cnpj/info',
 			{
 				schema: {
-					tags: ['employees'],
-					summary: 'Get all employees of a company',
+					tags: ['company'],
+					summary: 'Obter informações da empresa',
 					security: [{ bearerAuth: [] }],
 					params: z.object({
 						cnpj: z.string(),
@@ -32,13 +29,11 @@ export async function getAllEmployees(
 			},
 			async (request, reply) => {
 				const { apiService } = resources
-				const { manager, company } = await request.getUserMembership(
-					request.params.cnpj
-				)
-				const employees = await apiService.getAllCompanyEmployees(company.id)
+				const { company } = await request.getUserMembership(request.params.cnpj)
+				const info = await apiService.getCompanyInfo(company.id)
 
-				return reply.status(201).send({
-					employees,
+				return reply.status(200).send({
+					company: info,
 				})
 			}
 		)

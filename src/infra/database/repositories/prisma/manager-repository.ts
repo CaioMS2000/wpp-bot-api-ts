@@ -2,6 +2,7 @@ import { Manager } from '@/domain/entities/manager'
 import { ManagerRepository } from '@/domain/repositories/manager-repository'
 import { prisma } from '@/lib/prisma'
 import { ManagerMapper } from '../../mappers/manager-mapper'
+import { logger } from '@/core/logger'
 
 export class PrismaManagerRepository extends ManagerRepository {
 	async save(manager: Manager): Promise<void> {
@@ -19,13 +20,21 @@ export class PrismaManagerRepository extends ManagerRepository {
 			where: { id },
 		})
 
+		logger.debug('find:raw\n', raw)
+
 		if (!raw) return null
 
-		return ManagerMapper.toEntity(raw)
+		const entity = ManagerMapper.toEntity(raw)
+
+		logger.debug('find:entity\n', entity)
+
+		return entity
 	}
 
 	async findOrThrow(id: string): Promise<Manager> {
 		const manager = await this.find(id)
+
+		logger.debug('findOrThrow\n', manager)
 
 		if (!manager) throw new Error('Manager not found')
 

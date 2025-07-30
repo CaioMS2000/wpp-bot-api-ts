@@ -1,3 +1,4 @@
+import { logger } from '@/core/logger'
 import { Client } from '@/domain/entities/client'
 import { Company } from '@/domain/entities/company'
 import { Department } from '@/domain/entities/department'
@@ -7,7 +8,6 @@ import { DepartmentRepository } from '@/domain/repositories/department-repositor
 import { EmployeeRepository } from '@/domain/repositories/employee-repository'
 import { prisma } from '@/lib/prisma'
 import { DepartmentMapper } from '../../mappers/department-mapper'
-import { logger } from '@/core/logger'
 
 export class PrismaDepartmentRepository extends DepartmentRepository {
 	async save(department: Department): Promise<void> {
@@ -49,7 +49,6 @@ export class PrismaDepartmentRepository extends DepartmentRepository {
 
 		const department = DepartmentMapper.toEntity(raw)
 		department.queue = raw.queue.map(q => q.clientId)
-		department.employees = raw.employees.map(e => e.id)
 
 		return department
 	}
@@ -94,7 +93,6 @@ export class PrismaDepartmentRepository extends DepartmentRepository {
 
 		const department = DepartmentMapper.toEntity(raw)
 		department.queue = raw.queue.map(q => q.clientId)
-		department.employees = raw.employees.map(e => e.id)
 
 		return department
 	}
@@ -110,7 +108,7 @@ export class PrismaDepartmentRepository extends DepartmentRepository {
 		return department
 	}
 
-	async findAllActive(companyId: string): Promise<Department[]> {
+	async findAll(companyId: string): Promise<Department[]> {
 		const departments: Department[] = []
 		const rawDepartments = await prisma.department.findMany({
 			where: {
@@ -138,7 +136,6 @@ export class PrismaDepartmentRepository extends DepartmentRepository {
 		for (const rawDepartment of rawDepartments) {
 			const department = DepartmentMapper.toEntity(rawDepartment)
 			department.queue = rawDepartment.queue.map(q => q.clientId)
-			department.employees = rawDepartment.employees.map(e => e.id)
 
 			departments.push(department)
 		}

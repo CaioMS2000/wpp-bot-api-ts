@@ -20,16 +20,19 @@ import { DepartmentQueueServiceFactory } from './department-queue-service-factor
 import { RepositoryFactory } from './repository-factory'
 import type { StateFactory } from './state-factory'
 import { GetClientByPhoneUseCase } from '../use-cases/get-client-by-phone-use-case'
-import { GetDepartmentEmployeeUseCase } from '../use-cases/get-department-employee'
 import { GetFAQCategoryUseCase } from '../use-cases/get-faq-category-use-case'
 import { GetFAQItemsUseCase } from '../use-cases/get-faq-items-use-case'
 import { GetDepartmentUseCase } from '../use-cases/get-department-use-case'
+import { GetManagerProfileUseCase } from '@/domain/web-api/use-cases/get-manager-profile-use-case'
+import { GetAllCompanyEmployeesUseCase } from '@/domain/web-api/use-cases/get-all-company-employees-use-case'
+import { DepartmentServiceFactory } from './department-service-factory'
 
 export class UseCaseFactory {
 	constructor(
 		private repositoryFactory: RepositoryFactory,
 		private stateFactory: StateFactory,
-		private departmentQueueServiceFactory: DepartmentQueueServiceFactory
+		private departmentQueueServiceFactory: DepartmentQueueServiceFactory,
+		private departmentServiceFactory: DepartmentServiceFactory
 	) {}
 
 	getListActiveDepartmentsUseCase(): ListActiveDepartmentsUseCase {
@@ -126,7 +129,7 @@ export class UseCaseFactory {
 			this.repositoryFactory.getConversationRepository(),
 			this.repositoryFactory.getDepartmentRepository(),
 			this.getTransferEmployeeToClientConversationUseCase(),
-			this.getGetDepartmentEmployeeUseCase()
+			this.departmentServiceFactory.getService()
 		)
 	}
 
@@ -164,15 +167,22 @@ export class UseCaseFactory {
 		return new GetFAQItemsUseCase(this.repositoryFactory.getFAQRepository())
 	}
 
-	getGetDepartmentEmployeeUseCase(): GetDepartmentEmployeeUseCase {
-		return new GetDepartmentEmployeeUseCase(
-			this.repositoryFactory.getDepartmentRepository(),
-			this.repositoryFactory.getEmployeeRepository()
+	getGetDepartmentUseCase(): GetDepartmentUseCase {
+		return new GetDepartmentUseCase(
+			this.repositoryFactory.getDepartmentRepository()
 		)
 	}
 
-	getGetDepartmentUseCase(): GetDepartmentUseCase {
-		return new GetDepartmentUseCase(
+	getGetManagerProfileUseCase(): GetManagerProfileUseCase {
+		return new GetManagerProfileUseCase(
+			this.repositoryFactory.getManagerRepository()
+		)
+	}
+
+	getGetAllCompanyEmployeesUseCase(): GetAllCompanyEmployeesUseCase {
+		return new GetAllCompanyEmployeesUseCase(
+			this.repositoryFactory.getEmployeeRepository(),
+			this.repositoryFactory.getConversationRepository(),
 			this.repositoryFactory.getDepartmentRepository()
 		)
 	}

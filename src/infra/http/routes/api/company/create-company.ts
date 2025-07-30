@@ -1,24 +1,13 @@
-import {
-	APIService,
-	businessHoursSchema,
-} from '@/domain/web-api/services/api-service'
+import { APIService } from '@/domain/web-api/services/api-service'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
+import { createCompanySchema } from '@/domain/web-api/services/schemas'
 
 type Resources = {
 	apiService: APIService
 }
-export const createCompanySchema = z.object({
-	name: z.string(),
-	phone: z.string(),
-	cnpj: z.string(),
-	email: z.string().optional(),
-	website: z.string().optional(),
-	description: z.string().optional(),
-	businessHours: businessHoursSchema,
-})
 
 export async function createCompany(
 	app: FastifyInstance,

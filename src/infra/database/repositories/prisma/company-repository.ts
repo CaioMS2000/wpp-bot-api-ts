@@ -19,6 +19,14 @@ export class PrismaCompanyRepository extends CompanyRepository {
 				},
 			})
 
+			await tx.manager.findUniqueOrThrow({ where: { id: company.managerId } })
+			await tx.manager.update({
+				where: { id: company.managerId },
+				data: {
+					companyId: company.id,
+				},
+			})
+
 			// Atualiza businessHours removendo os antigos e inserindo os novos
 			await tx.businessHour.deleteMany({
 				where: { companyId: company.id },

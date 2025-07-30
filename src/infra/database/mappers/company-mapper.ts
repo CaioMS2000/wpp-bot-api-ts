@@ -51,7 +51,7 @@ export class CompanyMapper {
 			phone: entity.phone,
 			website: entity.website,
 			description: entity.description,
-			managerId: entity.manager.id,
+			managerId: entity.managerId,
 		}
 	}
 

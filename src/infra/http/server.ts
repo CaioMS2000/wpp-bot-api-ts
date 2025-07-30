@@ -24,6 +24,16 @@ import { AuthServiceFactory } from '@/domain/web-api/factories/auth-service-fact
 import { register } from './routes/api/auth/register-manager'
 import { ApiServiceFactory } from '@/domain/web-api/factories/api-service-factory'
 import { logout } from './routes/api/auth/logout'
+import { getAllChats } from './routes/api/company/get-chats'
+import { getCompanyInfo } from './routes/api/company/get-company-info'
+import { getEmployee } from './routes/api/employee/get-employee'
+import { getAllEmployees } from './routes/api/employee/get-all-employees'
+import { getDepartment } from './routes/api/department/get-department'
+import { getAllDepartments } from './routes/api/department/get-all-departments'
+import { getFAQs } from './routes/api/company/get-faqs'
+import { updateCompany } from './routes/api/company/update-company'
+import { getRecentChats } from './routes/api/company/get-recent-chats'
+import { DepartmentServiceFactory } from '@/domain/whats-app/application/factory/department-service-factory'
 // console.clear()
 logger.info('Starting server setup')
 
@@ -45,28 +55,36 @@ async function main() {
 	const aiServiceFactory = new AIServiceFactory()
 	const stateFactory = new StateFactory(outputPort, aiServiceFactory)
 	const repositoryFactory = new PrismaRepositoryFactory()
+	const departmentServiceFactory = new DepartmentServiceFactory(
+		repositoryFactory
+	)
+	const departmentService = departmentServiceFactory.getService()
 	const departmentQueueServiceFactory = new DepartmentQueueServiceFactory(
 		repositoryFactory
 	)
 	const useCaseFactory = new UseCaseFactory(
 		repositoryFactory,
 		stateFactory,
-		departmentQueueServiceFactory
+		departmentQueueServiceFactory,
+		departmentServiceFactory
 	)
 	const prismaStateDataParser = new PrismaStateDataParser(
 		stateFactory,
 		repositoryFactory,
-		useCaseFactory
+		useCaseFactory,
+		departmentService
 	)
 	const stateServiceFactory = new StateServiceFactory(
 		repositoryFactory,
 		useCaseFactory,
-		stateFactory
+		stateFactory,
+		departmentServiceFactory
 	)
 	const authServiceFactory = new AuthServiceFactory(repositoryFactory)
 	const apiServiceFactory = new ApiServiceFactory(
 		repositoryFactory,
-		useCaseFactory
+		useCaseFactory,
+		departmentServiceFactory
 	)
 
 	repositoryFactory.setPrismaStateDataParser(prismaStateDataParser)
@@ -99,15 +117,32 @@ async function main() {
 	const authService = authServiceFactory.getService()
 	const apiService = apiServiceFactory.getService()
 
+	// Decorate Fastify instance with services
+	app.decorateRequest('authService', {
+		getter() {
+			return authService
+		},
+	})
+
 	// WhatsApp
 	app.register(webhook)
 	app.register(whatsAppWebhook, { whatsAppMessageService })
 
 	// API
-	app.register(createCompany)
 	app.register(authenticateWithPassword, { authService })
 	app.register(register, { authService })
 	app.register(logout)
+
+	app.register(createCompany, { apiService })
+	app.register(getAllChats, { apiService })
+	app.register(getCompanyInfo, { apiService })
+	app.register(getEmployee, { apiService })
+	app.register(getAllEmployees, { apiService })
+	app.register(getDepartment, { apiService })
+	app.register(getAllDepartments, { apiService })
+	app.register(getFAQs, { apiService })
+	app.register(updateCompany, { apiService })
+	app.register(getRecentChats, { apiService })
 
 	logger.debug('Routes registered')
 

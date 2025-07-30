@@ -5,7 +5,7 @@ export class ListActiveDepartmentsUseCase {
 	constructor(private departmentRepository: DepartmentRepository) {}
 
 	async execute(companyId: string) {
-		const departments = await this.departmentRepository.findAllActive(companyId)
+		const departments = await this.departmentRepository.findAll(companyId)
 
 		return departments
 	}

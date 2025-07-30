@@ -1,10 +1,10 @@
 import { logger } from '@/core/logger'
 
 export type ParsedWhatsAppMessage = {
-    from: string
-    to: string
-    message: string
-    name?: string
+	from: string
+	to: string
+	message: string
+	name?: string
 }
 
 // logger.debug(
@@ -12,72 +12,70 @@ export type ParsedWhatsAppMessage = {
 //     JSON.stringify(payload, null, 2)
 // )
 export function parseWhatsAppMessage(
-    payload: any
+	payload: any
 ): Nullable<ParsedWhatsAppMessage> {
-    let to: string | undefined
-    let from: string | undefined
-    let name: string | undefined
+	let to: string | undefined
+	let from: string | undefined
+	let name: string | undefined
 
-    try {
-        const entry = payload?.entry?.[0]
-        const change = entry?.changes?.[0]
-        const message = change?.value?.messages?.[0]
-        const metadata = change?.value?.metadata
-        const contact = change?.value?.contacts?.[0]
+	try {
+		const entry = payload?.entry?.[0]
+		const change = entry?.changes?.[0]
+		const message = change?.value?.messages?.[0]
+		const metadata = change?.value?.metadata
+		const contact = change?.value?.contacts?.[0]
 
-        if (!message || !metadata) {
-            const tipoEvento = Object.keys(change?.value || {}).filter(
-                key => key !== 'metadata'
-            )
-            logger.info(
-                `[webhook] Evento ignorado (sem mensagem de usuário). Tipo(s): ${tipoEvento.join(', ') || 'desconhecido'}`
-            )
-            return null
-        }
+		if (!message || !metadata) {
+			const tipoEvento = Object.keys(change?.value || {}).filter(
+				key => key !== 'metadata'
+			)
+			logger.info(
+				`[webhook] Evento ignorado (sem mensagem de usuário). Tipo(s): ${tipoEvento.join(', ') || 'desconhecido'}`
+			)
+			return null
+		}
 
-        from = message.from
-        to = metadata.display_phone_number
+		from = message.from
+		to = metadata.display_phone_number
 
-        if (!from || !to) {
-            throw new Error(
-                'Não foi possível identificar o remetente ou destinatário da mensagem'
-            )
-        }
+		if (!from || !to) {
+			throw new Error(
+				'Não foi possível identificar o remetente ou destinatário da mensagem'
+			)
+		}
 
-        name = contact?.profile?.name ?? undefined
+		name = contact?.profile?.name ?? undefined
 
-        let content: string | undefined
+		let content: string | undefined
 
-        switch (message.type) {
-            case 'text':
-                content = message.text?.body
-                break
-            case 'interactive':
-                if (message.interactive.type === 'button_reply') {
-                    content = message.interactive.button_reply.title
-                } else if (message.interactive.type === 'list_reply') {
-                    content = message.interactive.list_reply.title
-                }
-                break
-            case 'document':
-                content = message.document.filename || message.document.id
-                break
-            default:
-                throw new Error(
-                    `Tipo de mensagem '${message.type}' não suportado`
-                )
-        }
+		switch (message.type) {
+			case 'text':
+				content = message.text?.body
+				break
+			case 'interactive':
+				if (message.interactive.type === 'button_reply') {
+					content = message.interactive.button_reply.title
+				} else if (message.interactive.type === 'list_reply') {
+					content = message.interactive.list_reply.title
+				}
+				break
+			case 'document':
+				content = message.document.filename || message.document.id
+				break
+			default:
+				throw new Error(`Tipo de mensagem '${message.type}' não suportado`)
+		}
 
-        if (!content) {
-            throw new Error('Mensagem não possui conteúdo textual')
-        }
+		if (!content) {
+			throw new Error('Mensagem não possui conteúdo textual')
+		}
 
-        return { from, to, message: content, name }
-    } catch (error) {
-        logger.error(
-            `[webhook] Erro ao analisar a mensagem do WhatsApp vinda de ${from}${name ? ` (${name})` : ''} para ${to}:`,
-            error
-        )
-        throw error
-    }
+		return { from, to, message: content, name }
+	} catch (error) {
+		logger.error(
+			`[webhook] Erro ao analisar a mensagem do WhatsApp vinda de ${from}${name ? ` (${name})` : ''} para ${to}:`,
+			error
+		)
+		throw error
+	}
 }

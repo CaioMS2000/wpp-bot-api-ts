@@ -1,8 +1,8 @@
 import { Employee } from '@/domain/entities/employee'
+import { CompanyRepository } from '@/domain/repositories/company-repository'
 import { EmployeeRepository } from '@/domain/repositories/employee-repository'
 import { prisma } from '@/lib/prisma'
 import { EmployeeMapper } from '../../mappers/employee-mapper'
-import { CompanyRepository } from '@/domain/repositories/company-repository'
 
 export class PrismaEmployeeRepository extends EmployeeRepository {
 	async save(employee: Employee): Promise<void> {
@@ -18,9 +18,12 @@ export class PrismaEmployeeRepository extends EmployeeRepository {
 		})
 	}
 
-	async findByPhone(phone: string): Promise<Nullable<Employee>> {
+	async findByPhone(
+		companyId: string,
+		phone: string
+	): Promise<Nullable<Employee>> {
 		const raw = await prisma.employee.findUnique({
-			where: { phone },
+			where: { phone, companyId },
 			include: {
 				company: {
 					include: {
@@ -50,9 +53,9 @@ export class PrismaEmployeeRepository extends EmployeeRepository {
 		return employee
 	}
 
-	async find(id: string): Promise<Nullable<Employee>> {
+	async find(companyId: string, id: string): Promise<Nullable<Employee>> {
 		const raw = await prisma.employee.findUnique({
-			where: { id },
+			where: { id, companyId },
 			include: {
 				company: {
 					include: {
@@ -82,8 +85,8 @@ export class PrismaEmployeeRepository extends EmployeeRepository {
 		return employee
 	}
 
-	async findOrThrow(id: string): Promise<Employee> {
-		const entity = await this.find(id)
+	async findOrThrow(companyId: string, id: string): Promise<Employee> {
+		const entity = await this.find(companyId, id)
 
 		if (!entity) {
 			throw new Error('Employee not found')
@@ -95,6 +98,17 @@ export class PrismaEmployeeRepository extends EmployeeRepository {
 	async findAllByCompany(companyId: string): Promise<Employee[]> {
 		const raw = await prisma.employee.findMany({
 			where: { companyId },
+		})
+
+		return raw.map(EmployeeMapper.toEntity)
+	}
+
+	async findAllByDepartment(
+		companyId: string,
+		departmentId: string
+	): Promise<Employee[]> {
+		const raw = await prisma.employee.findMany({
+			where: { companyId, departmentId },
 		})
 
 		return raw.map(EmployeeMapper.toEntity)
