@@ -1,8 +1,4 @@
-import { Conversation } from '@/domain/entities/conversation'
-
-import { logger } from '@/core/logger'
 import { OutputPort } from '@/core/output/output-port'
-import { isClient, isEmployee } from '@/utils/entity'
 import { AIChatState } from '../states/ai-chat-state'
 import { DepartmentChatState } from '../states/client-only/department-chat-state'
 import { DepartmentQueueState } from '../states/client-only/department-queue-state'
