@@ -23,8 +23,6 @@ import { GetClientByPhoneUseCase } from '../use-cases/get-client-by-phone-use-ca
 import { GetFAQCategoryUseCase } from '../use-cases/get-faq-category-use-case'
 import { GetFAQItemsUseCase } from '../use-cases/get-faq-items-use-case'
 import { GetDepartmentUseCase } from '../use-cases/get-department-use-case'
-import { GetManagerProfileUseCase } from '@/domain/web-api/use-cases/get-manager-profile-use-case'
-import { GetAllCompanyEmployeesUseCase } from '@/domain/web-api/use-cases/get-all-company-employees-use-case'
 import { DepartmentServiceFactory } from './department-service-factory'
 
 export class UseCaseFactory {
@@ -169,20 +167,6 @@ export class UseCaseFactory {
 
 	getGetDepartmentUseCase(): GetDepartmentUseCase {
 		return new GetDepartmentUseCase(
-			this.repositoryFactory.getDepartmentRepository()
-		)
-	}
-
-	getGetManagerProfileUseCase(): GetManagerProfileUseCase {
-		return new GetManagerProfileUseCase(
-			this.repositoryFactory.getManagerRepository()
-		)
-	}
-
-	getGetAllCompanyEmployeesUseCase(): GetAllCompanyEmployeesUseCase {
-		return new GetAllCompanyEmployeesUseCase(
-			this.repositoryFactory.getEmployeeRepository(),
-			this.repositoryFactory.getConversationRepository(),
 			this.repositoryFactory.getDepartmentRepository()
 		)
 	}

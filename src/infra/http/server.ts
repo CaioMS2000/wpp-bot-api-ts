@@ -22,7 +22,7 @@ import { authenticateWithPassword } from './routes/api/auth/authenticate-with-pa
 import { AuthService } from '@/domain/web-api/services/auth-service'
 import { AuthServiceFactory } from '@/domain/web-api/factories/auth-service-factory'
 import { register } from './routes/api/auth/register-manager'
-import { ApiServiceFactory } from '@/domain/web-api/factories/api-service-factory'
+import { UseCaseFactory as WebAPIUseCaseFactory } from '@/domain/web-api/factories/use-case-factory'
 import { logout } from './routes/api/auth/logout'
 import { getAllChats } from './routes/api/company/get-chats'
 import { getCompanyInfo } from './routes/api/company/get-company-info'
@@ -62,6 +62,10 @@ async function main() {
 	const departmentQueueServiceFactory = new DepartmentQueueServiceFactory(
 		repositoryFactory
 	)
+	const webAPIUseCaseFactory = new WebAPIUseCaseFactory(
+		repositoryFactory,
+		departmentServiceFactory
+	)
 	const useCaseFactory = new UseCaseFactory(
 		repositoryFactory,
 		stateFactory,
@@ -81,11 +85,6 @@ async function main() {
 		departmentServiceFactory
 	)
 	const authServiceFactory = new AuthServiceFactory(repositoryFactory)
-	const apiServiceFactory = new ApiServiceFactory(
-		repositoryFactory,
-		useCaseFactory,
-		departmentServiceFactory
-	)
 
 	repositoryFactory.setPrismaStateDataParser(prismaStateDataParser)
 	stateFactory.setUseCaseFactory(useCaseFactory)
@@ -115,7 +114,6 @@ async function main() {
 
 	const whatsAppMessageService = whatsAppMessageServiceFactory.getService()
 	const authService = authServiceFactory.getService()
-	const apiService = apiServiceFactory.getService()
 
 	// Decorate Fastify instance with services
 	app.decorateRequest('authService', {
@@ -133,16 +131,39 @@ async function main() {
 	app.register(register, { authService })
 	app.register(logout)
 
-	app.register(createCompany, { apiService })
-	app.register(getAllChats, { apiService })
-	app.register(getCompanyInfo, { apiService })
-	app.register(getEmployee, { apiService })
-	app.register(getAllEmployees, { apiService })
-	app.register(getDepartment, { apiService })
-	app.register(getAllDepartments, { apiService })
-	app.register(getFAQs, { apiService })
-	app.register(updateCompany, { apiService })
-	app.register(getRecentChats, { apiService })
+	app.register(createCompany, {
+		createCompanyUseCase: webAPIUseCaseFactory.getCreateCompanyUseCase(),
+	})
+	app.register(getAllChats, {
+		getChatsUseCase: webAPIUseCaseFactory.getGetChatsUseCase(),
+	})
+	app.register(getCompanyInfo, {
+		getCompanyInfoUseCase: webAPIUseCaseFactory.getGetCompanyInfoUseCase(),
+	})
+	app.register(getEmployee, {
+		getEmployeeByPhoneUseCase:
+			webAPIUseCaseFactory.getGetEmployeeByPhoneUseCase(),
+	})
+	app.register(getAllEmployees, {
+		getAllCompanyEmployeesUseCase:
+			webAPIUseCaseFactory.getGetAllCompanyEmployeesUseCase(),
+	})
+	app.register(getDepartment, {
+		getDepartmentUseCase: webAPIUseCaseFactory.getGetDepartmentUseCase(),
+	})
+	app.register(getAllDepartments, {
+		getCompanyDepartmentsUseCase:
+			webAPIUseCaseFactory.getGetCompanyDepartmentsUseCase(),
+	})
+	app.register(getFAQs, {
+		getFAQsUseCase: webAPIUseCaseFactory.getGetFAQsUseCase(),
+	})
+	app.register(updateCompany, {
+		updateCompanyUseCase: webAPIUseCaseFactory.getUpdateCompanyUseCase(),
+	})
+	app.register(getRecentChats, {
+		getRecentChatsUseCase: webAPIUseCaseFactory.getGetRecentChatsUseCase(),
+	})
 
 	logger.debug('Routes registered')
 

@@ -1,4 +1,3 @@
-import { Company } from '@/domain/entities/company'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
 import { DepartmentRepository } from '@/domain/repositories/department-repository'
 import { EmployeeRepository } from '@/domain/repositories/employee-repository'
