@@ -1,39 +1,25 @@
 import path from 'node:path'
 import { logger } from '@/core/logger'
-import { ProcessClientMessageServiceFactory } from '@/domain/whats-app/application/factory/process-client-message-service-factory'
-import { ProcessEmployeeMessageServiceFactory } from '@/domain/whats-app/application/factory/process-employee-message-service-factory'
-import { UseCaseFactory } from '@/domain/whats-app/application/factory/use-case-factory'
 import { prisma } from '@/lib/prisma'
 import { emptyJsonFile, findProjectRoot } from '@/utils/files'
-import { WhatsAppMessageServiceFactory } from '../../domain/whats-app/application/factory/whats-app-message-service-factory'
-import { PrismaRepositoryFactory } from '../factory/prisma/prisma-repository-factory'
-import { app } from './app'
-import { whatsAppWebhook } from './routes/message/whats-app-webhook'
-import { webhook } from './routes/whats-app-webhook/token'
-import { StateFactory } from '@/domain/whats-app/application/factory/state-factory'
-import { WhatsAppOutputPort } from './output/whats-app-output-port'
-import { AIServiceFactory } from '@/domain/whats-app/application/factory/ai-service-factory'
-import { DepartmentQueueServiceFactory } from '@/domain/whats-app/application/factory/department-queue-service-factory'
 import { clearDatabase } from 'ROOT/clear-database'
-import { StateServiceFactory } from '@/domain/whats-app/application/factory/state-service-factory'
-import { PrismaStateDataParser } from '../database/state-data-parser/prisma/prisma-state-data-parser'
-import { createCompany } from './routes/api/company/create-company'
+import { app } from './app'
+import { DependenciesContainer } from './dependencies-container'
 import { authenticateWithPassword } from './routes/api/auth/authenticate-with-password'
-import { AuthService } from '@/domain/web-api/services/auth-service'
-import { AuthServiceFactory } from '@/domain/web-api/factories/auth-service-factory'
-import { register } from './routes/api/auth/register-manager'
-import { UseCaseFactory as WebAPIUseCaseFactory } from '@/domain/web-api/factories/use-case-factory'
 import { logout } from './routes/api/auth/logout'
+import { register } from './routes/api/auth/register-manager'
+import { createCompany } from './routes/api/company/create-company'
 import { getAllChats } from './routes/api/company/get-chats'
 import { getCompanyInfo } from './routes/api/company/get-company-info'
-import { getEmployee } from './routes/api/employee/get-employee'
-import { getAllEmployees } from './routes/api/employee/get-all-employees'
-import { getDepartment } from './routes/api/department/get-department'
-import { getAllDepartments } from './routes/api/department/get-all-departments'
 import { getFAQs } from './routes/api/company/get-faqs'
-import { updateCompany } from './routes/api/company/update-company'
 import { getRecentChats } from './routes/api/company/get-recent-chats'
-import { DepartmentServiceFactory } from '@/domain/whats-app/application/factory/department-service-factory'
+import { updateCompany } from './routes/api/company/update-company'
+import { getAllDepartments } from './routes/api/department/get-all-departments'
+import { getDepartment } from './routes/api/department/get-department'
+import { getAllEmployees } from './routes/api/employee/get-all-employees'
+import { getEmployee } from './routes/api/employee/get-employee'
+import { whatsAppWebhook } from './routes/message/whats-app-webhook'
+import { webhook } from './routes/whats-app-webhook/token'
 // console.clear()
 logger.info('Starting server setup')
 
@@ -51,118 +37,63 @@ async function softDBClear() {
 }
 async function main() {
 	// await softDBClear()
-	const outputPort = new WhatsAppOutputPort()
-	const aiServiceFactory = new AIServiceFactory()
-	const stateFactory = new StateFactory(outputPort, aiServiceFactory)
-	const repositoryFactory = new PrismaRepositoryFactory()
-	const departmentServiceFactory = new DepartmentServiceFactory(
-		repositoryFactory
-	)
-	const departmentService = departmentServiceFactory.getService()
-	const departmentQueueServiceFactory = new DepartmentQueueServiceFactory(
-		repositoryFactory
-	)
-	const webAPIUseCaseFactory = new WebAPIUseCaseFactory(
-		repositoryFactory,
-		departmentServiceFactory
-	)
-	const useCaseFactory = new UseCaseFactory(
-		repositoryFactory,
-		stateFactory,
-		departmentQueueServiceFactory,
-		departmentServiceFactory
-	)
-	const prismaStateDataParser = new PrismaStateDataParser(
-		stateFactory,
-		repositoryFactory,
-		useCaseFactory,
-		departmentService
-	)
-	const stateServiceFactory = new StateServiceFactory(
-		repositoryFactory,
-		useCaseFactory,
-		stateFactory,
-		departmentServiceFactory
-	)
-	const authServiceFactory = new AuthServiceFactory(repositoryFactory)
+	const container = new DependenciesContainer()
 
-	repositoryFactory.setPrismaStateDataParser(prismaStateDataParser)
-	stateFactory.setUseCaseFactory(useCaseFactory)
-	aiServiceFactory.setRepositoryFactory(repositoryFactory)
-	aiServiceFactory.setUseCaseFactory(useCaseFactory)
-
-	const processClientMessageServiceFactory =
-		new ProcessClientMessageServiceFactory(
-			repositoryFactory,
-			useCaseFactory,
-			stateServiceFactory
-		)
-	const processEmployeeMessageServiceFactory =
-		new ProcessEmployeeMessageServiceFactory(
-			repositoryFactory,
-			useCaseFactory,
-			stateServiceFactory
-		)
-	const whatsAppMessageServiceFactory = new WhatsAppMessageServiceFactory(
-		repositoryFactory,
-		useCaseFactory,
-		processClientMessageServiceFactory,
-		processEmployeeMessageServiceFactory
-	)
-
-	logger.debug('Creating services')
-
-	const whatsAppMessageService = whatsAppMessageServiceFactory.getService()
-	const authService = authServiceFactory.getService()
-
-	// Decorate Fastify instance with services
-	app.decorateRequest('authService', {
+	// Configuração do servidor
+	app.decorateRequest('container', {
 		getter() {
-			return authService
+			return container
 		},
 	})
 
-	// WhatsApp
+	// Registrar rotas
 	app.register(webhook)
-	app.register(whatsAppWebhook, { whatsAppMessageService })
+	app.register(whatsAppWebhook, {
+		whatsAppMessageService: container.whatsAppMessageService,
+	})
 
 	// API
-	app.register(authenticateWithPassword, { authService })
-	app.register(register, { authService })
+	app.register(authenticateWithPassword, { authService: container.authService })
+	app.register(register, { authService: container.authService })
 	app.register(logout)
 
 	app.register(createCompany, {
-		createCompanyUseCase: webAPIUseCaseFactory.getCreateCompanyUseCase(),
+		createCompanyUseCase:
+			container.webAPIUseCaseFactory.getCreateCompanyUseCase(),
 	})
 	app.register(getAllChats, {
-		getChatsUseCase: webAPIUseCaseFactory.getGetChatsUseCase(),
+		getChatsUseCase: container.webAPIUseCaseFactory.getGetChatsUseCase(),
 	})
 	app.register(getCompanyInfo, {
-		getCompanyInfoUseCase: webAPIUseCaseFactory.getGetCompanyInfoUseCase(),
+		getCompanyInfoUseCase:
+			container.webAPIUseCaseFactory.getGetCompanyInfoUseCase(),
 	})
 	app.register(getEmployee, {
 		getEmployeeByPhoneUseCase:
-			webAPIUseCaseFactory.getGetEmployeeByPhoneUseCase(),
+			container.webAPIUseCaseFactory.getGetEmployeeByPhoneUseCase(),
 	})
 	app.register(getAllEmployees, {
 		getAllCompanyEmployeesUseCase:
-			webAPIUseCaseFactory.getGetAllCompanyEmployeesUseCase(),
+			container.webAPIUseCaseFactory.getGetAllCompanyEmployeesUseCase(),
 	})
 	app.register(getDepartment, {
-		getDepartmentUseCase: webAPIUseCaseFactory.getGetDepartmentUseCase(),
+		getDepartmentUseCase:
+			container.webAPIUseCaseFactory.getGetDepartmentUseCase(),
 	})
 	app.register(getAllDepartments, {
 		getCompanyDepartmentsUseCase:
-			webAPIUseCaseFactory.getGetCompanyDepartmentsUseCase(),
+			container.webAPIUseCaseFactory.getGetCompanyDepartmentsUseCase(),
 	})
 	app.register(getFAQs, {
-		getFAQsUseCase: webAPIUseCaseFactory.getGetFAQsUseCase(),
+		getFAQsUseCase: container.webAPIUseCaseFactory.getGetFAQsUseCase(),
 	})
 	app.register(updateCompany, {
-		updateCompanyUseCase: webAPIUseCaseFactory.getUpdateCompanyUseCase(),
+		updateCompanyUseCase:
+			container.webAPIUseCaseFactory.getUpdateCompanyUseCase(),
 	})
 	app.register(getRecentChats, {
-		getRecentChatsUseCase: webAPIUseCaseFactory.getGetRecentChatsUseCase(),
+		getRecentChatsUseCase:
+			container.webAPIUseCaseFactory.getGetRecentChatsUseCase(),
 	})
 
 	logger.debug('Routes registered')

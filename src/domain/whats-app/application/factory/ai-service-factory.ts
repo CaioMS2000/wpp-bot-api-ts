@@ -3,26 +3,26 @@ import { AIService } from '../services/ai-service'
 import { RepositoryFactory } from './repository-factory'
 import { UseCaseFactory } from './use-case-factory'
 
-export class AIServiceFactory {
-	private repositoryFactory: RepositoryFactory
-	private useCaseFactory: UseCaseFactory
-	constructor() {
-		this.repositoryFactory = null as unknown as RepositoryFactory
-		this.useCaseFactory = null as unknown as UseCaseFactory
-	}
+export interface AIServiceFactoryDependencies {
+	repositoryFactory: RepositoryFactory
+	useCaseFactory: UseCaseFactory
+}
 
-	setRepositoryFactory(repositoryFactory: RepositoryFactory) {
-		this.repositoryFactory = repositoryFactory
-	}
-	setUseCaseFactory(useCaseFactory: UseCaseFactory) {
-		this.useCaseFactory = useCaseFactory
+export class AIServiceFactory {
+	private _dependencies: AIServiceFactoryDependencies
+	constructor(dependencies: AIServiceFactoryDependencies) {
+		this._dependencies = dependencies
 	}
 
 	createService(): AIService {
 		return new AIResponseService(
-			this.repositoryFactory.getConversationRepository(),
-			this.useCaseFactory.getGetClientUseCase(),
-			this.useCaseFactory.getGetEmployeeUseCase()
+			this.dependencies.repositoryFactory.getConversationRepository(),
+			this.dependencies.useCaseFactory.getGetClientUseCase(),
+			this.dependencies.useCaseFactory.getGetEmployeeUseCase()
 		)
+	}
+
+	get dependencies() {
+		return this._dependencies
 	}
 }

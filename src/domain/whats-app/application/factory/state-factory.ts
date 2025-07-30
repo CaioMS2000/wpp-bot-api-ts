@@ -13,73 +13,76 @@ import { AIServiceFactory } from './ai-service-factory'
 import { RepositoryFactory } from './repository-factory'
 import { UseCaseFactory } from './use-case-factory'
 
+export interface StateFactoryDependencies {
+	outputPort: OutputPort
+	aiServiceFactory: AIServiceFactory
+	useCaseFactory?: UseCaseFactory
+}
+
 export class StateFactory {
-	private repositoryFactory: RepositoryFactory =
-		null as unknown as RepositoryFactory
-	private useCaseFactory: UseCaseFactory = null as unknown as UseCaseFactory
-	constructor(
-		private outputPort: OutputPort,
-		private aiServiceFactory: AIServiceFactory
-	) {}
+	constructor(private dependencies: StateFactoryDependencies) {}
 
 	setUseCaseFactory(useCaseFactory: UseCaseFactory) {
-		this.useCaseFactory = useCaseFactory
+		this.dependencies.useCaseFactory = useCaseFactory
 	}
-
-	setRepositoryFactory(repositoryFactory: RepositoryFactory) {
-		this.repositoryFactory = repositoryFactory
-	}
-
 	create(stateDataType: StateDataType) {
+		if (!this.dependencies.useCaseFactory) {
+			throw new Error('UseCaseFactory not initialized')
+		}
+
 		const { stateName, params } = stateDataType
 		switch (stateName) {
 			case StateName.InitialMenuState: {
 				// const {  } = params
 				const { user, company, conversation } = params
 				return new InitialMenuState(
-					this.outputPort,
+					this.dependencies.outputPort,
 					user,
 					company,
 					conversation,
-					this.useCaseFactory.getStartNextClientConversationUseCase(),
-					this.useCaseFactory.getGetDepartmentUseCase()
+					this.dependencies.useCaseFactory.getStartNextClientConversationUseCase(),
+					this.dependencies.useCaseFactory.getGetDepartmentUseCase()
 				)
 			}
 			case StateName.FAQCategoriesState: {
 				const { user, categories } = params
-				return new FAQCategoriesState(this.outputPort, user, categories)
+				return new FAQCategoriesState(
+					this.dependencies.outputPort,
+					user,
+					categories
+				)
 			}
 			case StateName.FAQItemsState: {
 				const { user, category } = params
 				return new FAQItemsState(
-					this.outputPort,
+					this.dependencies.outputPort,
 					user,
 					category,
-					this.useCaseFactory.getGetFAQItemsUseCase()
+					this.dependencies.useCaseFactory.getGetFAQItemsUseCase()
 				)
 			}
 			case StateName.AIChatState: {
 				const { user, conversation } = params
 				return new AIChatState(
-					this.outputPort,
+					this.dependencies.outputPort,
 					conversation,
 					user,
-					this.aiServiceFactory.createService()
+					this.dependencies.aiServiceFactory.createService()
 				)
 			}
 			case StateName.DepartmentSelectionState: {
 				const { activeDepartments, client } = params
 				return new DepartmentSelectionState(
-					this.outputPort,
+					this.dependencies.outputPort,
 					client,
 					activeDepartments,
-					this.useCaseFactory.getInsertClientIntoDepartmentQueue()
+					this.dependencies.useCaseFactory.getInsertClientIntoDepartmentQueue()
 				)
 			}
 			case StateName.DepartmentChatState: {
 				const { client, department, employee } = params
 				return new DepartmentChatState(
-					this.outputPort,
+					this.dependencies.outputPort,
 					employee,
 					client,
 					department
@@ -88,31 +91,31 @@ export class StateFactory {
 			case StateName.DepartmentQueueState: {
 				const { client, department } = params
 				return new DepartmentQueueState(
-					this.outputPort,
+					this.dependencies.outputPort,
 					client,
 					department,
-					this.useCaseFactory.getRemoveClientFromDepartmentQueue()
+					this.dependencies.useCaseFactory.getRemoveClientFromDepartmentQueue()
 				)
 			}
 			case StateName.ChatWithClientState: {
 				const { client, company, department, employee } = params
 				return new ChatWithClientState(
-					this.outputPort,
+					this.dependencies.outputPort,
 					employee,
 					department,
 					client,
 					company,
-					this.useCaseFactory.getFinishClientAndEmployeeChatUseCase(),
-					this.useCaseFactory.getRemoveClientFromDepartmentQueue()
+					this.dependencies.useCaseFactory.getFinishClientAndEmployeeChatUseCase(),
+					this.dependencies.useCaseFactory.getRemoveClientFromDepartmentQueue()
 				)
 			}
 			case StateName.ListDepartmentQueueState: {
 				const { department, employee } = params
 				return new ListDepartmentQueueState(
-					this.outputPort,
+					this.dependencies.outputPort,
 					employee,
 					department,
-					this.useCaseFactory.getGetClientUseCase()
+					this.dependencies.useCaseFactory.getGetClientUseCase()
 				)
 			}
 		}

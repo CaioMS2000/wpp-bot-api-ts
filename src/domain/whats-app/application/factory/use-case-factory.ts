@@ -25,63 +25,65 @@ import { GetFAQItemsUseCase } from '../use-cases/get-faq-items-use-case'
 import { GetDepartmentUseCase } from '../use-cases/get-department-use-case'
 import { DepartmentServiceFactory } from './department-service-factory'
 
+export interface UseCaseFactoryDependencies {
+	repositoryFactory: RepositoryFactory
+	stateFactory: StateFactory
+	departmentQueueServiceFactory: DepartmentQueueServiceFactory
+	departmentServiceFactory: DepartmentServiceFactory
+}
+
 export class UseCaseFactory {
-	constructor(
-		private repositoryFactory: RepositoryFactory,
-		private stateFactory: StateFactory,
-		private departmentQueueServiceFactory: DepartmentQueueServiceFactory,
-		private departmentServiceFactory: DepartmentServiceFactory
-	) {}
+	constructor(private dependencies: UseCaseFactoryDependencies) {}
 
 	getListActiveDepartmentsUseCase(): ListActiveDepartmentsUseCase {
 		return new ListActiveDepartmentsUseCase(
-			this.repositoryFactory.getDepartmentRepository()
+			this.dependencies.repositoryFactory.getDepartmentRepository()
 		)
 	}
 
 	getListFAQCategoriesUseCase(): ListFAQCategoriesUseCase {
 		return new ListFAQCategoriesUseCase(
-			this.repositoryFactory.getFAQRepository()
+			this.dependencies.repositoryFactory.getFAQRepository()
 		)
 	}
 
 	getListFAQCategorieItemsUseCase(): ListFAQCategorieItemsUseCase {
 		return new ListFAQCategorieItemsUseCase(
-			this.repositoryFactory.getFAQRepository()
+			this.dependencies.repositoryFactory.getFAQRepository()
 		)
 	}
 
 	getFindOrCreateClientUseCase(): FindOrCreateClientUseCase {
 		return new FindOrCreateClientUseCase(
-			this.repositoryFactory.getClientRepository()
+			this.dependencies.repositoryFactory.getClientRepository()
 		)
 	}
 
 	getFindEmployeeByPhoneUseCase(): FindEmployeeByPhoneUseCase {
 		return new FindEmployeeByPhoneUseCase(
-			this.repositoryFactory.getEmployeeRepository()
+			this.dependencies.repositoryFactory.getEmployeeRepository()
 		)
 	}
 
 	getFindConversationByEmployeePhoneUseCase(): FindConversationByEmployeePhoneUseCase {
 		return new FindConversationByEmployeePhoneUseCase(
-			this.repositoryFactory.getConversationRepository()
+			this.dependencies.repositoryFactory.getConversationRepository()
 		)
 	}
 
 	getCreateConversationUseCase(): CreateConversationUseCase {
 		return new CreateConversationUseCase(
-			this.repositoryFactory.getConversationRepository(),
-			this.repositoryFactory.getClientRepository(),
-			this.repositoryFactory.getEmployeeRepository(),
-			this.repositoryFactory.getCompanyRepository(),
-			this.stateFactory
+			this.dependencies.repositoryFactory.getConversationRepository(),
+			this.dependencies.repositoryFactory.getClientRepository(),
+			this.dependencies.repositoryFactory.getEmployeeRepository(),
+			this.dependencies.repositoryFactory.getCompanyRepository(),
+			this.dependencies.stateFactory
 		)
 	}
 
 	getResolveSenderContextUseCase(): ResolveSenderContextUseCase {
 		return new ResolveSenderContextUseCase(
-			this.repositoryFactory.getCompanyRepository(),
+			this.dependencies.repositoryFactory.getCompanyRepository(),
 			this.getFindEmployeeByPhoneUseCase(),
 			this.getFindOrCreateClientUseCase()
 		)
@@ -89,85 +91,93 @@ export class UseCaseFactory {
 
 	getTransferEmployeeToClientConversationUseCase(): TransferEmployeeToClientConversationUseCase {
 		return new TransferEmployeeToClientConversationUseCase(
-			this.repositoryFactory.getConversationRepository(),
-			this.stateFactory,
+			this.dependencies.repositoryFactory.getConversationRepository(),
+			this.dependencies.stateFactory,
 			this.getGetClientUseCase()
 		)
 	}
 
 	getFindConversationByClientPhoneUseCase(): FindConversationByClientPhoneUseCase {
 		return new FindConversationByClientPhoneUseCase(
-			this.repositoryFactory.getConversationRepository()
+			this.dependencies.repositoryFactory.getConversationRepository()
 		)
 	}
 
 	getInsertClientIntoDepartmentQueue(): InsertClientIntoDepartmentQueue {
 		return new InsertClientIntoDepartmentQueue(
-			this.repositoryFactory.getDepartmentRepository()
+			this.dependencies.repositoryFactory.getDepartmentRepository()
 		)
 	}
 
 	getRemoveClientFromDepartmentQueue(): RemoveClientFromDepartmentQueue {
 		return new RemoveClientFromDepartmentQueue(
-			this.repositoryFactory.getDepartmentRepository()
+			this.dependencies.repositoryFactory.getDepartmentRepository()
 		)
 	}
 
 	getFinishClientAndEmployeeChatUseCase(): FinishClientAndEmployeeChatUseCase {
 		return new FinishClientAndEmployeeChatUseCase(
-			this.repositoryFactory.getConversationRepository(),
-			this.stateFactory
+			this.dependencies.repositoryFactory.getConversationRepository(),
+			this.dependencies.stateFactory
 		)
 	}
 
 	getStartNextClientConversationUseCase(): StartNextClientConversationUseCase {
 		return new StartNextClientConversationUseCase(
-			this.stateFactory,
-			this.departmentQueueServiceFactory.getService(),
-			this.repositoryFactory.getConversationRepository(),
-			this.repositoryFactory.getDepartmentRepository(),
+			this.dependencies.stateFactory,
+			this.dependencies.departmentQueueServiceFactory.getService(),
+			this.dependencies.repositoryFactory.getConversationRepository(),
+			this.dependencies.repositoryFactory.getDepartmentRepository(),
 			this.getTransferEmployeeToClientConversationUseCase(),
-			this.departmentServiceFactory.getService()
+			this.dependencies.departmentServiceFactory.getService()
 		)
 	}
 
 	getGetCompanyUseCase(): GetCompanyUseCase {
-		return new GetCompanyUseCase(this.repositoryFactory.getCompanyRepository())
+		return new GetCompanyUseCase(
+			this.dependencies.repositoryFactory.getCompanyRepository()
+		)
 	}
 
 	getGetEmployeeUseCase(): GetEmployeeUseCase {
 		return new GetEmployeeUseCase(
-			this.repositoryFactory.getEmployeeRepository()
+			this.dependencies.repositoryFactory.getEmployeeRepository()
 		)
 	}
 
 	getGetClientUseCase(): GetClientUseCase {
-		return new GetClientUseCase(this.repositoryFactory.getClientRepository())
+		return new GetClientUseCase(
+			this.dependencies.repositoryFactory.getClientRepository()
+		)
 	}
 
 	getGetClientByPhoneUseCase(): GetClientByPhoneUseCase {
 		return new GetClientByPhoneUseCase(
-			this.repositoryFactory.getClientRepository()
+			this.dependencies.repositoryFactory.getClientRepository()
 		)
 	}
 
 	getGetDepartmentByNameUseCase(): GetDepartmentByNameUseCase {
 		return new GetDepartmentByNameUseCase(
-			this.repositoryFactory.getDepartmentRepository()
+			this.dependencies.repositoryFactory.getDepartmentRepository()
 		)
 	}
 
 	getGetFAQCategoryUseCase(): GetFAQCategoryUseCase {
-		return new GetFAQCategoryUseCase(this.repositoryFactory.getFAQRepository())
+		return new GetFAQCategoryUseCase(
+			this.dependencies.repositoryFactory.getFAQRepository()
+		)
 	}
 
 	getGetFAQItemsUseCase(): GetFAQItemsUseCase {
-		return new GetFAQItemsUseCase(this.repositoryFactory.getFAQRepository())
+		return new GetFAQItemsUseCase(
+			this.dependencies.repositoryFactory.getFAQRepository()
+		)
 	}
 
 	getGetDepartmentUseCase(): GetDepartmentUseCase {
 		return new GetDepartmentUseCase(
-			this.repositoryFactory.getDepartmentRepository()
+			this.dependencies.repositoryFactory.getDepartmentRepository()
 		)
 	}
 }
