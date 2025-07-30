@@ -1,12 +1,12 @@
-import { APIService } from '@/domain/web-api/services/api-service'
+import { createCompanySchema } from '@/domain/web-api/@types/schemas'
+import { CreateCompanyUseCase } from '@/domain/web-api/use-cases/create-company-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
-import { createCompanySchema } from '@/domain/web-api/services/schemas'
 
 type Resources = {
-	apiService: APIService
+	createCompanyUseCase: CreateCompanyUseCase
 }
 
 export async function createCompany(
@@ -24,15 +24,10 @@ export async function createCompany(
 					summary: 'Create a new company',
 					security: [{ bearerAuth: [] }],
 					body: createCompanySchema,
-					// response: {
-					//   201: z.object({
-					//     companyId: z.string().uuid(),
-					//   }),
-					// },
 				},
 			},
 			async (request, reply) => {
-				const { apiService } = resources
+				const { createCompanyUseCase } = resources
 				const userId = await request.getCurrentUserID()
 
 				const {
@@ -45,7 +40,7 @@ export async function createCompany(
 					businessHours,
 				} = request.body
 
-				await apiService.createCompany({
+				await createCompanyUseCase.execute({
 					name,
 					phone,
 					cnpj,

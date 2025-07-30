@@ -1,12 +1,12 @@
-import { APIService } from '@/domain/web-api/services/api-service'
+import { createCompanySchema } from '@/domain/web-api/@types/schemas'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
-import { createCompanySchema } from '@/domain/web-api/services/schemas'
+import { UpdateCompanyUseCase } from '@/domain/web-api/use-cases/update-company-use-case'
 
 type Resources = {
-	apiService: APIService
+	updateCompanyUseCase: UpdateCompanyUseCase
 }
 
 export async function updateCompany(
@@ -30,9 +30,12 @@ export async function updateCompany(
 				},
 			},
 			async (request, reply) => {
-				const { apiService } = resources
+				const { updateCompanyUseCase } = resources
 				const { company } = await request.getUserMembership(request.params.cnpj)
-				const info = await apiService.updateCompany(company.cnpj, request.body)
+				const info = await updateCompanyUseCase.execute(
+					company.cnpj,
+					request.body
+				)
 
 				return reply.status(200).send({
 					company: info,

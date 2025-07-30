@@ -1,5 +1,5 @@
+import { authenticateBodySchema } from '@/domain/web-api/@types/schemas'
 import { AuthService } from '@/domain/web-api/services/auth-service'
-import { authenticateBodySchema } from '@/domain/web-api/services/schemas'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'

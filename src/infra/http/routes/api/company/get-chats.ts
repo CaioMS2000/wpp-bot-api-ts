@@ -1,11 +1,11 @@
-import { APIService } from '@/domain/web-api/services/api-service'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
+import { GetChatsUseCase } from '@/domain/web-api/use-cases/get-chats-use-case'
 
 type Resources = {
-	apiService: APIService
+	getChatsUseCase: GetChatsUseCase
 }
 
 export async function getAllChats(app: FastifyInstance, resources: Resources) {
@@ -25,9 +25,9 @@ export async function getAllChats(app: FastifyInstance, resources: Resources) {
 				},
 			},
 			async (request, reply) => {
-				const { apiService } = resources
+				const { getChatsUseCase } = resources
 				const { company } = await request.getUserMembership(request.params.cnpj)
-				const chats = await apiService.getChats(company.id)
+				const chats = await getChatsUseCase.execute(company.id)
 
 				return reply.status(201).send({
 					chats,

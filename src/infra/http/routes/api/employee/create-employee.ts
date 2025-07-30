@@ -1,12 +1,12 @@
-import { type APIService } from '@/domain/web-api/services/api-service'
+import { createEmployeeSchema } from '@/domain/web-api/@types/schemas'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
-import { createEmployeeSchema } from '@/domain/web-api/services/schemas'
+import { CreateEmployeeUseCase } from '@/domain/web-api/use-cases/create-employee-use-case'
 
 type Resources = {
-	apiService: APIService
+	createEmployeeUseCase: CreateEmployeeUseCase
 }
 
 export async function createEmployee(
@@ -30,11 +30,11 @@ export async function createEmployee(
 				},
 			},
 			async (request, reply) => {
-				const { apiService } = resources
+				const { createEmployeeUseCase } = resources
 				const { manager, company } = await request.getUserMembership(
 					request.params.cnpj
 				)
-				const employee = await apiService.createEmployee(request.body)
+				const employee = await createEmployeeUseCase.execute(request.body)
 
 				return reply.status(201).send()
 			}
