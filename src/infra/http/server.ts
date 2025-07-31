@@ -40,9 +40,14 @@ async function main() {
 	const container = new DependenciesContainer()
 
 	// Configuração do servidor
-	app.decorateRequest('container', {
+	// app.decorateRequest('container', {
+	// 	getter() {
+	// 		return container
+	// 	},
+	// })
+	app.decorateRequest('authService', {
 		getter() {
-			return container
+			return container.authService
 		},
 	})
 
