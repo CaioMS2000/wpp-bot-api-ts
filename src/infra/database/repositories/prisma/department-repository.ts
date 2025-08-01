@@ -246,4 +246,29 @@ export class PrismaDepartmentRepository extends DepartmentRepository {
 
 		return queueItem.clientId
 	}
+
+	async findByEmployee(
+		companyId: string,
+		employeeId: string
+	): Promise<Nullable<Department>> {
+		const employee = await prisma.employee.findFirstOrThrow({
+			where: { id: employeeId, companyId },
+		})
+
+		if (!employee.departmentId) {
+			return null
+		}
+
+		const employeeDepartment = await prisma.department.findFirst({
+			where: { id: employee.departmentId, companyId },
+		})
+
+		if (!employeeDepartment) {
+			throw new Error(
+				`Employee references department with id ${employeeId}, but it wasn't found.`
+			)
+		}
+
+		return DepartmentMapper.toEntity(employeeDepartment)
+	}
 }

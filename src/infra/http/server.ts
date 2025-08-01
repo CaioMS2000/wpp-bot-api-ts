@@ -9,10 +9,10 @@ import { authenticateWithPassword } from './routes/api/auth/authenticate-with-pa
 import { logout } from './routes/api/auth/logout'
 import { register } from './routes/api/auth/register-manager'
 import { createCompany } from './routes/api/company/create-company'
-import { getAllChats } from './routes/api/company/get-chats'
+import { getAllChats } from './routes/api/chat/get-chats'
 import { getCompanyInfo } from './routes/api/company/get-company-info'
-import { getFAQs } from './routes/api/company/get-faqs'
-import { getRecentChats } from './routes/api/company/get-recent-chats'
+import { getFAQs } from './routes/api/faq/get-faqs'
+import { getRecentChats } from './routes/api/chat/get-recent-chats'
 import { updateCompany } from './routes/api/company/update-company'
 import { getAllDepartments } from './routes/api/department/get-all-departments'
 import { getDepartment } from './routes/api/department/get-department'
@@ -20,6 +20,9 @@ import { getAllEmployees } from './routes/api/employee/get-all-employees'
 import { getEmployee } from './routes/api/employee/get-employee'
 import { whatsAppWebhook } from './routes/message/whats-app-webhook'
 import { webhook } from './routes/whats-app-webhook/token'
+import { getBaseMetrics } from './routes/api/metricts/base-metrics'
+import { getDepartmentsMetrics } from './routes/api/metricts/departments-metricts'
+import { createDepartment } from './routes/api/department/create-department'
 // console.clear()
 logger.info('Starting server setup')
 
@@ -99,6 +102,18 @@ async function main() {
 	app.register(getRecentChats, {
 		getRecentChatsUseCase:
 			container.webAPIUseCaseFactory.getGetRecentChatsUseCase(),
+	})
+	app.register(getBaseMetrics, {
+		getBaseMetricsUseCase:
+			container.webAPIUseCaseFactory.getGetBaseMetricsUseCase(),
+	})
+	app.register(getDepartmentsMetrics, {
+		getDepartmentsMetricsUseCase:
+			container.webAPIUseCaseFactory.getGetDepartmentsMetricsUseCase(),
+	})
+	app.register(createDepartment, {
+		createDepartmentUseCase:
+			container.webAPIUseCaseFactory.getCreateDepartmentUseCase(),
 	})
 
 	logger.debug('Routes registered')

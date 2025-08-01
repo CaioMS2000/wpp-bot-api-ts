@@ -1,6 +1,5 @@
 import { AggregateRoot } from '@/core/entities/aggregate-root'
 import type { Client } from './client'
-import { Employee } from './employee'
 
 export type DepartmentProps = {
 	name: string

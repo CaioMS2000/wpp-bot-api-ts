@@ -20,21 +20,15 @@ export class PrismaManagerRepository extends ManagerRepository {
 			where: { id },
 		})
 
-		logger.debug('find:raw\n', raw)
-
 		if (!raw) return null
 
 		const entity = ManagerMapper.toEntity(raw)
-
-		logger.debug('find:entity\n', entity)
 
 		return entity
 	}
 
 	async findOrThrow(id: string): Promise<Manager> {
 		const manager = await this.find(id)
-
-		logger.debug('findOrThrow\n', manager)
 
 		if (!manager) throw new Error('Manager not found')
 

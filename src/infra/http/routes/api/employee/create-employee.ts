@@ -31,12 +31,13 @@ export async function createEmployee(
 			},
 			async (request, reply) => {
 				const { createEmployeeUseCase } = resources
-				const { manager, company } = await request.getUserMembership(
-					request.params.cnpj
-				)
-				const employee = await createEmployeeUseCase.execute(request.body)
+				const { company } = await request.getUserMembership(request.params.cnpj)
+				const employee = await createEmployeeUseCase.execute({
+					...request.body,
+					companyId: company.id,
+				})
 
-				return reply.status(201).send()
+				return reply.status(201).send({ employee })
 			}
 		)
 }

@@ -32,4 +32,5 @@ export abstract class ConversationRepository {
 		companyId: string,
 		limit: number
 	): Promise<Conversation[]>
+	abstract findByMonth(companyId: string, date: Date): Promise<Conversation[]>
 }

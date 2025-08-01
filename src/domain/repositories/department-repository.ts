@@ -10,6 +10,10 @@ export abstract class DepartmentRepository {
 		companyId: string,
 		name: string
 	): Promise<Nullable<Department>>
+	abstract findByEmployee(
+		companyId: string,
+		employeeId: string
+	): Promise<Nullable<Department>>
 	abstract findByNameOrThrow(
 		companyId: string,
 		name: string

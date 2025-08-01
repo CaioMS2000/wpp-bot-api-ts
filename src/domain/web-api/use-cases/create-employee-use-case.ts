@@ -5,7 +5,7 @@ import { CreateEmployeeType } from '../@types'
 export class CreateEmployeeUseCase {
 	constructor(private readonly employeeRepository: EmployeeRepository) {}
 
-	async execute(data: CreateEmployeeType) {
+	async execute(data: Parameters<typeof Employee.create>[0]) {
 		const employee = Employee.create(data)
 		await this.employeeRepository.save(employee)
 		return employee

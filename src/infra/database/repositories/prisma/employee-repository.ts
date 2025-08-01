@@ -113,4 +113,19 @@ export class PrismaEmployeeRepository extends EmployeeRepository {
 
 		return raw.map(EmployeeMapper.toEntity)
 	}
+
+	async findByDepartment(
+		companyId: string,
+		departmentId: string
+	): Promise<Nullable<Employee>> {
+		const raw = await prisma.employee.findFirst({
+			where: { companyId, departmentId },
+		})
+
+		if (!raw) return null
+
+		const employee = EmployeeMapper.toEntity(raw)
+
+		return employee
+	}
 }

@@ -3,16 +3,19 @@ import { RepositoryFactory } from '@/domain/whats-app/application/factory/reposi
 import { CreateCompanyUseCase } from '../use-cases/create-company-use-case'
 import { CreateEmployeeUseCase } from '../use-cases/create-employee-use-case'
 import { GetAllCompanyEmployeesUseCase } from '../use-cases/get-all-company-employees-use-case'
+import { GetBaseMetricsUseCase } from '../use-cases/get-base-metrics-use-case'
 import { GetChatsUseCase } from '../use-cases/get-chats-use-case'
 import { GetCompanyDepartmentsUseCase } from '../use-cases/get-company-departments-use-case'
 import { GetCompanyInfoUseCase } from '../use-cases/get-company-info-use-case'
 import { GetDepartmentUseCase } from '../use-cases/get-department-use-case'
+import { GetDepartmentsMetricsUseCase } from '../use-cases/get-departments-metrics-use-case'
 import { GetEmployeeByPhoneUseCase } from '../use-cases/get-employee-by-phone-use-case'
 import { GetFAQsUseCase } from '../use-cases/get-faqs-use-case'
 import { GetManagerProfileUseCase } from '../use-cases/get-manager-profile-use-case'
 import { GetRecentChatsUseCase } from '../use-cases/get-recent-chats-use-case'
 import { ParseChatUseCase } from '../use-cases/parse-chat-use-case'
 import { UpdateCompanyUseCase } from '../use-cases/update-company-use-case'
+import { CreateDepartmentUseCase } from '../use-cases/create-department-use-case'
 
 export class UseCaseFactory {
 	constructor(
@@ -101,6 +104,26 @@ export class UseCaseFactory {
 	getUpdateCompanyUseCase(): UpdateCompanyUseCase {
 		return new UpdateCompanyUseCase(
 			this.repositoryFactory.getCompanyRepository()
+		)
+	}
+
+	getGetBaseMetricsUseCase(): GetBaseMetricsUseCase {
+		return new GetBaseMetricsUseCase(
+			this.repositoryFactory.getConversationRepository()
+		)
+	}
+
+	getGetDepartmentsMetricsUseCase(): GetDepartmentsMetricsUseCase {
+		return new GetDepartmentsMetricsUseCase(
+			this.repositoryFactory.getConversationRepository(),
+			this.repositoryFactory.getDepartmentRepository(),
+			this.repositoryFactory.getEmployeeRepository()
+		)
+	}
+
+	getCreateDepartmentUseCase(): CreateDepartmentUseCase {
+		return new CreateDepartmentUseCase(
+			this.repositoryFactory.getDepartmentRepository()
 		)
 	}
 }

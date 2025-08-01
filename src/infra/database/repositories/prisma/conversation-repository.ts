@@ -68,16 +68,6 @@ export class PrismaConversationRepository extends ConversationRepository {
 			MessageMapper.toModel(message)
 		)
 
-		await Promise.all(
-			dbMessages.map(message =>
-				prisma.message.upsert({
-					where: { id: message.id },
-					update: message,
-					create: message,
-				})
-			)
-		)
-
 		await prisma.conversation.upsert({
 			where: { id: conversation.id },
 			update: {
@@ -92,6 +82,16 @@ export class PrismaConversationRepository extends ConversationRepository {
 				id: conversation.id,
 			},
 		})
+
+		await Promise.all(
+			dbMessages.map(message =>
+				prisma.message.upsert({
+					where: { id: message.id },
+					update: message,
+					create: message,
+				})
+			)
+		)
 	}
 
 	async findOrThrow(companyId: string, id: string): Promise<Conversation> {
@@ -100,7 +100,7 @@ export class PrismaConversationRepository extends ConversationRepository {
 			include: {
 				client: true,
 				employee: true,
-				messages: true,
+				messages: { orderBy: { timestamp: 'asc' } },
 			},
 		})
 
@@ -274,6 +274,23 @@ export class PrismaConversationRepository extends ConversationRepository {
 			where: { companyId, userType: PrismaUserType.CLIENT },
 			orderBy: { startedAt: 'desc' },
 			take: limit,
+		})
+
+		return raw.map(ConversationMapper.toEntity)
+	}
+
+	async findByMonth(companyId: string, date: Date): Promise<Conversation[]> {
+		const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1)
+		const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0)
+
+		const raw = await prisma.conversation.findMany({
+			where: {
+				companyId,
+				startedAt: {
+					gte: startOfMonth,
+					lte: endOfMonth,
+				},
+			},
 		})
 
 		return raw.map(ConversationMapper.toEntity)

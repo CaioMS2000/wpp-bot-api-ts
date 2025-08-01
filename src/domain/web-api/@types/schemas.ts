@@ -44,7 +44,6 @@ export const createCompanySchema = z.object({
 export const createEmployeeSchema = z.object({
 	name: z.string(),
 	phone: z.string(),
-	companyId: z.string(),
 	departmentId: z.string().optional(),
 })
 
@@ -58,4 +57,11 @@ export const registerBodySchema = z.object({
 	password: z.string().min(3),
 	name: z.string().min(3),
 	phone: z.string().optional().nullable().default(null),
+})
+
+export const chatSchema = z.object({})
+
+export const createDepartmentSchema = z.object({
+	name: z.string().min(1, 'Name is required'),
+	description: z.string().optional(),
 })
