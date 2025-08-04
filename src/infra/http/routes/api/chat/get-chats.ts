@@ -1,11 +1,29 @@
+import { chatMessageSchema } from '@/domain/web-api/@types/schemas'
+import { GetChatsUseCase } from '@/domain/web-api/use-cases/get-chats-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
-import { GetChatsUseCase } from '@/domain/web-api/use-cases/get-chats-use-case'
 
 type Resources = {
 	getChatsUseCase: GetChatsUseCase
+}
+
+export const paramsSchema = z.object({
+	cnpj: z.string(),
+})
+
+export const responseSchema = {
+	200: z.object({
+		chats: z.array(
+			z.object({
+				id: z.string(),
+				startedAt: z.date(),
+				endedAt: z.date().nullable(),
+				messages: z.array(chatMessageSchema),
+			})
+		),
+	}),
 }
 
 export async function getAllChats(app: FastifyInstance, resources: Resources) {
@@ -19,9 +37,8 @@ export async function getAllChats(app: FastifyInstance, resources: Resources) {
 					tags: ['chats'],
 					summary: 'Get all chats of a company',
 					security: [{ bearerAuth: [] }],
-					params: z.object({
-						cnpj: z.string(),
-					}),
+					params: paramsSchema,
+					response: responseSchema,
 				},
 			},
 			async (request, reply) => {

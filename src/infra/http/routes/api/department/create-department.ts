@@ -1,12 +1,30 @@
+import { CreateDepartmentUseCase } from '@/domain/web-api/use-cases/create-department-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
-import { CreateDepartmentUseCase } from '@/domain/web-api/use-cases/create-department-use-case'
-import { createDepartmentSchema } from '@/domain/web-api/@types/schemas'
 
 type Resources = {
 	createDepartmentUseCase: CreateDepartmentUseCase
+}
+
+export const paramsSchema = z.object({
+	cnpj: z.string(),
+})
+
+export const bodySchema = z.object({
+	name: z.string().min(1, 'Name is required'),
+	description: z.string().optional(),
+})
+
+export const responseSchema = {
+	200: z.object({
+		department: z.object({
+			name: z.string(),
+			description: z.string(),
+			companyId: z.string(),
+		}),
+	}),
 }
 
 export async function createDepartment(
@@ -23,10 +41,9 @@ export async function createDepartment(
 					tags: ['departments'],
 					summary: 'Create Department',
 					security: [{ bearerAuth: [] }],
-					params: z.object({
-						cnpj: z.string(),
-					}),
-					body: createDepartmentSchema,
+					params: paramsSchema,
+					body: bodySchema,
+					response: responseSchema,
 				},
 			},
 			async (request, reply) => {

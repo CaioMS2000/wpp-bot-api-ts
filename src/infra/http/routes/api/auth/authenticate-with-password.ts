@@ -1,4 +1,3 @@
-import { authenticateBodySchema } from '@/domain/web-api/@types/schemas'
 import { AuthService } from '@/domain/web-api/services/auth-service'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
@@ -8,13 +7,31 @@ type Resources = {
 	authService: AuthService
 }
 
+export const bodySchema = z.object({
+	email: z.string().email(),
+	password: z.string().min(3),
+})
+
+export const responseSchema = {
+	200: z.object({
+		user: z.object({
+			name: z.string(),
+			email: z.string(),
+			id: z.string(),
+			phone: z.string().nullable(),
+			managedCompanyCNPJ: z.string().nullable(),
+		}),
+	}),
+}
+
 export async function authenticateWithPassword(
 	app: FastifyInstance,
 	resources: Resources
 ) {
 	app.withTypeProvider<ZodTypeProvider>().post('/api/sessions/password', {
 		schema: {
-			body: authenticateBodySchema,
+			body: bodySchema,
+			response: responseSchema,
 		},
 		handler: async (req, reply) => {
 			console.log('login request with the following body:\n', req.body)

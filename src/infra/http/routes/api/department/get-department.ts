@@ -1,11 +1,31 @@
+import { GetDepartmentUseCase } from '@/domain/web-api/use-cases/get-department-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
-import { GetDepartmentUseCase } from '@/domain/web-api/use-cases/get-department-use-case'
 
 type Resources = {
 	getDepartmentUseCase: GetDepartmentUseCase
+}
+
+export const paramsSchema = z.object({
+	cnpj: z.string(),
+	id: z.string(),
+})
+
+export const responseSchema = {
+	200: z.object({
+		department: z.object({
+			name: z.string(),
+			description: z.string(),
+			employees: z.array(
+				z.object({
+					name: z.string(),
+					phone: z.string(),
+				})
+			),
+		}),
+	}),
 }
 
 export async function getDepartment(
@@ -22,10 +42,8 @@ export async function getDepartment(
 					tags: ['departments'],
 					summary: 'Get a department of a company',
 					security: [{ bearerAuth: [] }],
-					params: z.object({
-						cnpj: z.string(),
-						id: z.string(),
-					}),
+					params: paramsSchema,
+					response: responseSchema,
 				},
 			},
 			async (request, reply) => {

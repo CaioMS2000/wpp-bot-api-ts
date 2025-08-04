@@ -1,16 +1,24 @@
-import { registerBodySchema } from '@/domain/web-api/@types/schemas'
 import { AuthService } from '@/domain/web-api/services/auth-service'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
+import { z } from 'zod'
 
 type Resources = {
 	authService: AuthService
 }
 
+export const bodySchema = z.object({
+	email: z.string().email(),
+	password: z.string().min(3),
+	name: z.string().min(3),
+	phone: z.string().optional().nullable().default(null),
+})
+
 export async function register(app: FastifyInstance, resources: Resources) {
 	app.withTypeProvider<ZodTypeProvider>().post('/api/sessions/signup', {
 		schema: {
-			body: registerBodySchema,
+			body: bodySchema,
+			response: { 200: z.null() },
 		},
 		handler: async (req, reply) => {
 			console.log('register request with the following body:\n', req.body)
@@ -24,9 +32,7 @@ export async function register(app: FastifyInstance, resources: Resources) {
 				phone
 			)
 
-			return reply.status(200).send({
-				...result,
-			})
+			return reply.status(200).send()
 		},
 	})
 }

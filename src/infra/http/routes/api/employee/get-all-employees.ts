@@ -1,11 +1,30 @@
+import { GetAllCompanyEmployeesUseCase } from '@/domain/web-api/use-cases/get-all-company-employees-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
-import { GetAllCompanyEmployeesUseCase } from '@/domain/web-api/use-cases/get-all-company-employees-use-case'
 
 type Resources = {
 	getAllCompanyEmployeesUseCase: GetAllCompanyEmployeesUseCase
+}
+
+export const paramsSchema = z.object({
+	cnpj: z.string(),
+})
+
+export const responseSchema = {
+	200: z.object({
+		employees: z.array(
+			z.object({
+				name: z.string(),
+				departmentName: z.string(),
+				phone: z.string(),
+				available: z.boolean(),
+				email: z.string(),
+				totalChats: z.number(),
+			})
+		),
+	}),
 }
 
 export async function getAllEmployees(
@@ -22,16 +41,13 @@ export async function getAllEmployees(
 					tags: ['employees'],
 					summary: 'Get all employees of a company',
 					security: [{ bearerAuth: [] }],
-					params: z.object({
-						cnpj: z.string(),
-					}),
+					params: paramsSchema,
+					response: responseSchema,
 				},
 			},
 			async (request, reply) => {
 				const { getAllCompanyEmployeesUseCase } = resources
-				const { manager, company } = await request.getUserMembership(
-					request.params.cnpj
-				)
+				const { company } = await request.getUserMembership(request.params.cnpj)
 				const employees = await getAllCompanyEmployeesUseCase.execute(
 					company.id
 				)

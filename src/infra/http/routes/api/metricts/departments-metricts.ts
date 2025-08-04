@@ -1,12 +1,22 @@
+import { GetDepartmentsMetricsUseCase } from '@/domain/web-api/use-cases/get-departments-metrics-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
-import { GetDepartmentsMetricsUseCase } from '@/domain/web-api/use-cases/get-departments-metrics-use-case'
-import { logger } from '@/core/logger'
 
 type Resources = {
 	getDepartmentsMetricsUseCase: GetDepartmentsMetricsUseCase
+}
+
+export const paramsSchema = z.object({
+	cnpj: z.string(),
+})
+
+export const responseSchema = {
+	200: z.object({
+		departmentName: z.string(),
+		totalChats: z.number(),
+	}),
 }
 
 export async function getDepartmentsMetrics(
@@ -23,9 +33,7 @@ export async function getDepartmentsMetrics(
 					tags: ['metrics'],
 					summary: 'Get departments metrics of a company',
 					security: [{ bearerAuth: [] }],
-					params: z.object({
-						cnpj: z.string(),
-					}),
+					params: paramsSchema,
 				},
 			},
 			async (request, reply) => {

@@ -1,4 +1,4 @@
-import { createCompanySchema } from '@/domain/web-api/@types/schemas'
+import { businessHoursSchema } from '@/domain/web-api/@types/schemas'
 import { CreateCompanyUseCase } from '@/domain/web-api/use-cases/create-company-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
@@ -8,6 +8,16 @@ import { auth } from '../middlewares/auth'
 type Resources = {
 	createCompanyUseCase: CreateCompanyUseCase
 }
+
+const bodySchema = z.object({
+	name: z.string(),
+	phone: z.string(),
+	cnpj: z.string(),
+	email: z.string().optional(),
+	website: z.string().optional(),
+	description: z.string().optional(),
+	businessHours: businessHoursSchema,
+})
 
 export async function createCompany(
 	app: FastifyInstance,
@@ -23,7 +33,8 @@ export async function createCompany(
 					tags: ['Companies'],
 					summary: 'Create a new company',
 					security: [{ bearerAuth: [] }],
-					body: createCompanySchema,
+					body: bodySchema,
+					response: { 200: z.null() },
 				},
 			},
 			async (request, reply) => {
@@ -51,9 +62,7 @@ export async function createCompany(
 					businessHours,
 				})
 
-				return reply.status(201).send({
-					message: 'Company created successfully',
-				})
+				return reply.status(201).send()
 			}
 		)
 }

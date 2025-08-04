@@ -1,13 +1,29 @@
-import { createCompanySchema } from '@/domain/web-api/@types/schemas'
+import { businessHoursSchema } from '@/domain/web-api/@types/schemas'
+import { UpdateCompanyUseCase } from '@/domain/web-api/use-cases/update-company-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
-import { UpdateCompanyUseCase } from '@/domain/web-api/use-cases/update-company-use-case'
 
 type Resources = {
 	updateCompanyUseCase: UpdateCompanyUseCase
 }
+
+const bodySchema = z
+	.object({
+		name: z.string(),
+		phone: z.string(),
+		cnpj: z.string(),
+		email: z.string().optional(),
+		website: z.string().optional(),
+		description: z.string().optional(),
+		businessHours: businessHoursSchema,
+	})
+	.partial()
+
+export const paramsSchema = z.object({
+	cnpj: z.string(),
+})
 
 export async function updateCompany(
 	app: FastifyInstance,
@@ -23,10 +39,9 @@ export async function updateCompany(
 					tags: ['company'],
 					summary: 'Atualizar informações da empresa',
 					security: [{ bearerAuth: [] }],
-					body: createCompanySchema.partial(),
-					params: z.object({
-						cnpj: z.string(),
-					}),
+					body: bodySchema,
+					params: paramsSchema,
+					response: { 200: z.null() },
 				},
 			},
 			async (request, reply) => {
@@ -37,9 +52,7 @@ export async function updateCompany(
 					request.body
 				)
 
-				return reply.status(200).send({
-					company: info,
-				})
+				return reply.status(200).send()
 			}
 		)
 }

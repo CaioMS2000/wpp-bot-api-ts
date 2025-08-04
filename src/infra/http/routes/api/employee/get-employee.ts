@@ -1,11 +1,26 @@
+import { GetEmployeeByPhoneUseCase } from '@/domain/web-api/use-cases/get-employee-by-phone-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
-import { GetEmployeeByPhoneUseCase } from '@/domain/web-api/use-cases/get-employee-by-phone-use-case'
 
 type Resources = {
 	getEmployeeByPhoneUseCase: GetEmployeeByPhoneUseCase
+}
+
+export const paramsSchema = z.object({
+	cnpj: z.string(),
+	phone: z.string(),
+})
+
+export const responseSchema = {
+	200: z.object({
+		employee: z.object({
+			name: z.string(),
+			phone: z.string(),
+			departmentName: z.string().nullable(),
+		}),
+	}),
 }
 
 export async function getEmployee(app: FastifyInstance, resources: Resources) {
@@ -19,10 +34,8 @@ export async function getEmployee(app: FastifyInstance, resources: Resources) {
 					tags: ['employees'],
 					summary: 'Get an employee of a company',
 					security: [{ bearerAuth: [] }],
-					params: z.object({
-						cnpj: z.string(),
-						phone: z.string(),
-					}),
+					params: paramsSchema,
+					response: responseSchema,
 				},
 			},
 			async (request, reply) => {

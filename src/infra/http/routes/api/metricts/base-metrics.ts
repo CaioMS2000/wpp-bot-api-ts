@@ -1,12 +1,26 @@
+import { logger } from '@/core/logger'
+import { GetBaseMetricsUseCase } from '@/domain/web-api/use-cases/get-base-metrics-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
-import { GetBaseMetricsUseCase } from '@/domain/web-api/use-cases/get-base-metrics-use-case'
-import { logger } from '@/core/logger'
 
 type Resources = {
 	getBaseMetricsUseCase: GetBaseMetricsUseCase
+}
+
+export const paramsSchema = z.object({
+	cnpj: z.string(),
+})
+
+export const responseSchema = {
+	200: z.object({
+		totalChatsWithAI: z.number(),
+		totalClientChats: z.number(),
+		todayTotalClientChats: z.number(),
+		activeClients: z.number(),
+		averageResponseTime: z.number(),
+	}),
 }
 
 export async function getBaseMetrics(
@@ -23,9 +37,8 @@ export async function getBaseMetrics(
 					tags: ['metrics'],
 					summary: 'Get base metrics of a company',
 					security: [{ bearerAuth: [] }],
-					params: z.object({
-						cnpj: z.string(),
-					}),
+					params: paramsSchema,
+					response: responseSchema,
 				},
 			},
 			async (request, reply) => {

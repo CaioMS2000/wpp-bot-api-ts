@@ -31,37 +31,33 @@ export const businessHoursSchema = z
 	.length(7)
 	.optional()
 
-export const createCompanySchema = z.object({
-	name: z.string(),
-	phone: z.string(),
-	cnpj: z.string(),
-	email: z.string().optional(),
-	website: z.string().optional(),
-	description: z.string().optional(),
-	businessHours: businessHoursSchema,
-})
+export const chatMessageSchema = z.discriminatedUnion('sender', [
+	z.object({
+		content: z.string(),
+		sender: z.literal('client'),
+		senderName: z.string(),
+		timestamp: z.date(),
+	}),
+	z.object({
+		content: z.string(),
+		sender: z.literal('employee'),
+		senderName: z.string(),
+		timestamp: z.date(),
+	}),
+	z.object({
+		content: z.string(),
+		sender: z.literal('ai'),
+		senderName: z.literal('AI'),
+		timestamp: z.date(),
+	}),
+])
 
-export const createEmployeeSchema = z.object({
-	name: z.string(),
-	phone: z.string(),
-	departmentId: z.string().optional(),
-})
-
-export const authenticateBodySchema = z.object({
-	email: z.string().email(),
-	password: z.string().min(3),
-})
-
-export const registerBodySchema = z.object({
-	email: z.string().email(),
-	password: z.string().min(3),
-	name: z.string().min(3),
-	phone: z.string().optional().nullable().default(null),
-})
-
-export const chatSchema = z.object({})
-
-export const createDepartmentSchema = z.object({
-	name: z.string().min(1, 'Name is required'),
-	description: z.string().optional(),
-})
+export const faqSchema = z.record(
+	z.string(),
+	z.array(
+		z.object({
+			question: z.string(),
+			answer: z.string(),
+		})
+	)
+)

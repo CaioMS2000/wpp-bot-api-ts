@@ -1,12 +1,31 @@
-import { createEmployeeSchema } from '@/domain/web-api/@types/schemas'
+import { CreateEmployeeUseCase } from '@/domain/web-api/use-cases/create-employee-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
-import { CreateEmployeeUseCase } from '@/domain/web-api/use-cases/create-employee-use-case'
 
 type Resources = {
 	createEmployeeUseCase: CreateEmployeeUseCase
+}
+
+export const paramsSchema = z.object({
+	cnpj: z.string(),
+})
+
+const bodySchema = z.object({
+	name: z.string(),
+	phone: z.string(),
+	departmentId: z.string().optional(),
+})
+
+const responseSchema = {
+	200: z.object({
+		employee: z.object({
+			name: z.string(),
+			phone: z.string(),
+			departmentId: z.string().nullable(),
+		}),
+	}),
 }
 
 export async function createEmployee(
@@ -23,10 +42,9 @@ export async function createEmployee(
 					tags: ['employees'],
 					summary: 'Create a new employee',
 					security: [{ bearerAuth: [] }],
-					params: z.object({
-						cnpj: z.string(),
-					}),
-					body: createEmployeeSchema,
+					params: paramsSchema,
+					body: bodySchema,
+					response: responseSchema,
 				},
 			},
 			async (request, reply) => {

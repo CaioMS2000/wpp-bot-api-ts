@@ -1,11 +1,27 @@
+import { GetCompanyDepartmentsUseCase } from '@/domain/web-api/use-cases/get-company-departments-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
-import { GetCompanyDepartmentsUseCase } from '@/domain/web-api/use-cases/get-company-departments-use-case'
 
 type Resources = {
 	getCompanyDepartmentsUseCase: GetCompanyDepartmentsUseCase
+}
+
+export const paramsSchema = z.object({
+	cnpj: z.string(),
+})
+
+export const responseSchema = {
+	200: z.object({
+		departments: z.array(
+			z.object({
+				name: z.string(),
+				description: z.string(),
+				companyId: z.string(),
+			})
+		),
+	}),
 }
 
 export async function getAllDepartments(
@@ -22,9 +38,8 @@ export async function getAllDepartments(
 					tags: ['departments'],
 					summary: 'Get all departments of a company',
 					security: [{ bearerAuth: [] }],
-					params: z.object({
-						cnpj: z.string(),
-					}),
+					params: paramsSchema,
+					response: responseSchema,
 				},
 			},
 			async (request, reply) => {
@@ -36,7 +51,7 @@ export async function getAllDepartments(
 					company.id
 				)
 
-				return reply.status(201).send({
+				return reply.status(200).send({
 					departments,
 				})
 			}

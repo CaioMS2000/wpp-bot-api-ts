@@ -1,12 +1,13 @@
 import { DepartmentServiceFactory } from '@/domain/whats-app/application/factory/department-service-factory'
 import { RepositoryFactory } from '@/domain/whats-app/application/factory/repository-factory'
 import { CreateCompanyUseCase } from '../use-cases/create-company-use-case'
+import { CreateDepartmentUseCase } from '../use-cases/create-department-use-case'
 import { CreateEmployeeUseCase } from '../use-cases/create-employee-use-case'
 import { GetAllCompanyEmployeesUseCase } from '../use-cases/get-all-company-employees-use-case'
 import { GetBaseMetricsUseCase } from '../use-cases/get-base-metrics-use-case'
 import { GetChatsUseCase } from '../use-cases/get-chats-use-case'
 import { GetCompanyDepartmentsUseCase } from '../use-cases/get-company-departments-use-case'
-import { GetCompanyInfoUseCase } from '../use-cases/get-company-info-use-case'
+import { GetCompanyUseCase } from '../use-cases/get-company-use-case'
 import { GetDepartmentUseCase } from '../use-cases/get-department-use-case'
 import { GetDepartmentsMetricsUseCase } from '../use-cases/get-departments-metrics-use-case'
 import { GetEmployeeByPhoneUseCase } from '../use-cases/get-employee-by-phone-use-case'
@@ -15,7 +16,6 @@ import { GetManagerProfileUseCase } from '../use-cases/get-manager-profile-use-c
 import { GetRecentChatsUseCase } from '../use-cases/get-recent-chats-use-case'
 import { ParseChatUseCase } from '../use-cases/parse-chat-use-case'
 import { UpdateCompanyUseCase } from '../use-cases/update-company-use-case'
-import { CreateDepartmentUseCase } from '../use-cases/create-department-use-case'
 
 export class UseCaseFactory {
 	constructor(
@@ -56,10 +56,8 @@ export class UseCaseFactory {
 		)
 	}
 
-	getGetCompanyInfoUseCase(): GetCompanyInfoUseCase {
-		return new GetCompanyInfoUseCase(
-			this.repositoryFactory.getCompanyRepository()
-		)
+	getGetCompanyUseCase(): GetCompanyUseCase {
+		return new GetCompanyUseCase(this.repositoryFactory.getCompanyRepository())
 	}
 
 	getGetDepartmentUseCase(): GetDepartmentUseCase {

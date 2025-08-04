@@ -1,36 +1,19 @@
-import { Company } from '@/domain/entities/company'
 import { z } from 'zod'
-import { businessHoursSchema, createEmployeeSchema } from './schemas'
+import { businessHoursSchema, chatMessageSchema, faqSchema } from './schemas'
 
 export type BusinessHoursType = z.infer<typeof businessHoursSchema>
 
-export type CompanyType = Omit<
-	Parameters<typeof Company.create>[0],
-	'businessHours'
-> & {
-	businessHours: BusinessHoursType
+export type ChatMessage = z.infer<typeof chatMessageSchema>
+
+export type CompanyType = {
+	cnpj: string
+	name: string
+	phone: string
+	managerId: string
+	email?: Nullable<string>
+	website?: Nullable<string>
+	description?: Nullable<string>
+	businessHours?: BusinessHoursType
 }
 
-export type ChatMessage =
-	| {
-			content: string
-			sender: 'client' | 'employee'
-			senderName: string
-			timestamp: Date
-	  }
-	| {
-			content: string
-			sender: 'ai'
-			senderName: 'AI'
-			timestamp: Date
-	  }
-
-export type FAQs = Record<
-	string,
-	{
-		question: string
-		answer: string
-	}[]
->
-
-export type CreateEmployeeType = z.infer<typeof createEmployeeSchema>
+export type FAQs = z.infer<typeof faqSchema>

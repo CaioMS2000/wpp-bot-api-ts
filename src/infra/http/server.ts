@@ -8,21 +8,21 @@ import { DependenciesContainer } from './dependencies-container'
 import { authenticateWithPassword } from './routes/api/auth/authenticate-with-password'
 import { logout } from './routes/api/auth/logout'
 import { register } from './routes/api/auth/register-manager'
-import { createCompany } from './routes/api/company/create-company'
 import { getAllChats } from './routes/api/chat/get-chats'
-import { getCompanyInfo } from './routes/api/company/get-company-info'
-import { getFAQs } from './routes/api/faq/get-faqs'
 import { getRecentChats } from './routes/api/chat/get-recent-chats'
+import { createCompany } from './routes/api/company/create-company'
+import { getCompanyInfo } from './routes/api/company/get-company-info'
 import { updateCompany } from './routes/api/company/update-company'
+import { createDepartment } from './routes/api/department/create-department'
 import { getAllDepartments } from './routes/api/department/get-all-departments'
 import { getDepartment } from './routes/api/department/get-department'
 import { getAllEmployees } from './routes/api/employee/get-all-employees'
 import { getEmployee } from './routes/api/employee/get-employee'
-import { whatsAppWebhook } from './routes/message/whats-app-webhook'
-import { webhook } from './routes/whats-app-webhook/token'
+import { getFAQs } from './routes/api/faq/get-faqs'
 import { getBaseMetrics } from './routes/api/metricts/base-metrics'
 import { getDepartmentsMetrics } from './routes/api/metricts/departments-metricts'
-import { createDepartment } from './routes/api/department/create-department'
+import { whatsAppWebhook } from './routes/message/whats-app-webhook'
+import { webhook } from './routes/whats-app-webhook/token'
 // console.clear()
 logger.info('Starting server setup')
 
@@ -73,8 +73,7 @@ async function main() {
 		getChatsUseCase: container.webAPIUseCaseFactory.getGetChatsUseCase(),
 	})
 	app.register(getCompanyInfo, {
-		getCompanyInfoUseCase:
-			container.webAPIUseCaseFactory.getGetCompanyInfoUseCase(),
+		getCompanyUseCase: container.webAPIUseCaseFactory.getGetCompanyUseCase(),
 	})
 	app.register(getEmployee, {
 		getEmployeeByPhoneUseCase:
