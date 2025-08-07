@@ -1,3 +1,4 @@
+import { logger } from '@/core/logger'
 import { Client } from '@/domain/entities/client'
 import { Company } from '@/domain/entities/company'
 import { Conversation } from '@/domain/entities/conversation'
@@ -6,14 +7,13 @@ import { ClientRepository } from '@/domain/repositories/client-repository'
 import { CompanyRepository } from '@/domain/repositories/company-repository'
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
 import { EmployeeRepository } from '@/domain/repositories/employee-repository'
+import { SenderType } from '@/domain/whats-app/@types'
 import { prisma } from '@/lib/prisma'
+import { UserType as PrismaUserType } from 'ROOT/prisma/generated'
 import { ConversationMapper } from '../../mappers/conversation-mapper'
 import { MessageMapper } from '../../mappers/message-mapper'
 import { PrismaStateDataParser } from '../../state-data-parser/prisma/prisma-state-data-parser'
 import { stateNameToPrismaEnum } from '../../utils/enumTypeMapping'
-import { SenderType } from '@/domain/whats-app/@types'
-import { logger } from '@/core/logger'
-import { UserType as PrismaUserType } from 'ROOT/prisma/generated'
 
 export class PrismaConversationRepository extends ConversationRepository {
 	private _prismaStateDataParser!: PrismaStateDataParser
@@ -294,5 +294,51 @@ export class PrismaConversationRepository extends ConversationRepository {
 		})
 
 		return raw.map(ConversationMapper.toEntity)
+	}
+
+	async findBetweenDates(
+		companyId: string,
+		startDate: Date,
+		endDate: Date
+	): Promise<Conversation[]> {
+		const raw = await prisma.conversation.findMany({
+			where: {
+				companyId,
+				startedAt: {
+					gte: startDate,
+					lt: endDate,
+				},
+				userType: PrismaUserType.CLIENT,
+			},
+			include: {
+				client: true,
+				employee: true,
+				messages: {
+					orderBy: {
+						timestamp: 'asc',
+					},
+				},
+			},
+			orderBy: {
+				startedAt: 'asc',
+			},
+		})
+
+		return Promise.all(
+			raw.map(async conversation => {
+				const entity = ConversationMapper.toEntity(conversation)
+
+				conversation.messages.forEach(message => {
+					entity.messages.push(MessageMapper.toEntity(message))
+				})
+
+				entity.currentState = await this.prismaStateDataParser.restoreState(
+					entity,
+					conversation
+				)
+
+				return entity
+			})
+		)
 	}
 }

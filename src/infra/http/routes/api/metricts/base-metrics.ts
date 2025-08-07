@@ -15,11 +15,11 @@ export const paramsSchema = z.object({
 
 export const responseSchema = {
 	200: z.object({
-		totalChatsWithAI: z.number(),
-		totalClientChats: z.number(),
-		todayTotalClientChats: z.number(),
-		activeClients: z.number(),
+		todayConversationsCount: z.number(),
+		totalActiveClients: z.number(),
+		responseRate: z.number(),
 		averageResponseTime: z.number(),
+		totalAiConversations: z.number(),
 	}),
 }
 

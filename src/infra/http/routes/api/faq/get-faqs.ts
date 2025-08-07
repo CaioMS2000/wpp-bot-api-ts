@@ -30,6 +30,7 @@ export async function getFAQs(app: FastifyInstance, resources: Resources) {
 					summary: 'Obter todas as FAQs da empresa',
 					security: [{ bearerAuth: [] }],
 					params: paramsSchema,
+					response: responseSchema,
 				},
 			},
 			async (request, reply) => {

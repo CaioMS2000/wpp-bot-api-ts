@@ -23,6 +23,8 @@ import { getBaseMetrics } from './routes/api/metricts/base-metrics'
 import { getDepartmentsMetrics } from './routes/api/metricts/departments-metricts'
 import { whatsAppWebhook } from './routes/message/whats-app-webhook'
 import { webhook } from './routes/whats-app-webhook/token'
+import { createEmployee } from './routes/api/employee/create-employee'
+import { getWeekConversationsMetrics } from './routes/api/metricts/get-week-conversations-metrics'
 // console.clear()
 logger.info('Starting server setup')
 
@@ -113,6 +115,14 @@ async function main() {
 	app.register(createDepartment, {
 		createDepartmentUseCase:
 			container.webAPIUseCaseFactory.getCreateDepartmentUseCase(),
+	})
+	app.register(createEmployee, {
+		createEmployeeUseCase:
+			container.webAPIUseCaseFactory.getCreateEmployeeUseCase(),
+	})
+	app.register(getWeekConversationsMetrics, {
+		getWeekConversationsMetrics:
+			container.webAPIUseCaseFactory.getGetWeekConversationsMetrics(),
 	})
 
 	logger.debug('Routes registered')

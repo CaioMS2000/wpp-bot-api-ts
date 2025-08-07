@@ -61,3 +61,9 @@ export const faqSchema = z.record(
 		})
 	)
 )
+
+export const departmentSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	description: z.string(),
+})

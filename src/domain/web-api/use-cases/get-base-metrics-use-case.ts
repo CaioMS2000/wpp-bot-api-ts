@@ -1,10 +1,18 @@
 import { ConversationRepository } from '@/domain/repositories/conversation-repository'
 import { AgentType, UserType } from '@/domain/whats-app/@types'
 
+type Metrics = {
+	todayConversationsCount: number
+	totalActiveClients: number
+	responseRate: number
+	averageResponseTime: number
+	totalAiConversations: number
+}
+
 export class GetBaseMetricsUseCase {
 	constructor(private conversationRepository: ConversationRepository) {}
 
-	async execute(companyId: string, day = new Date()) {
+	async execute(companyId: string, day = new Date()): Promise<Metrics> {
 		const totalChats = await this.conversationRepository.findByMonth(
 			companyId,
 			day
@@ -15,7 +23,6 @@ export class GetBaseMetricsUseCase {
 		const totalClientChats = totalChats.filter(
 			chat => chat.userType === UserType.CLIENT
 		)
-		const clientsIdsSet = new Set<string>(totalClientChats.map(CC => CC.userId))
 		const todayTotalClientChats = totalClientChats.filter(chat => {
 			const chatDate = chat.startedAt // ou outro campo que represente a data da conversa
 			const today = new Date()
@@ -48,10 +55,10 @@ export class GetBaseMetricsUseCase {
 		}
 
 		return {
-			totalChatsWithAI: chatWithAI.length,
-			totalClientChats: totalClientChats.length,
-			todayTotalClientChats: todayTotalClientChats.length,
-			activeClients: clientsIdsSet.size,
+			totalAiConversations: chatWithAI.length,
+			totalActiveClients: totalClientChats.length,
+			todayConversationsCount: todayTotalClientChats.length,
+			responseRate: 1, // valor decimal; no front precisa converter para %
 			averageResponseTime,
 		}
 	}

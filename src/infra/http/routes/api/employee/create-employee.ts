@@ -1,3 +1,4 @@
+import { departmentSchema } from '@/domain/web-api/@types/schemas'
 import { CreateEmployeeUseCase } from '@/domain/web-api/use-cases/create-employee-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
@@ -15,7 +16,7 @@ export const paramsSchema = z.object({
 const bodySchema = z.object({
 	name: z.string(),
 	phone: z.string(),
-	departmentId: z.string().optional(),
+	departmentId: z.string().nullable(),
 })
 
 const responseSchema = {
@@ -23,7 +24,7 @@ const responseSchema = {
 		employee: z.object({
 			name: z.string(),
 			phone: z.string(),
-			departmentId: z.string().nullable(),
+			department: departmentSchema.nullable(),
 		}),
 	}),
 }
@@ -50,12 +51,19 @@ export async function createEmployee(
 			async (request, reply) => {
 				const { createEmployeeUseCase } = resources
 				const { company } = await request.getUserMembership(request.params.cnpj)
-				const employee = await createEmployeeUseCase.execute({
+				const { employee, department } = await createEmployeeUseCase.execute({
 					...request.body,
 					companyId: company.id,
 				})
+				const data = {
+					employee: {
+						name: employee.name,
+						phone: employee.phone,
+						department: department,
+					},
+				}
 
-				return reply.status(201).send({ employee })
+				return reply.status(201).send(data)
 			}
 		)
 }

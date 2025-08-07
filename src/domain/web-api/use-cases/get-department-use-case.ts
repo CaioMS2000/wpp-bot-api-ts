@@ -19,6 +19,7 @@ export class GetDepartmentUseCase {
 		)
 
 		return {
+			id: department.id,
 			name: department.name,
 			description: department.description,
 			employees: employees.map(employee => ({

@@ -3,6 +3,7 @@ import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
+import { departmentSchema } from '@/domain/web-api/@types/schemas'
 
 type Resources = {
 	createDepartmentUseCase: CreateDepartmentUseCase
@@ -19,11 +20,7 @@ export const bodySchema = z.object({
 
 export const responseSchema = {
 	200: z.object({
-		department: z.object({
-			name: z.string(),
-			description: z.string(),
-			companyId: z.string(),
-		}),
+		department: departmentSchema,
 	}),
 }
 

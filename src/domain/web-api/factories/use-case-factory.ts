@@ -16,6 +16,7 @@ import { GetManagerProfileUseCase } from '../use-cases/get-manager-profile-use-c
 import { GetRecentChatsUseCase } from '../use-cases/get-recent-chats-use-case'
 import { ParseChatUseCase } from '../use-cases/parse-chat-use-case'
 import { UpdateCompanyUseCase } from '../use-cases/update-company-use-case'
+import { GetWeekConversationsMetrics } from '../use-cases/get-week-conversations-metrics'
 
 export class UseCaseFactory {
 	constructor(
@@ -31,7 +32,8 @@ export class UseCaseFactory {
 
 	getCreateEmployeeUseCase(): CreateEmployeeUseCase {
 		return new CreateEmployeeUseCase(
-			this.repositoryFactory.getEmployeeRepository()
+			this.repositoryFactory.getEmployeeRepository(),
+			this.repositoryFactory.getDepartmentRepository()
 		)
 	}
 
@@ -122,6 +124,12 @@ export class UseCaseFactory {
 	getCreateDepartmentUseCase(): CreateDepartmentUseCase {
 		return new CreateDepartmentUseCase(
 			this.repositoryFactory.getDepartmentRepository()
+		)
+	}
+
+	getGetWeekConversationsMetrics(): GetWeekConversationsMetrics {
+		return new GetWeekConversationsMetrics(
+			this.repositoryFactory.getConversationRepository()
 		)
 	}
 }
