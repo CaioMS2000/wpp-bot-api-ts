@@ -31,6 +31,14 @@ import { updateFAQItem } from './routes/api/faq/update-faq-item'
 import { updateFAQCategoryName } from './routes/api/faq/update-faq-category-name'
 import { deleteFAQItem } from './routes/api/faq/delete-faq-item'
 import { deleteFAQCategory } from './routes/api/faq/delete-faq-category'
+
+import { router as authRouter } from './routes/api/auth/router'
+import { router as chatRouter } from './routes/api/chat/router'
+import { router as companyRouter } from './routes/api/company/router'
+import { router as departmentRouter } from './routes/api/department/router'
+import { router as employeeRouter } from './routes/api/employee/router'
+import { router as faqRouter } from './routes/api/faq/router'
+import { router as metrictsRouter } from './routes/api/metricts/router'
 // console.clear()
 logger.info('Starting server setup')
 
@@ -50,18 +58,13 @@ async function main() {
 	// await softDBClear()
 	const container = new DependenciesContainer()
 
-	// Configuração do servidor
-	// app.decorateRequest('container', {
-	// 	getter() {
-	// 		return container
-	// 	},
-	// })
 	app.decorateRequest('authService', {
 		getter() {
 			return container.authService
 		},
 	})
 
+	// WhatsApp
 	// Registrar rotas
 	app.register(webhook)
 	app.register(whatsAppWebhook, {
@@ -69,89 +72,65 @@ async function main() {
 	})
 
 	// API
-	app.register(authenticateWithPassword, { authService: container.authService })
-	app.register(register, { authService: container.authService })
-	app.register(logout)
+	// Registrar rotas
+	app.register(authRouter, {
+		authService: container.authService,
+	})
 
-	app.register(createCompany, {
-		createCompanyUseCase:
-			container.webAPIUseCaseFactory.getCreateCompanyUseCase(),
-	})
-	app.register(getAllChats, {
+	app.register(chatRouter, {
 		getChatsUseCase: container.webAPIUseCaseFactory.getGetChatsUseCase(),
-	})
-	app.register(getCompanyInfo, {
-		getCompanyUseCase: container.webAPIUseCaseFactory.getGetCompanyUseCase(),
-	})
-	app.register(getEmployee, {
-		getEmployeeByPhoneUseCase:
-			container.webAPIUseCaseFactory.getGetEmployeeByPhoneUseCase(),
-	})
-	app.register(getAllEmployees, {
-		getAllCompanyEmployeesUseCase:
-			container.webAPIUseCaseFactory.getGetAllCompanyEmployeesUseCase(),
-	})
-	app.register(getDepartment, {
-		getDepartmentUseCase:
-			container.webAPIUseCaseFactory.getGetDepartmentUseCase(),
-	})
-	app.register(getAllDepartments, {
-		getCompanyDepartmentsUseCase:
-			container.webAPIUseCaseFactory.getGetCompanyDepartmentsUseCase(),
-	})
-	app.register(getFAQs, {
-		getFAQsUseCase: container.webAPIUseCaseFactory.getGetFAQsUseCase(),
-	})
-	app.register(updateCompany, {
-		updateCompanyUseCase:
-			container.webAPIUseCaseFactory.getUpdateCompanyUseCase(),
-	})
-	app.register(getRecentChats, {
 		getRecentChatsUseCase:
 			container.webAPIUseCaseFactory.getGetRecentChatsUseCase(),
 	})
-	app.register(getBaseMetrics, {
-		getBaseMetricsUseCase:
-			container.webAPIUseCaseFactory.getGetBaseMetricsUseCase(),
+
+	app.register(companyRouter, {
+		createCompanyUseCase:
+			container.webAPIUseCaseFactory.getCreateCompanyUseCase(),
+		getCompanyUseCase: container.webAPIUseCaseFactory.getGetCompanyUseCase(),
+		updateCompanyUseCase:
+			container.webAPIUseCaseFactory.getUpdateCompanyUseCase(),
 	})
-	app.register(getDepartmentsMetrics, {
-		getDepartmentsMetricsUseCase:
-			container.webAPIUseCaseFactory.getGetDepartmentsMetricsUseCase(),
-	})
-	app.register(createDepartment, {
+
+	app.register(departmentRouter, {
 		createDepartmentUseCase:
 			container.webAPIUseCaseFactory.getCreateDepartmentUseCase(),
-	})
-	app.register(createEmployee, {
-		createEmployeeUseCase:
-			container.webAPIUseCaseFactory.getCreateEmployeeUseCase(),
-	})
-	app.register(getWeekConversationsMetrics, {
-		getWeekConversationsMetrics:
-			container.webAPIUseCaseFactory.getGetWeekConversationsMetrics(),
-	})
-	app.register(updateDepartment, {
+		getCompanyDepartmentsUseCase:
+			container.webAPIUseCaseFactory.getGetCompanyDepartmentsUseCase(),
+		getDepartmentUseCase:
+			container.webAPIUseCaseFactory.getGetDepartmentUseCase(),
 		updateDepartmentUseCase:
 			container.webAPIUseCaseFactory.getUpdateDepartmentUseCase(),
 	})
-	app.register(createFAQ, {
-		createFAQUseCase: container.webAPIUseCaseFactory.getCreateFAQUseCase(),
+
+	app.register(employeeRouter, {
+		createEmployeeUseCase:
+			container.webAPIUseCaseFactory.getCreateEmployeeUseCase(),
+		getAllCompanyEmployeesUseCase:
+			container.webAPIUseCaseFactory.getGetAllCompanyEmployeesUseCase(),
+		getEmployeeByPhoneUseCase:
+			container.webAPIUseCaseFactory.getGetEmployeeByPhoneUseCase(),
 	})
-	app.register(updateFAQItem, {
+
+	app.register(faqRouter, {
+		createFAQUseCase: container.webAPIUseCaseFactory.getCreateFAQUseCase(),
+		deleteFAQCategoryUseCase:
+			container.webAPIUseCaseFactory.getDeleteFAQCategoryUseCase(),
+		deleteFAQItemUseCase:
+			container.webAPIUseCaseFactory.getDeleteFAQItemUseCase(),
+		getFAQsUseCase: container.webAPIUseCaseFactory.getGetFAQsUseCase(),
+		updateFAQCategoryNameUseCase:
+			container.webAPIUseCaseFactory.getUpdateFAQCategoryNameUseCase(),
 		updateFAQItemUseCase:
 			container.webAPIUseCaseFactory.getUpdateFAQItemUseCase(),
 	})
-	app.register(updateFAQCategoryName, {
-		updateFAQCategoryNameUseCase:
-			container.webAPIUseCaseFactory.getUpdateFAQCategoryNameUseCase(),
-	})
-	app.register(deleteFAQItem, {
-		deleteFAQItemUseCase:
-			container.webAPIUseCaseFactory.getDeleteFAQItemUseCase(),
-	})
-	app.register(deleteFAQCategory, {
-		deleteFAQCategoryUseCase:
-			container.webAPIUseCaseFactory.getDeleteFAQCategoryUseCase(),
+
+	app.register(metrictsRouter, {
+		getBaseMetricsUseCase:
+			container.webAPIUseCaseFactory.getGetBaseMetricsUseCase(),
+		getDepartmentsMetricsUseCase:
+			container.webAPIUseCaseFactory.getGetDepartmentsMetricsUseCase(),
+		getWeekConversationsMetrics:
+			container.webAPIUseCaseFactory.getGetWeekConversationsMetrics(),
 	})
 
 	logger.debug('Routes registered')
