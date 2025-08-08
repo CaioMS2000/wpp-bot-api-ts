@@ -16,15 +16,21 @@ import { updateCompany } from './routes/api/company/update-company'
 import { createDepartment } from './routes/api/department/create-department'
 import { getAllDepartments } from './routes/api/department/get-all-departments'
 import { getDepartment } from './routes/api/department/get-department'
+import { updateDepartment } from './routes/api/department/update-department'
+import { createEmployee } from './routes/api/employee/create-employee'
 import { getAllEmployees } from './routes/api/employee/get-all-employees'
 import { getEmployee } from './routes/api/employee/get-employee'
+import { createFAQ } from './routes/api/faq/create-faq'
 import { getFAQs } from './routes/api/faq/get-faqs'
 import { getBaseMetrics } from './routes/api/metricts/base-metrics'
 import { getDepartmentsMetrics } from './routes/api/metricts/departments-metricts'
+import { getWeekConversationsMetrics } from './routes/api/metricts/get-week-conversations-metrics'
 import { whatsAppWebhook } from './routes/message/whats-app-webhook'
 import { webhook } from './routes/whats-app-webhook/token'
-import { createEmployee } from './routes/api/employee/create-employee'
-import { getWeekConversationsMetrics } from './routes/api/metricts/get-week-conversations-metrics'
+import { updateFAQItem } from './routes/api/faq/update-faq-item'
+import { updateFAQCategoryName } from './routes/api/faq/update-faq-category-name'
+import { deleteFAQItem } from './routes/api/faq/delete-faq-item'
+import { deleteFAQCategory } from './routes/api/faq/delete-faq-category'
 // console.clear()
 logger.info('Starting server setup')
 
@@ -123,6 +129,29 @@ async function main() {
 	app.register(getWeekConversationsMetrics, {
 		getWeekConversationsMetrics:
 			container.webAPIUseCaseFactory.getGetWeekConversationsMetrics(),
+	})
+	app.register(updateDepartment, {
+		updateDepartmentUseCase:
+			container.webAPIUseCaseFactory.getUpdateDepartmentUseCase(),
+	})
+	app.register(createFAQ, {
+		createFAQUseCase: container.webAPIUseCaseFactory.getCreateFAQUseCase(),
+	})
+	app.register(updateFAQItem, {
+		updateFAQItemUseCase:
+			container.webAPIUseCaseFactory.getUpdateFAQItemUseCase(),
+	})
+	app.register(updateFAQCategoryName, {
+		updateFAQCategoryNameUseCase:
+			container.webAPIUseCaseFactory.getUpdateFAQCategoryNameUseCase(),
+	})
+	app.register(deleteFAQItem, {
+		deleteFAQItemUseCase:
+			container.webAPIUseCaseFactory.getDeleteFAQItemUseCase(),
+	})
+	app.register(deleteFAQCategory, {
+		deleteFAQCategoryUseCase:
+			container.webAPIUseCaseFactory.getDeleteFAQCategoryUseCase(),
 	})
 
 	logger.debug('Routes registered')

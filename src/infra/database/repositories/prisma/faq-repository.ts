@@ -4,7 +4,7 @@ import { FAQRepository } from '@/domain/repositories/faq-repository'
 import { prisma } from '@/lib/prisma'
 
 export class PrismaFAQRepository extends FAQRepository {
-	async save(
+	async create(
 		companyId: string,
 		category: string,
 		question: string,
@@ -141,5 +141,78 @@ export class PrismaFAQRepository extends FAQRepository {
 			},
 			category.id
 		)
+	}
+
+	async updateFAQItem(
+		companyId: string,
+		categoryId: string,
+		itemId: string,
+		question: string,
+		answer: string
+	): Promise<void> {
+		const category = await prisma.fAQCategory.findUniqueOrThrow({
+			where: { id: categoryId, companyId },
+		})
+
+		await prisma.fAQItem.update({
+			where: {
+				id: itemId,
+				categoryId: category.id,
+			},
+			data: {
+				question,
+				answer,
+			},
+		})
+	}
+
+	async updateCategoryName(
+		companyId: string,
+		categoryId: string,
+		name: string
+	): Promise<void> {
+		await prisma.fAQCategory.update({
+			where: {
+				id: categoryId,
+				companyId,
+			},
+			data: {
+				name,
+			},
+		})
+	}
+
+	async deleteFAQItem(
+		companyId: string,
+		categoryId: string,
+		itemId: string
+	): Promise<void> {
+		const category = await prisma.fAQCategory.findUniqueOrThrow({
+			where: { id: categoryId, companyId },
+		})
+
+		await prisma.fAQItem.delete({
+			where: {
+				id: itemId,
+				categoryId: category.id,
+			},
+		})
+	}
+
+	async deleteCategory(companyId: string, categoryId: string): Promise<void> {
+		const category = await prisma.fAQCategory.findUniqueOrThrow({
+			where: { id: categoryId, companyId },
+		})
+
+		await prisma.fAQItem.deleteMany({
+			where: {
+				categoryId: category.id,
+			},
+		})
+		await prisma.fAQCategory.delete({
+			where: {
+				id: category.id,
+			},
+		})
 	}
 }

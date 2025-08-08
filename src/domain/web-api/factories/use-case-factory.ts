@@ -3,6 +3,7 @@ import { RepositoryFactory } from '@/domain/whats-app/application/factory/reposi
 import { CreateCompanyUseCase } from '../use-cases/create-company-use-case'
 import { CreateDepartmentUseCase } from '../use-cases/create-department-use-case'
 import { CreateEmployeeUseCase } from '../use-cases/create-employee-use-case'
+import { CreateFAQUseCase } from '../use-cases/create-faq-use-case'
 import { GetAllCompanyEmployeesUseCase } from '../use-cases/get-all-company-employees-use-case'
 import { GetBaseMetricsUseCase } from '../use-cases/get-base-metrics-use-case'
 import { GetChatsUseCase } from '../use-cases/get-chats-use-case'
@@ -14,9 +15,14 @@ import { GetEmployeeByPhoneUseCase } from '../use-cases/get-employee-by-phone-us
 import { GetFAQsUseCase } from '../use-cases/get-faqs-use-case'
 import { GetManagerProfileUseCase } from '../use-cases/get-manager-profile-use-case'
 import { GetRecentChatsUseCase } from '../use-cases/get-recent-chats-use-case'
+import { GetWeekConversationsMetrics } from '../use-cases/get-week-conversations-metrics'
 import { ParseChatUseCase } from '../use-cases/parse-chat-use-case'
 import { UpdateCompanyUseCase } from '../use-cases/update-company-use-case'
-import { GetWeekConversationsMetrics } from '../use-cases/get-week-conversations-metrics'
+import { UpdateDepartmentUseCase } from '../use-cases/update-department-use-case'
+import { UpdateFAQItemUseCase } from '../use-cases/update-faq-item-use-case'
+import { UpdateFAQCategoryNameUseCase } from '../use-cases/update-faq-category-name-use-case'
+import { DeleteFAQItemUseCase } from '../use-cases/delete-faq-item-use-case'
+import { DeleteFAQCategoryUseCase } from '../use-cases/delete-faq-category-use-case'
 
 export class UseCaseFactory {
 	constructor(
@@ -123,13 +129,45 @@ export class UseCaseFactory {
 
 	getCreateDepartmentUseCase(): CreateDepartmentUseCase {
 		return new CreateDepartmentUseCase(
-			this.repositoryFactory.getDepartmentRepository()
+			this.repositoryFactory.getDepartmentRepository(),
+			this.repositoryFactory.getEmployeeRepository()
 		)
 	}
 
 	getGetWeekConversationsMetrics(): GetWeekConversationsMetrics {
 		return new GetWeekConversationsMetrics(
 			this.repositoryFactory.getConversationRepository()
+		)
+	}
+
+	getUpdateDepartmentUseCase(): UpdateDepartmentUseCase {
+		return new UpdateDepartmentUseCase(
+			this.repositoryFactory.getDepartmentRepository(),
+			this.repositoryFactory.getEmployeeRepository()
+		)
+	}
+
+	getCreateFAQUseCase(): CreateFAQUseCase {
+		return new CreateFAQUseCase(this.repositoryFactory.getFAQRepository())
+	}
+
+	getUpdateFAQItemUseCase(): UpdateFAQItemUseCase {
+		return new UpdateFAQItemUseCase(this.repositoryFactory.getFAQRepository())
+	}
+
+	getUpdateFAQCategoryNameUseCase(): UpdateFAQCategoryNameUseCase {
+		return new UpdateFAQCategoryNameUseCase(
+			this.repositoryFactory.getFAQRepository()
+		)
+	}
+
+	getDeleteFAQItemUseCase(): DeleteFAQItemUseCase {
+		return new DeleteFAQItemUseCase(this.repositoryFactory.getFAQRepository())
+	}
+
+	getDeleteFAQCategoryUseCase(): DeleteFAQCategoryUseCase {
+		return new DeleteFAQCategoryUseCase(
+			this.repositoryFactory.getFAQRepository()
 		)
 	}
 }
