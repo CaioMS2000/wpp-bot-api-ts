@@ -38,6 +38,8 @@ export async function getFAQs(app: FastifyInstance, resources: Resources) {
 				const { company } = await request.getUserMembership(request.params.cnpj)
 				const faqs = await getFAQsUseCase.getFAQs(company.id)
 
+				console.log('\nfaqs:\n', faqs)
+
 				return reply.status(200).send({
 					faqs,
 				})

@@ -21,8 +21,9 @@ export const bodySchema = z.object({
 export const responseSchema = {
 	201: z.object({
 		faq: z.object({
-			id: z.string(),
-			category: z.string(),
+			categoryName: z.string(),
+			categoryId: z.string(),
+			itemId: z.string(),
 			question: z.string(),
 			answer: z.string(),
 		}),
@@ -55,7 +56,15 @@ export async function createFAQ(app: FastifyInstance, resources: Resources) {
 					answer
 				)
 
-				return reply.status(201).send({ faq })
+				return reply.status(201).send({
+					faq: {
+						categoryName: faq.categoryName,
+						categoryId: faq.categoryId,
+						itemId: faq.itemId,
+						question: faq.question,
+						answer: faq.answer,
+					},
+				})
 			}
 		)
 }

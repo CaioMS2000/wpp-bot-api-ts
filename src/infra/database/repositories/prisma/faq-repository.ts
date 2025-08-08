@@ -83,6 +83,7 @@ export class PrismaFAQRepository extends FAQRepository {
 				{
 					answer: item.answer,
 					question: item.question,
+					categoryId: item.categoryId,
 				},
 				item.id
 			)
@@ -110,6 +111,7 @@ export class PrismaFAQRepository extends FAQRepository {
 				{
 					answer: item.answer,
 					question: item.question,
+					categoryId: item.categoryId,
 				},
 				item.id
 			)

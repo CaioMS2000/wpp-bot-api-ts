@@ -6,23 +6,26 @@ export class GetFAQsUseCase {
 
 	async getFAQs(companyId: string) {
 		const categories = await this.faqRepository.findCategories(companyId)
-		const faqs: FAQs = {}
-
-		for (const category of categories) {
-			faqs[category.name] = []
-			const items = await this.faqRepository.findItemsByCategory(
-				companyId,
-				category.id
-			)
-
-			items.forEach(item => {
-				faqs[category.name].push({
-					question: item.question,
-					answer: item.answer,
-				})
+		console.log('\ncategories:\n', categories)
+		const results = (await Promise.all(
+			categories.map(async category => {
+				const items = await this.faqRepository.findItemsByCategory(
+					companyId,
+					category.id
+				)
+				return {
+					id: category.id,
+					name: category.name,
+					items: items.map(item => ({
+						id: item.id,
+						question: item.question,
+						answer: item.answer,
+					})),
+				}
 			})
-		}
+		)) satisfies FAQs
+		console.log('\nresults:\n', results)
 
-		return faqs
+		return results
 	}
 }

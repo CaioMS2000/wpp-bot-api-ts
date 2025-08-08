@@ -18,6 +18,7 @@ export class FAQMapper {
 					{
 						question: i.question,
 						answer: i.answer,
+						categoryId: i.categoryId,
 					},
 					i.id
 				)

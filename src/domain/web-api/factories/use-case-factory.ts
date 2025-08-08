@@ -23,6 +23,7 @@ import { UpdateFAQItemUseCase } from '../use-cases/update-faq-item-use-case'
 import { UpdateFAQCategoryNameUseCase } from '../use-cases/update-faq-category-name-use-case'
 import { DeleteFAQItemUseCase } from '../use-cases/delete-faq-item-use-case'
 import { DeleteFAQCategoryUseCase } from '../use-cases/delete-faq-category-use-case'
+import { UpdateEmployeeUseCase } from '../use-cases/update-employee-use-case'
 
 export class UseCaseFactory {
 	constructor(
@@ -168,6 +169,13 @@ export class UseCaseFactory {
 	getDeleteFAQCategoryUseCase(): DeleteFAQCategoryUseCase {
 		return new DeleteFAQCategoryUseCase(
 			this.repositoryFactory.getFAQRepository()
+		)
+	}
+
+	getUpdateEmployeeUseCase(): UpdateEmployeeUseCase {
+		return new UpdateEmployeeUseCase(
+			this.repositoryFactory.getEmployeeRepository(),
+			this.repositoryFactory.getDepartmentRepository()
 		)
 	}
 }

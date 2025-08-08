@@ -42,4 +42,12 @@ export class Employee extends AggregateRoot<EmployeeProps> {
 	set departmentId(departmentId: Nullable<string>) {
 		this.props.departmentId = departmentId
 	}
+
+	set name(value: string) {
+		this.props.name = value
+	}
+
+	set phone(value: string) {
+		this.props.phone = value
+	}
 }

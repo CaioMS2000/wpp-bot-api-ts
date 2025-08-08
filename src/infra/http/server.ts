@@ -109,6 +109,8 @@ async function main() {
 			container.webAPIUseCaseFactory.getGetAllCompanyEmployeesUseCase(),
 		getEmployeeByPhoneUseCase:
 			container.webAPIUseCaseFactory.getGetEmployeeByPhoneUseCase(),
+		updateEmployeeUseCase:
+			container.webAPIUseCaseFactory.getUpdateEmployeeUseCase(),
 	})
 
 	app.register(faqRouter, {

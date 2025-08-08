@@ -3,6 +3,7 @@ import { Entity } from '@/core/entities/entity'
 export type FAQItemProps = {
 	question: string
 	answer: string
+	categoryId: string
 }
 
 export class FAQItem extends Entity<FAQItemProps> {
@@ -16,5 +17,9 @@ export class FAQItem extends Entity<FAQItemProps> {
 
 	get answer() {
 		return this.props.answer
+	}
+
+	get categoryId() {
+		return this.props.categoryId
 	}
 }

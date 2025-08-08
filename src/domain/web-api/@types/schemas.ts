@@ -52,14 +52,18 @@ export const chatMessageSchema = z.discriminatedUnion('sender', [
 	}),
 ])
 
-export const faqSchema = z.record(
-	z.string(),
-	z.array(
-		z.object({
-			question: z.string(),
-			answer: z.string(),
-		})
-	)
+export const faqSchema = z.array(
+	z.object({
+		id: z.string(),
+		name: z.string(),
+		items: z.array(
+			z.object({
+				id: z.string(),
+				question: z.string(),
+				answer: z.string(),
+			})
+		),
+	})
 )
 
 export const departmentSchema = z.object({

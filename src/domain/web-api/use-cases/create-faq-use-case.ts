@@ -23,8 +23,9 @@ export class CreateFAQUseCase {
 		}
 
 		return {
-			id: newFAQItem.id,
-			category: category,
+			itemId: newFAQItem.id,
+			categoryId: newFAQItem.id,
+			categoryName: category,
 			question: newFAQItem.question,
 			answer: newFAQItem.answer,
 		}
