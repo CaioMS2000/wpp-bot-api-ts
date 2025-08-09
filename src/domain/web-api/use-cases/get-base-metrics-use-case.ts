@@ -17,6 +17,7 @@ export class GetBaseMetricsUseCase {
 			companyId,
 			day
 		)
+		console.log('\n\ntotalChats:\n', totalChats)
 		const chatWithAI = totalChats.filter(
 			chat => chat.agentType === AgentType.AI
 		)

@@ -55,6 +55,8 @@ export class UseCaseFactory {
 	getGetChatsUseCase(): GetChatsUseCase {
 		return new GetChatsUseCase(
 			this.repositoryFactory.getConversationRepository(),
+			this.repositoryFactory.getDepartmentRepository(),
+			this.repositoryFactory.getClientRepository(),
 			this.getParseChatUseCase()
 		)
 	}

@@ -292,8 +292,14 @@ export class PrismaConversationRepository extends ConversationRepository {
 				},
 			},
 		})
+		const fullConversations = await Promise.all(
+			raw.map(async c => {
+				return this.findOrThrow(c.companyId, c.id)
+			})
+		)
 
-		return raw.map(ConversationMapper.toEntity)
+		// return raw.map(ConversationMapper.toEntity)
+		return fullConversations
 	}
 
 	async findBetweenDates(

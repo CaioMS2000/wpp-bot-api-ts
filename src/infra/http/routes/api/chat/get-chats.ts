@@ -23,6 +23,7 @@ export const responseSchema = {
 				messages: z.array(chatMessageSchema),
 			})
 		),
+		clientsInQueue: z.number(),
 	}),
 }
 
@@ -44,11 +45,15 @@ export async function getAllChats(app: FastifyInstance, resources: Resources) {
 			async (request, reply) => {
 				const { getChatsUseCase } = resources
 				const { company } = await request.getUserMembership(request.params.cnpj)
-				const chats = await getChatsUseCase.execute(company.id)
+				const { chats, clientsInQueue } = await getChatsUseCase.execute(
+					company.id
+				)
 
-				return reply.status(201).send({
-					chats,
-				})
+				console.log('\nchats:\n', chats)
+
+				return reply
+					.status(201)
+					.send({ chats, clientsInQueue: clientsInQueue.length })
 			}
 		)
 }
