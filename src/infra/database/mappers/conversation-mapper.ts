@@ -10,19 +10,25 @@ import {
 	AgentType as PrismaAgentType,
 	StateName as PrismaStateName,
 } from 'ROOT/prisma/generated'
-import { Conversation } from '@/domain/entities/conversation'
-import { AgentType, UserType } from '@/domain/whats-app/@types'
+import { Conversation } from '@/entities/conversation'
+import { AgentType, UserType } from '@/@types'
 import { CompanyMapper } from './company-mapper'
 import { ClientMapper } from './client-mapper'
 import { EmployeeMapper } from './employee-mapper'
 import { MessageMapper } from './message-mapper'
-import { Employee } from '@/domain/entities/employee'
-import { Company } from '@/domain/entities/company'
-import { ConversationState } from '@/domain/whats-app/application/states/conversation-state'
+import { Employee } from '@/entities/employee'
+import { Company } from '@/entities/company'
+import {
+	fromPrismaStateName,
+	toPrismaStateName,
+} from '@/infra/database/utils/enumTypeMapping'
 import { fromPrismaUserType } from '../utils/enumTypeMapping'
 
 export class ConversationMapper {
-	static toEntity(raw: PrismaConversation): Conversation {
+	static toEntity(
+		raw: PrismaConversation,
+		rawMessages: PrismaMessage[] = []
+	): Conversation {
 		const companyId: string = raw.companyId
 		const startedAt: Date = raw.startedAt
 		const endedAt: Nullable<Date> = raw.endedAt
@@ -30,6 +36,16 @@ export class ConversationMapper {
 		const agentId: Nullable<string> = raw.agentId
 		const resume: Nullable<string> = raw.resume
 		let userId: string
+		let agentType: Nullable<AgentType> = null
+
+		if (agentId) {
+			if (raw.agentType === 'EMPLOYEE') {
+				agentType = AgentType.EMPLOYEE
+			}
+			if (raw.agentType === 'AI') {
+				agentType = AgentType.AI
+			}
+		}
 
 		if (raw.userType === 'CLIENT' && raw.clientId) {
 			userId = raw.clientId
@@ -47,8 +63,13 @@ export class ConversationMapper {
 				endedAt,
 				lastStateChange,
 				agentId,
+				agentType,
 				resume,
 				userType: fromPrismaUserType(raw.userType),
+				state: fromPrismaStateName(raw.currentState),
+				stateMetadata: raw.stateData,
+				entryActionExecuted: raw.entryActionExecuted,
+				messages: rawMessages.map(MessageMapper.toEntity),
 			},
 			raw.id
 		)
@@ -57,7 +78,6 @@ export class ConversationMapper {
 	}
 
 	static toModel(entity: Conversation): Omit<PrismaConversation, 'id'> {
-		// Verifica se user é Client ou Employee baseado na presença da propriedade 'department'
 		const isEmployee = entity.userType === UserType.EMPLOYEE
 
 		return {
@@ -76,16 +96,15 @@ export class ConversationMapper {
 					? entity.agentId
 					: null,
 			companyId: entity.companyId,
-			currentState: entity.currentState.constructor.name
-				.replace('State', '')
-				.toLowerCase() as PrismaStateName,
-			stateData: entity.currentState?.data ?? null,
+			currentState: toPrismaStateName(entity.state),
+			stateData: null,
 			createdAt: entity.startedAt,
 			updatedAt: new Date(),
 			startedAt: entity.startedAt,
 			endedAt: entity.endedAt,
 			lastStateChange: entity.lastStateChange,
 			resume: entity.resume,
+			entryActionExecuted: entity.entryActionExecuted,
 		}
 	}
 }

@@ -1,4 +1,4 @@
-import { AuthService } from '@/domain/web-api/services/auth-service'
+import { AuthService } from '@/modules/web-api/services/auth-service'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -34,15 +34,9 @@ export async function authenticateWithPassword(
 			response: responseSchema,
 		},
 		handler: async (req, reply) => {
-			console.log('login request with the following body:\n', req.body)
-
 			const { email, password } = req.body
-
 			const { id, ...result } =
 				await resources.authService.authenticateWithPassword(email, password)
-
-			console.log('login result:\n', result)
-
 			const token = await reply.jwtSign(
 				{
 					sub: id,

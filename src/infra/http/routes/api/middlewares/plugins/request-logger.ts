@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import fastifyPlugin from 'fastify-plugin'
 import fs from 'node:fs'
 import path from 'node:path'
-import { logger } from '@/core/logger'
+import { logger } from '@/logger'
 import { findProjectRoot } from '@/utils/files'
 
 export const requestLogger = fastifyPlugin(async (app: FastifyInstance) => {

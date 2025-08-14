@@ -1,5 +1,5 @@
-import { logger } from '@/core/logger'
-import { GetBaseMetricsUseCase } from '@/domain/web-api/use-cases/get-base-metrics-use-case'
+import { logger } from '@/logger'
+import { GetBaseMetricsUseCase } from '@/modules/web-api/use-cases/get-base-metrics-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'

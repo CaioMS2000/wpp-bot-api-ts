@@ -1,53 +1,86 @@
-import { Message } from '@/domain/entities/message'
-import { SenderType } from '@/domain/whats-app/@types'
+import { SenderType } from '@/@types'
+import { Message } from '@/entities/message'
+import { logger } from '@/logger'
 import { Message as PrismaMessage } from 'ROOT/prisma/generated'
 import { toPrismaFromType } from '../utils/enumTypeMapping'
-import { logger } from '@/core/logger'
 
 export class MessageMapper {
 	static toEntity(raw: PrismaMessage): Message {
-		if (raw.from === 'AI' && raw.aiResponseId) {
-			return Message.create(
-				{
-					conversationId: raw.conversationId,
-					senderType: SenderType.AI,
-					content: raw.content,
-					aiResponseId: raw.aiResponseId,
-				},
-				raw.id
-			)
-		} else if (raw.from !== 'AI' && (raw.clientId || raw.employeeId)) {
-			let resolvedFrom: Nullable<Message['senderType']> = null
-			let resolvedSenderId: Nullable<Message['senderId']> = null
+		switch (raw.from) {
+			case 'AI': {
+				if (!raw.aiResponseId) {
+					logger.error(
+						'[MessageMapper.toEntity] AI message without aiResponseId',
+						{ raw }
+					)
+					throw new Error('AI message without aiResponseId')
+				}
 
-			if (raw.from === 'CLIENT') {
-				resolvedFrom = SenderType.CLIENT
-				resolvedSenderId = raw.clientId
-			} else if (raw.from === 'EMPLOYEE') {
-				resolvedFrom = SenderType.EMPLOYEE
-				resolvedSenderId = raw.employeeId
+				return Message.create(
+					{
+						conversationId: raw.conversationId,
+						senderType: SenderType.AI,
+						content: raw.content,
+						aiResponseId: raw.aiResponseId,
+					},
+					raw.id
+				)
 			}
 
-			if (resolvedFrom === null || resolvedSenderId === null) {
-				logger.error('[MessageMapper.toEntity]\n', {
-					raw,
-					resolvedFrom,
-					resolvedSenderId,
-				})
+			case 'SYSTEM': {
+				return Message.create(
+					{
+						conversationId: raw.conversationId,
+						senderType: SenderType.SYSTEM,
+						content: raw.content,
+					},
+					raw.id
+				)
+			}
+
+			case 'CLIENT': {
+				if (!raw.clientId) {
+					logger.error(
+						'[MessageMapper.toEntity] CLIENT message without clientId',
+						{ raw }
+					)
+					throw new Error('CLIENT message without clientId')
+				}
+				return Message.create(
+					{
+						conversationId: raw.conversationId,
+						senderType: SenderType.CLIENT,
+						content: raw.content,
+						senderId: raw.clientId,
+					},
+					raw.id
+				)
+			}
+
+			case 'EMPLOYEE': {
+				if (!raw.employeeId) {
+					logger.error(
+						'[MessageMapper.toEntity] EMPLOYEE message without employeeId',
+						{ raw }
+					)
+					throw new Error('EMPLOYEE message without employeeId')
+				}
+				return Message.create(
+					{
+						conversationId: raw.conversationId,
+						senderType: SenderType.EMPLOYEE,
+						content: raw.content,
+						senderId: raw.employeeId,
+					},
+					raw.id
+				)
+			}
+
+			default: {
+				logger.error('[MessageMapper.toEntity] Unknown message origin', { raw })
 				throw new Error('Cannot resolve message origin')
 			}
-
-			return Message.create(
-				{
-					senderType: resolvedFrom,
-					content: raw.content,
-					senderId: resolvedSenderId,
-					conversationId: raw.conversationId,
-				},
-				raw.id
-			)
 		}
-		throw new Error('Cannot resolve message from')
 	}
 
 	static toModel(entity: Message): PrismaMessage {

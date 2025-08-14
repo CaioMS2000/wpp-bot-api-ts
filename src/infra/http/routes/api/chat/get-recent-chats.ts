@@ -1,5 +1,5 @@
-import { chatMessageSchema } from '@/domain/web-api/@types/schemas'
-import { GetRecentChatsUseCase } from '@/domain/web-api/use-cases/get-recent-chats-use-case'
+import { chatMessageSchema } from '@/modules/web-api/@types/schemas'
+import { GetRecentChatsUseCase } from '@/modules/web-api/use-cases/get-recent-chats-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'

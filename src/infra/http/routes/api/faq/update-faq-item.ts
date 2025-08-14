@@ -1,8 +1,8 @@
+import { UpdateFAQItemUseCase } from '@/modules/web-api/use-cases/update-faq-item-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
-import { UpdateFAQItemUseCase } from '@/domain/web-api/use-cases/update-faq-item-use-case'
 
 type Resources = {
 	updateFAQItemUseCase: UpdateFAQItemUseCase

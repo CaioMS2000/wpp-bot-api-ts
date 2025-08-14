@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url'
 import { PrismaClient, Prisma } from './prisma/generated'
 import { prisma } from '@/lib/prisma'
-import { logger } from '@/core/logger'
+import { logger } from '@/logger'
 
 export async function clearDatabase(
 	prisma: PrismaClient | Prisma.TransactionClient,

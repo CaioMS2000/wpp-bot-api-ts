@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { logger } from '@/core/logger'
+import { logger } from '@/logger'
 import { prisma } from '@/lib/prisma'
 import { emptyJsonFile, findProjectRoot } from '@/utils/files'
 import { clearDatabase } from 'ROOT/clear-database'

@@ -1,5 +1,5 @@
 import { Client as PrismaClient } from 'ROOT/prisma/generated'
-import { Client } from '@/domain/entities/client'
+import { Client } from '@/entities/client'
 
 export class ClientMapper {
 	static toEntity(raw: PrismaClient): Client {
@@ -18,6 +18,8 @@ export class ClientMapper {
 			name: entity.name,
 			phone: entity.phone,
 			companyId: entity.companyId,
+			email: entity.email,
+			profession: entity.profession,
 		}
 	}
 }

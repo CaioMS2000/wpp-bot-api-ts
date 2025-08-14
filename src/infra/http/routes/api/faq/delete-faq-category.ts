@@ -1,8 +1,8 @@
+import { DeleteFAQCategoryUseCase } from '@/modules/web-api/use-cases/delete-faq-category-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
-import { DeleteFAQCategoryUseCase } from '@/domain/web-api/use-cases/delete-faq-category-use-case'
 
 type Resources = {
 	deleteFAQCategoryUseCase: DeleteFAQCategoryUseCase

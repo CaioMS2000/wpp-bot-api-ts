@@ -1,8 +1,8 @@
-import { Client } from '@/domain/entities/client'
-import { Department } from '@/domain/entities/department'
-import { Employee } from '@/domain/entities/employee'
-import { FAQItem } from '@/domain/entities/faq-item'
-import { User } from '@/domain/whats-app/@types'
+import { Client } from '@/entities/client'
+import { Department } from '@/entities/department'
+import { Employee } from '@/entities/employee'
+import { FAQItem } from '@/entities/faq-item'
+import { User } from '@/@types'
 
 // export function isClient(user: Client | Employee): user is Client {
 // export function isClient(user: unknown): user is Client {

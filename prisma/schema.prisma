@@ -9,13 +9,13 @@ datasource db {
 }
 
 model Manager {
-  id       String   @id @default(uuid())
-  name     String
-  companyId     String?
-  email    String   @unique
-  password String
-  phone    String?  @unique
-  company  Company?
+  id        String   @id @default(uuid())
+  name      String
+  companyId String?
+  email     String   @unique
+  password  String
+  phone     String?  @unique
+  company   Company?
 }
 
 enum WeekDay {
@@ -59,14 +59,16 @@ model Company {
 }
 
 model Client {
-  id            String         @id @default(uuid())
+  id            String            @id @default(uuid())
   name          String
-  phone         String         @unique
+  email         String?
+  profession    String?
+  phone         String            @unique
   companyId     String
-  company       Company        @relation(fields: [companyId], references: [id])
+  company       Company           @relation(fields: [companyId], references: [id])
   conversations Conversation[]
   messages      Message[]
-  queue       DepartmentQueue[]
+  queue         DepartmentQueue[]
 }
 
 model Employee {
@@ -93,44 +95,47 @@ enum AgentType {
 }
 
 enum StateName {
-  initial_menu
-  ai_chat
-  faq_categories
-  faq_items
-  department_selection
-  department_queue
-  department_chat
-  department_queue_list
-  chat_with_client
+  CHATTING_WITH_EMPLOYEE
+  CHATTING_WITH_CLIENT
+  CHATTING_WITH_AI
+  DEPARTMENT_QUEUE
+  SELECTING_DEPARTMENT
+  LISTING_DEPARTMENT_QUEUE
+  SELECTING_FAQ_CATEGORY
+  LISTING_FAQ_ITEMS
+  INITIAL_MENU
+  BEGIN
 }
 
 model Conversation {
-  id              String     @id @default(uuid())
-  clientId        String?
-  employeeId      String?
-  userType        UserType
-  agentType       AgentType?
-  agentId         String?
-  companyId       String
-  currentState    StateName
-  stateData       Json?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  startedAt       DateTime   @default(now())
-  endedAt         DateTime?
-  lastStateChange DateTime?
-  resume          String?
-  client          Client?    @relation(fields: [clientId], references: [id])
-  company         Company    @relation(fields: [companyId], references: [id])
-  employee        Employee?  @relation("employee", fields: [employeeId], references: [id])
-  agent           Employee?  @relation("agent", fields: [agentId], references: [id])
-  messages        Message[]
+  id                  String     @id @default(uuid())
+  clientId            String?
+  employeeId          String?
+  userType            UserType
+  agentType           AgentType?
+  agentId             String?
+  companyId           String
+  currentState        StateName
+  stateData           Json?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+  startedAt           DateTime   @default(now())
+  endedAt             DateTime?
+  lastStateChange     DateTime?
+  resume              String?
+  entryActionExecuted Boolean
+  client              Client?    @relation(fields: [clientId], references: [id])
+  company             Company    @relation(fields: [companyId], references: [id])
+  employee            Employee?  @relation("employee", fields: [employeeId], references: [id])
+  agent               Employee?  @relation("agent", fields: [agentId], references: [id])
+  messages            Message[]
 }
 
 enum FromType {
   CLIENT
   EMPLOYEE
   AI
+  SYSTEM
 }
 
 model Message {
@@ -148,11 +153,11 @@ model Message {
 }
 
 model Department {
-  id          String     @id @default(uuid())
-  name        String     @unique
-  description String?    @default("")
+  id          String            @id @default(uuid())
+  name        String            @unique
+  description String?           @default("")
   companyId   String
-  company     Company    @relation(fields: [companyId], references: [id])
+  company     Company           @relation(fields: [companyId], references: [id])
   employees   Employee[]
   queue       DepartmentQueue[]
 }
@@ -165,7 +170,7 @@ model DepartmentQueue {
   leftAt       DateTime?
   department   Department @relation(fields: [departmentId], references: [id])
   client       Client     @relation(fields: [clientId], references: [id])
-  
+
   @@unique([departmentId, clientId])
   @@index([departmentId, joinedAt])
 }

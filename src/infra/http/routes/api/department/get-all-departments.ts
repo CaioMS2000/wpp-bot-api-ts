@@ -1,9 +1,9 @@
-import { GetCompanyDepartmentsUseCase } from '@/domain/web-api/use-cases/get-company-departments-use-case'
+import { departmentSchema } from '@/modules/web-api/@types/schemas'
+import { GetCompanyDepartmentsUseCase } from '@/modules/web-api/use-cases/get-company-departments-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
-import { departmentSchema } from '@/domain/web-api/@types/schemas'
 
 type Resources = {
 	getCompanyDepartmentsUseCase: GetCompanyDepartmentsUseCase

@@ -1,5 +1,5 @@
-import { faqSchema } from '@/domain/web-api/@types/schemas'
-import { GetFAQsUseCase } from '@/domain/web-api/use-cases/get-faqs-use-case'
+import { faqSchema } from '@/modules/web-api/@types/schemas'
+import { GetFAQsUseCase } from '@/modules/web-api/use-cases/get-faqs-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -37,8 +37,6 @@ export async function getFAQs(app: FastifyInstance, resources: Resources) {
 				const { getFAQsUseCase } = resources
 				const { company } = await request.getUserMembership(request.params.cnpj)
 				const faqs = await getFAQsUseCase.getFAQs(company.id)
-
-				console.log('\nfaqs:\n', faqs)
 
 				return reply.status(200).send({
 					faqs,

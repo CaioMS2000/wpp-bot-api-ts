@@ -1,125 +1,138 @@
-import { AuthServiceFactory } from '@/domain/web-api/factories/auth-service-factory'
-import { UseCaseFactory as WebAPIUseCaseFactory } from '@/domain/web-api/factories/use-case-factory'
-import { AIServiceFactory } from '@/domain/whats-app/application/factory/ai-service-factory'
-import { DepartmentQueueServiceFactory } from '@/domain/whats-app/application/factory/department-queue-service-factory'
-import { DepartmentServiceFactory } from '@/domain/whats-app/application/factory/department-service-factory'
-import { ProcessClientMessageServiceFactory } from '@/domain/whats-app/application/factory/process-client-message-service-factory'
-import { ProcessEmployeeMessageServiceFactory } from '@/domain/whats-app/application/factory/process-employee-message-service-factory'
-import { StateFactory } from '@/domain/whats-app/application/factory/state-factory'
-import { StateServiceFactory } from '@/domain/whats-app/application/factory/state-service-factory'
-import { UseCaseFactory } from '@/domain/whats-app/application/factory/use-case-factory'
-import { WhatsAppMessageServiceFactory } from '@/domain/whats-app/application/factory/whats-app-message-service-factory'
-import { PrismaStateDataParser } from '../database/state-data-parser/prisma/prisma-state-data-parser'
-import { PrismaRepositoryFactory } from '../factory/prisma/prisma-repository-factory'
+import { AIServiceFactory } from '@/infra/factory/openai/ai-service-factory'
+import { AuthServiceFactory } from '@/modules/web-api/factories/auth-service-factory'
+import { UseCaseFactory as WebAPIUseCaseFactory } from '@/modules/web-api/factories/use-case-factory'
+import { DepartmentQueueServiceFactory } from '@/modules/whats-app/factory/department-queue-service-factory'
+import { DepartmentServiceFactory } from '@/modules/whats-app/factory/department-service-factory'
+import { ProcessClientMessageServiceFactory } from '@/modules/whats-app/factory/process-client-message-service-factory'
+import { ProcessEmployeeMessageServiceFactory } from '@/modules/whats-app/factory/process-employee-message-service-factory'
+import { StateServiceFactory } from '@/modules/whats-app/factory/state-service-factory'
+import { WhatsAppMessageServiceFactory } from '@/modules/whats-app/factory/whats-app-message-service-factory'
 import { WhatsAppOutputPort } from './output/whats-app-output-port'
+import { UserServiceFactory } from '@/modules/whats-app/factory/user-service-factory'
+import { CompanyServiceFactory } from '@/modules/whats-app/factory/company-service-factory'
+import { ConversationServiceFactory } from '@/modules/whats-app/factory/conversation-service-factory'
+import { StateOrchestratorFactory } from '@/modules/whats-app/factory/state-orchestrator-factory'
+import { FAQServiceFactory } from '@/modules/whats-app/factory/faq-service-factory'
+import { MessageHandlerFactory } from '@/modules/whats-app/factory/message-handler-factory'
+import { StateContextServiceFactory } from '@/modules/whats-app/factory/state-context-service-factory'
+import { ManagerServiceFactory } from '@/modules/web-api/factories/manager-service-factory'
+import { ManagerService } from '@/modules/web-api/services/manager-service'
 
 export class DependenciesContainer {
 	public readonly outputPort = new WhatsAppOutputPort()
-	public readonly repositoryFactory = new PrismaRepositoryFactory()
 
 	// WhatsApp Factories
 	public readonly aiServiceFactory: AIServiceFactory
-	public readonly stateFactory: StateFactory
+	public readonly companyServiceFactory: CompanyServiceFactory
+	public readonly conversationServiceFactory: ConversationServiceFactory
 	public readonly departmentServiceFactory: DepartmentServiceFactory
 	public readonly departmentQueueServiceFactory: DepartmentQueueServiceFactory
-	public readonly useCaseFactory: UseCaseFactory
+	public readonly faqServiceFactory: FAQServiceFactory
+	public readonly messageHandlerFactory: MessageHandlerFactory
 	public readonly stateServiceFactory: StateServiceFactory
+	public readonly stateOrchestratorFactory: StateOrchestratorFactory
+	public readonly stateContextServiceFactory: StateContextServiceFactory
 	public readonly processClientMessageServiceFactory: ProcessClientMessageServiceFactory
 	public readonly processEmployeeMessageServiceFactory: ProcessEmployeeMessageServiceFactory
+	public readonly userServiceFactory: UserServiceFactory
 	public readonly whatsAppMessageServiceFactory: WhatsAppMessageServiceFactory
 
 	// Web API Factories
 	public readonly authServiceFactory: AuthServiceFactory
 	public readonly webAPIUseCaseFactory: WebAPIUseCaseFactory
+	public readonly managerServiceFactory: ManagerServiceFactory
 
 	// Services
 	public readonly whatsAppMessageService: ReturnType<
 		WhatsAppMessageServiceFactory['getService']
 	>
+	public readonly managerService: ManagerService
 	public readonly authService: ReturnType<AuthServiceFactory['getService']>
 
 	constructor() {
-		// Primeira fase - construção sem dependências circulares
-		this.aiServiceFactory = new AIServiceFactory({
-			repositoryFactory: this.repositoryFactory,
-			useCaseFactory: null as any, // Será definido depois
-		})
-
-		this.stateFactory = new StateFactory({
-			outputPort: this.outputPort,
-			aiServiceFactory: this.aiServiceFactory,
-		})
-
+		this.companyServiceFactory = new CompanyServiceFactory()
+		this.faqServiceFactory = new FAQServiceFactory()
+		this.userServiceFactory = new UserServiceFactory(this.companyServiceFactory)
 		this.departmentServiceFactory = new DepartmentServiceFactory(
-			this.repositoryFactory
+			this.userServiceFactory
 		)
-
+		this.stateContextServiceFactory = new StateContextServiceFactory()
 		this.departmentQueueServiceFactory = new DepartmentQueueServiceFactory(
-			this.repositoryFactory
+			this.departmentServiceFactory,
+			this.userServiceFactory
 		)
-
-		// Web API Factories
-		this.authServiceFactory = new AuthServiceFactory(this.repositoryFactory)
-		this.webAPIUseCaseFactory = new WebAPIUseCaseFactory(
-			this.repositoryFactory,
-			this.departmentServiceFactory
+		this.conversationServiceFactory = new ConversationServiceFactory(
+			this.userServiceFactory,
+			this.companyServiceFactory,
+			this.departmentQueueServiceFactory
 		)
-
-		// Segunda fase - resolver dependências circulares
-		this.useCaseFactory = new UseCaseFactory({
-			repositoryFactory: this.repositoryFactory,
-			stateFactory: this.stateFactory,
-			departmentQueueServiceFactory: this.departmentQueueServiceFactory,
-			departmentServiceFactory: this.departmentServiceFactory,
-		})
-
-		// Configurar dependências circulares
-		this.stateFactory.setUseCaseFactory(this.useCaseFactory)
-		this.aiServiceFactory.dependencies.useCaseFactory = this.useCaseFactory
-
-		// Terceira fase - inicialização completa
-		const departmentService = this.departmentServiceFactory.getService()
-		const prismaStateDataParser = new PrismaStateDataParser(
-			this.stateFactory,
-			this.repositoryFactory,
-			this.useCaseFactory,
-			departmentService
+		this.aiServiceFactory = new AIServiceFactory(
+			this.conversationServiceFactory,
+			this.userServiceFactory
 		)
-
-		this.repositoryFactory.setPrismaStateDataParser(prismaStateDataParser)
 
 		this.stateServiceFactory = new StateServiceFactory(
-			this.repositoryFactory,
-			this.useCaseFactory,
-			this.stateFactory,
-			this.departmentServiceFactory
+			this.faqServiceFactory,
+			this.departmentServiceFactory,
+			this.userServiceFactory,
+			this.conversationServiceFactory,
+			this.companyServiceFactory
+		)
+		this.stateOrchestratorFactory = new StateOrchestratorFactory(
+			this.outputPort,
+			this.stateServiceFactory,
+			this.faqServiceFactory,
+			this.conversationServiceFactory,
+			this.departmentServiceFactory,
+			this.departmentQueueServiceFactory,
+			this.userServiceFactory,
+			this.stateContextServiceFactory
 		)
 
 		// WhatsApp Message Services
 		this.processClientMessageServiceFactory =
 			new ProcessClientMessageServiceFactory(
-				this.repositoryFactory,
-				this.useCaseFactory,
-				this.stateServiceFactory
+				this.conversationServiceFactory,
+				this.stateOrchestratorFactory
 			)
 
 		this.processEmployeeMessageServiceFactory =
 			new ProcessEmployeeMessageServiceFactory(
-				this.repositoryFactory,
-				this.useCaseFactory,
-				this.stateServiceFactory
+				this.conversationServiceFactory,
+				this.stateOrchestratorFactory
 			)
 
+		this.messageHandlerFactory = new MessageHandlerFactory(
+			this.processClientMessageServiceFactory.getService(),
+			this.processEmployeeMessageServiceFactory.getService()
+		)
 		this.whatsAppMessageServiceFactory = new WhatsAppMessageServiceFactory(
-			this.repositoryFactory,
-			this.useCaseFactory,
-			this.processClientMessageServiceFactory,
-			this.processEmployeeMessageServiceFactory
+			this.messageHandlerFactory,
+			this.userServiceFactory
 		)
 
 		// Instanciar serviços
 		this.whatsAppMessageService =
 			this.whatsAppMessageServiceFactory.getService()
+
+		// Web API Factories
+		this.managerServiceFactory = new ManagerServiceFactory()
+		this.authServiceFactory = new AuthServiceFactory(
+			this.companyServiceFactory,
+			this.managerServiceFactory
+		)
+		this.webAPIUseCaseFactory = new WebAPIUseCaseFactory(
+			this.departmentServiceFactory,
+			this.departmentQueueServiceFactory,
+			this.companyServiceFactory,
+			this.faqServiceFactory,
+			this.userServiceFactory,
+			this.conversationServiceFactory,
+			this.managerServiceFactory
+		)
+
+		// Web API services
 		this.authService = this.authServiceFactory.getService()
+		this.managerService = this.managerServiceFactory.getService()
 	}
 }

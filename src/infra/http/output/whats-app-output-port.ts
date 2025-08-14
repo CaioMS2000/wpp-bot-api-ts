@@ -1,6 +1,5 @@
-import { logger } from '@/core/logger'
-import { OutputMessage, OutputPort } from '@/core/output/output-port'
-import { User } from '@/domain/whats-app/@types'
+import { logger } from '@/logger'
+import { OutputMessage, OutputPort } from '@/output/output-port'
 import { sendButtonMessage } from '../whatsapp-client/sendButtonMessage'
 import {
 	sendDocumentMessage,
@@ -8,10 +7,10 @@ import {
 } from '../whatsapp-client/sendDocumentMessage'
 import { sendListMessage } from '../whatsapp-client/sendListMessage'
 import { sendTextMessage } from '../whatsapp-client/sendTextMessage'
+import { User } from '@/@types'
 
 export class WhatsAppOutputPort implements OutputPort {
 	async handle(toUser: User, output: OutputMessage) {
-		// logger.debug('[handle] Output:\n', output)
 		try {
 			switch (output.type) {
 				case 'text':

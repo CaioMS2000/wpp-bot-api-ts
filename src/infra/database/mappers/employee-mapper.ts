@@ -1,5 +1,5 @@
 import { Employee as PrismaEmployee } from 'ROOT/prisma/generated'
-import { Employee } from '@/domain/entities/employee'
+import { Employee } from '@/entities/employee'
 
 export class EmployeeMapper {
 	static toEntity(raw: PrismaEmployee): Employee {

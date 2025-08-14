@@ -1,28 +1,36 @@
+import { hash } from 'bcryptjs'
 import { Prisma } from '../prisma/generated'
 
 export async function seedCompanyAndManager(prisma: Prisma.TransactionClient) {
+    const email = 'manager@evolight.com'
+    const CNPJ = '99999999999999'
     const manager = await prisma.manager.upsert({
-        where: { email: 'manager@evolight.com' },
+        where: { email },
         update: {},
         create: {
             name: 'Eugenio Garcia',
-            email: 'manager@evolight.com',
+            email,
             phone: '5562987654321',
-            password: '123456',
+            password: await hash('123456', 6),
         },
     })
 
-    await prisma.company.upsert({
-        where: { cnpj: '99999999999999' },
+    const company = await prisma.company.upsert({
+        where: { cnpj: CNPJ },
         update: {},
         create: {
             name: 'Evolight',
             phone: '556236266103',
-            cnpj: '99999999999999',
+            cnpj: CNPJ,
             email: 'contato@evolight.com.br',
             website: 'https://evolight.com.br',
             description: 'Líder em soluções de energia renovável.',
-            managerId: manager.id,
+            manager: { connect: { id: manager.id } },
         },
+    })
+
+    await prisma.manager.update({
+        where: { id: manager.id },
+        data: { companyId: company.id },
     })
 }

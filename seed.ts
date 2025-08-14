@@ -5,28 +5,28 @@ import { seedFAQs } from './seed/faqs'
 import { seedDepartments } from './seed/departments'
 import { seedEmployees } from './seed/employees'
 import { seedClientsAndChats } from './seed/chats'
-import { logger } from '@/core/logger'
+import { logger } from '@/logger'
 
 async function main() {
-    console.clear()
-    await prisma.$transaction(async tx => {
-        await seedCompanyAndManager(tx)
-        await seedBusinessHours(tx)
-        await seedDepartments(tx)
-        await seedEmployees(tx)
-        await seedFAQs(tx)
-        await seedClientsAndChats(tx)
-    })
+	console.clear()
+	await prisma.$transaction(async tx => {
+		await seedCompanyAndManager(tx)
+		await seedBusinessHours(tx)
+		await seedDepartments(tx)
+		await seedEmployees(tx)
+		await seedFAQs(tx)
+		await seedClientsAndChats(tx)
+	})
 }
 
 main()
-    .then(() => {
-        logger.info('🌱 Seed concluído com sucesso')
-    })
-    .catch(e => {
-        logger.error(e)
-        process.exit(1)
-    })
-    .finally(async () => {
-        await prisma.$disconnect()
-    })
+	.then(() => {
+		logger.info('🌱 Seed concluído com sucesso')
+	})
+	.catch(e => {
+		logger.error(e)
+		process.exit(1)
+	})
+	.finally(async () => {
+		await prisma.$disconnect()
+	})

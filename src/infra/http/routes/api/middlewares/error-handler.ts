@@ -1,4 +1,4 @@
-import { logger } from '@/core/logger'
+import { logger } from '@/logger'
 import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify'
 
 export function errorHandler(

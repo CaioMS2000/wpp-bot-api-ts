@@ -1,4 +1,4 @@
-import { logger } from '@/core/logger'
+import { logger } from '@/logger'
 import type { FastifyInstance } from 'fastify'
 import fastifyPlugin from 'fastify-plugin'
 

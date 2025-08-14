@@ -1,4 +1,4 @@
-import { CreateFAQUseCase } from '@/domain/web-api/use-cases/create-faq-use-case'
+import { CreateFAQUseCase } from '@/modules/web-api/use-cases/create-faq-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'

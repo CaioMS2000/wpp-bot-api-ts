@@ -1,10 +1,9 @@
 import path from 'node:path'
-import { logger } from '@/core/logger'
-import { Conversation } from '@/domain/entities/conversation'
-import { Message } from '@/domain/entities/message'
-import { ConversationRepository } from '@/domain/repositories/conversation-repository'
-import { SenderType, UserType } from '@/domain/whats-app/@types'
-import { AIService } from '@/domain/whats-app/application/services/ai-service'
+import { logger } from '@/logger'
+import { Conversation } from '@/entities/conversation'
+import { Message } from '@/entities/message'
+import { SenderType, UserType } from '@/@types'
+import { AIService } from '@/modules/whats-app/services/ai-service'
 import { env } from '@/env'
 import { appendToLogFile, findProjectRoot } from '@/utils/files'
 import { OpenAI } from 'openai'
@@ -18,17 +17,16 @@ import {
 	FunctionRegistry,
 } from '../types'
 import { functionRegistry } from './functions/registry'
-import { GetClientUseCase } from '@/domain/whats-app/application/use-cases/get-client-use-case'
-import { GetEmployeeUseCase } from '@/domain/whats-app/application/use-cases/get-employee-use-case'
+import { ConversationService } from '@/modules/whats-app/services/conversation-service'
+import { UserService } from '@/modules/whats-app/services/user-service'
 
 export class AIResponseService extends AIService {
 	private client: OpenAI
 	private tools: Tool[] = []
 
 	constructor(
-		private conversationRepository: ConversationRepository,
-		private getClientUseCase: GetClientUseCase,
-		private getEmployeeUseCase: GetEmployeeUseCase
+		private conversationService: ConversationService,
+		private userService: UserService
 	) {
 		super()
 
@@ -45,9 +43,10 @@ export class AIResponseService extends AIService {
 		let instructions = `${systemInstructions}\n**Informações de contexto/sessão**`
 
 		if (conversation.userType === UserType.CLIENT) {
-			const client = await this.getClientUseCase.execute(
+			const client = await this.userService.getClient(
 				conversation.companyId,
-				conversation.userId
+				conversation.userId,
+				{ notNull: true }
 			)
 			instructions +=
 				'\nVocê está conversando com um cliente. De acordo com a base de dados essas são as informações que temos:\n'
@@ -183,7 +182,7 @@ export class AIResponseService extends AIService {
 			})
 
 			conversation.messages.push(newMessage)
-			await this.conversationRepository.save(conversation)
+			await this.conversationService.save(conversation)
 
 			return newMessage
 		} catch (error) {

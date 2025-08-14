@@ -1,5 +1,5 @@
-import { businessHoursSchema } from '@/domain/web-api/@types/schemas'
-import { UpdateCompanyUseCase } from '@/domain/web-api/use-cases/update-company-use-case'
+import { businessHoursSchema } from '@/modules/web-api/@types/schemas'
+import { UpdateCompanyUseCase } from '@/modules/web-api/use-cases/update-company-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'

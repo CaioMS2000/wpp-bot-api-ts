@@ -1,16 +1,23 @@
 {
-    "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-    "extends": ["node_modules/@caioms/biomejs-config/biome.json"],
-"formatter": {
-    "indentStyle": "tab",
-    "indentWidth": 2,
-    "lineWidth": 80
-  },
-    "linter": {
-        "rules": {
-            "correctness": {
-                "noSwitchDeclarations": "off"
-            }
-        }
-    }
+	"$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+	"extends": [
+		"node_modules/@caioms/biomejs-config/biome.json",
+		"@caioms/biomejs-config/biome"
+	],
+	"files": {
+		"include": ["src/**/*.ts"],
+		"ignore": ["biome.json"]
+	},
+	"formatter": {
+		"indentStyle": "tab",
+		"indentWidth": 2,
+		"lineWidth": 80
+	},
+	"linter": {
+		"rules": {
+			"correctness": {
+				"noSwitchDeclarations": "off"
+			}
+		}
+	}
 }

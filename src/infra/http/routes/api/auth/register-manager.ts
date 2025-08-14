@@ -1,4 +1,4 @@
-import { AuthService } from '@/domain/web-api/services/auth-service'
+import { AuthService } from '@/modules/web-api/services/auth-service'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -21,16 +21,8 @@ export async function register(app: FastifyInstance, resources: Resources) {
 			response: { 200: z.null() },
 		},
 		handler: async (req, reply) => {
-			console.log('register request with the following body:\n', req.body)
-
 			const { email, password, name, phone } = req.body
-
-			const result = await resources.authService.registerManager(
-				name,
-				email,
-				password,
-				phone
-			)
+			await resources.authService.registerManager(name, email, password, phone)
 
 			return reply.status(200).send()
 		},

@@ -1,4 +1,4 @@
-import { GetAllCompanyEmployeesUseCase } from '@/domain/web-api/use-cases/get-all-company-employees-use-case'
+import { GetAllCompanyEmployeesUseCase } from '@/modules/web-api/use-cases/get-all-company-employees-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'

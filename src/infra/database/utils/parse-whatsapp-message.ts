@@ -1,4 +1,4 @@
-import { logger } from '@/core/logger'
+import { logger } from '@/logger'
 
 export type ParsedWhatsAppMessage = {
 	from: string

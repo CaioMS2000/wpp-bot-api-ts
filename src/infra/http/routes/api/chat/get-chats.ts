@@ -1,5 +1,5 @@
-import { chatMessageSchema } from '@/domain/web-api/@types/schemas'
-import { GetChatsUseCase } from '@/domain/web-api/use-cases/get-chats-use-case'
+import { chatMessageSchema } from '@/modules/web-api/@types/schemas'
+import { GetChatsUseCase } from '@/modules/web-api/use-cases/get-chats-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
@@ -49,11 +49,7 @@ export async function getAllChats(app: FastifyInstance, resources: Resources) {
 					company.id
 				)
 
-				console.log('\nchats:\n', chats)
-
-				return reply
-					.status(201)
-					.send({ chats, clientsInQueue: clientsInQueue.length })
+				return reply.status(201).send({ chats, clientsInQueue })
 			}
 		)
 }

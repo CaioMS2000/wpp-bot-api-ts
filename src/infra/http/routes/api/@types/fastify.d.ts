@@ -1,7 +1,7 @@
 import 'fastify'
-import { Manager } from "@/domain/entities/manager"
-import { Company } from "@/domain/entities/company"
-import { type AuthService } from '@/domain/web-api/services/auth-service'
+import { Manager } from "@/entities/manager"
+import { Company } from "@/entities/company"
+import { type AuthService } from '@/modules/web-api/services/auth-service'
 
 declare  module 'fastify' {
 	interface FastifyRequest {

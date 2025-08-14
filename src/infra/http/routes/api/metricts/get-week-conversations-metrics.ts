@@ -1,4 +1,4 @@
-import { GetWeekConversationsMetrics } from '@/domain/web-api/use-cases/get-week-conversations-metrics'
+import { GetWeekConversationsMetrics } from '@/modules/web-api/use-cases/get-week-conversations-metrics'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'

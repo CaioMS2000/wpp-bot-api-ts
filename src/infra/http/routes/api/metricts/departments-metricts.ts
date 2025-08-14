@@ -1,4 +1,4 @@
-import { GetDepartmentsMetricsUseCase } from '@/domain/web-api/use-cases/get-departments-metrics-use-case'
+import { GetDepartmentsMetricsUseCase } from '@/modules/web-api/use-cases/get-departments-metrics-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'

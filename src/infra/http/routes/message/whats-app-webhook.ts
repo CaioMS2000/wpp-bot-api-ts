@@ -1,12 +1,11 @@
-import { Client } from '@/domain/entities/client'
-import { WhatsAppMessageService } from '@/domain/whats-app/application/services/whats-app-message-service'
+import { Client } from '@/entities/client'
 import { parseWhatsAppMessage } from '@/infra/database/utils/parse-whatsapp-message'
+import { logger } from '@/logger'
+import { WhatsAppMessageService } from '@/modules/whats-app/services/whats-app-message-service'
+import { appendRequestLog } from '@/utils/log-in-file'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { WhatsAppOutputPort } from '../../output/whats-app-output-port'
-import { logger } from '@/core/logger'
-
-const TAG = '[webhook]'
 
 type Resources = {
 	whatsAppMessageService: WhatsAppMessageService
@@ -20,25 +19,45 @@ export async function whatsAppWebhook(
 ) {
 	app.withTypeProvider<ZodTypeProvider>().post('/', {
 		handler: async (req, reply) => {
-			req.log.info(TAG, 'Evento recebido do webhook')
+			logger.debug('Evento recebido do webhook')
 
 			// @ts-ignore - Temporary test phone validation
-			const entry = req.body?.entry
-			const x = entry?.[0]?.changes?.[0]?.value?.messages?.[0].from
-			const y = entry?.[0]?.changes?.[0]?.value?.metadata?.display_phone_number
-			const z = entry?.[0]?.changes?.[0]?.value?.messages?.[0]
+			const entry0 = (req.body as any)?.entry?.[0]
+			const change0 = entry0?.changes?.[0]
+			const msg = change0?.value?.messages?.[0]
+			const hasMessage = !!msg
 
-			if (!testPhones.includes(x)) {
-				const name =
-					entry?.[0]?.changes?.[0]?.value?.contacts?.[0]?.profile?.name ??
-					undefined
+			if (!hasMessage) {
+				return reply.status(200).send({ status: 'ignored' })
+			}
 
-				logger.debug(TAG, `Mensagem recebida de ${x}(${name}) para ${y}: ${z}`)
+			// @ts-ignore - Temporary test phone validation
+			const _from = msg.from as string
+			const toDisplay = change0?.value?.metadata?.display_phone_number as string
+			// @ts-ignore - Temporary test phone validation
+			const _name = change0?.value?.contacts?.[0]?.profile?.name ?? undefined
+
+			// 2) Regra temporária de "ignorar alguns números"
+			if (!testPhones.includes(_from)) {
+				await appendRequestLog({
+					at: new Date().toISOString(),
+					reason: 'rejected_phone',
+					from: _from,
+					to: toDisplay,
+					name: _name,
+					body: req.body,
+					headers: req.headers,
+					ip: req.ip,
+				})
+
+				logger.debug(
+					`Mensagem recebida de ${_from}(${_name}) para ${toDisplay}: ${JSON.stringify(msg)}`
+				)
 
 				return await tempOutput.handle(
 					Client.create({
 						name: 'Teste',
-						phone: `${entry?.[0]?.changes?.[0]?.value?.messages?.[0].from}`,
+						phone: _from, // use a variável já validada
 						companyId: '1',
 					}),
 					{
@@ -52,14 +71,14 @@ export async function whatsAppWebhook(
 			const parsed = parseWhatsAppMessage(req.body)
 
 			if (!parsed) {
-				req.log.info(TAG, 'Evento não é uma mensagem de usuário. Ignorado.')
+				logger.debug('Evento não é uma mensagem de usuário. Ignorado.')
 				return reply.status(200).send({ status: 'ignored' })
 			}
 
 			const { from, to, message, name } = parsed
 
 			try {
-				req.log.info(TAG, `Mensagem recebida de ${from} para ${to}: ${message}`)
+				logger.debug(`Mensagem recebida de ${from} para ${to}: ${message}`)
 
 				await whatsAppMessageService.processIncomingMessage(
 					from,
@@ -68,10 +87,10 @@ export async function whatsAppWebhook(
 					name
 				)
 
-				req.log.info(TAG, 'Mensagem encaminhada ao serviço com sucesso')
+				logger.debug('Mensagem encaminhada ao serviço com sucesso')
 				return reply.status(200).send({ status: 'ok' })
 			} catch (err: any) {
-				req.log.error({ err }, `${TAG} Erro ao processar mensagem`)
+				logger.error({ err }, 'Erro ao processar mensagem')
 				return reply.status(200).send({
 					status: 'ok',
 					message: 'Mensagem recebida, mas houve um erro interno ao processar.',

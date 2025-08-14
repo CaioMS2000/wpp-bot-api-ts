@@ -3,8 +3,8 @@ import {
 	Day,
 	TimeString,
 	WeekDay,
-} from '@/core/value-objects/business-hours'
-import { Company } from '@/domain/entities/company'
+} from '@/value-objects/business-hours'
+import { Company } from '@/entities/company'
 import {
 	BusinessHour as PrismaBusinessHour,
 	Company as PrismaCompany,

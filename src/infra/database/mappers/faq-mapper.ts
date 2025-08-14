@@ -2,9 +2,9 @@ import {
 	FAQCategory as PrismaFAQCategory,
 	FAQItem as PrismaFAQItem,
 } from 'ROOT/prisma/generated'
-import { FAQ } from '@/domain/entities/faq'
-import { FAQCategory } from '@/domain/entities/faq-category'
-import { FAQItem } from '@/domain/entities/faq-item'
+import { CategoryType, FAQ } from '@/entities/faq'
+import { FAQCategory } from '@/entities/faq-category'
+import { FAQItem } from '@/entities/faq-item'
 
 type FAQCategoryWithRelations = PrismaFAQCategory & {
 	items: PrismaFAQItem[]
@@ -12,7 +12,7 @@ type FAQCategoryWithRelations = PrismaFAQCategory & {
 
 export class FAQMapper {
 	static toEntity(categories: FAQCategoryWithRelations[]): FAQ {
-		const faqCategories: FAQCategory[] = categories.map(cat => {
+		const faqCategories = categories.map(cat => {
 			const items = cat.items.map(i =>
 				FAQItem.create(
 					{
@@ -23,13 +23,15 @@ export class FAQMapper {
 					i.id
 				)
 			)
-			return FAQCategory.create(
-				{
-					name: cat.name,
-					items: items.map(i => i.id),
-				},
-				cat.id
-			)
+			return {
+				category: FAQCategory.create(
+					{
+						name: cat.name,
+					},
+					cat.id
+				),
+				items,
+			}
 		})
 
 		return FAQ.create({
@@ -45,7 +47,7 @@ export class FAQMapper {
 	): PrismaFAQCategory & {
 		items: PrismaFAQItem[]
 	} {
-		const match = category.items.some(ix => items.some(iy => iy.id === ix))
+		const match = items.some(ix => ix.categoryId === category.id)
 
 		if (!match) {
 			throw new Error('Category items do not match')

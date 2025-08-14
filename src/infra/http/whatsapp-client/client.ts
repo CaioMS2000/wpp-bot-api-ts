@@ -1,4 +1,5 @@
 import { env } from '@/env'
+import { logger } from '@/logger'
 
 const BASE_URL = 'https://graph.facebook.com/v22.0'
 const phoneNumberId = env.PHONE_NUMBER_ID
@@ -22,9 +23,11 @@ export async function sendWhatsAppMessageBody<T = any>(
 
 	if (!res.ok) {
 		const error = await res.json()
-		throw new Error(
-			`Erro ao enviar mensagem. Requisição usada:\n${JSON.stringify(body)}\nerro:\n${JSON.stringify(error)}`
-		)
+		const errorMessage = `Erro ao enviar mensagem. Requisição usada:\n${JSON.stringify(body)}\nerro:\n${JSON.stringify(error)}`
+
+		logger.error(errorMessage)
+
+		throw new Error(errorMessage)
 	}
 
 	return res.json() as Promise<T>

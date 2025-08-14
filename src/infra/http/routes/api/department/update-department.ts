@@ -1,8 +1,8 @@
+import { UpdateDepartmentUseCase } from '@/modules/web-api/use-cases/update-department-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
-import { UpdateDepartmentUseCase } from '@/domain/web-api/use-cases/update-department-use-case'
 
 type Resources = {
 	updateDepartmentUseCase: UpdateDepartmentUseCase
