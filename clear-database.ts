@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url'
-import { PrismaClient, Prisma } from './prisma/generated'
+import { PrismaClient, Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/logger'
 
@@ -33,13 +33,6 @@ export async function clearDatabase(
 
 	logger.info(`Deleting models: ${models.join(', ')}`)
 
-	// for (const modelName of models) {
-	//     const model = prisma[modelName as keyof typeof prisma] as any
-	//     if (typeof model?.deleteMany === 'function') {
-	//         logger.debug(`Deleting ${modelName}...`)
-	//         await model.deleteMany({})
-	//     }
-	// }
 	for (const modelName of models) {
 		const model = prisma[modelName as keyof typeof prisma] as any
 		if (typeof model?.deleteMany === 'function') {

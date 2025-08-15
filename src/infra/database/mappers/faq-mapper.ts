@@ -1,10 +1,10 @@
-import {
-	FAQCategory as PrismaFAQCategory,
-	FAQItem as PrismaFAQItem,
-} from 'ROOT/prisma/generated'
 import { CategoryType, FAQ } from '@/entities/faq'
 import { FAQCategory } from '@/entities/faq-category'
 import { FAQItem } from '@/entities/faq-item'
+import {
+	FAQCategory as PrismaFAQCategory,
+	FAQItem as PrismaFAQItem,
+} from '@prisma/client'
 
 type FAQCategoryWithRelations = PrismaFAQCategory & {
 	items: PrismaFAQItem[]

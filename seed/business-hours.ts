@@ -1,4 +1,4 @@
-import { Prisma, WeekDay } from '../prisma/generated'
+import { Prisma, WeekDay } from '@prisma/client'
 
 export async function seedBusinessHours(prisma: Prisma.TransactionClient) {
     const company = await prisma.company.findFirstOrThrow()

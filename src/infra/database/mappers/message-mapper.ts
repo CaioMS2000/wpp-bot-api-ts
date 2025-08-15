@@ -1,7 +1,7 @@
 import { SenderType } from '@/@types'
 import { Message } from '@/entities/message'
 import { logger } from '@/logger'
-import { Message as PrismaMessage } from 'ROOT/prisma/generated'
+import { Message as PrismaMessage } from '@prisma/client'
 import { toPrismaFromType } from '../utils/enumTypeMapping'
 
 export class MessageMapper {

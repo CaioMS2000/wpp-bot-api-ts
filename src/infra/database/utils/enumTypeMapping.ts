@@ -1,10 +1,10 @@
 import { SenderType, UserType } from '@/@types'
+import { ConversationStateType } from '@/states'
 import {
 	FromType as PrismaFromType,
 	StateName as PrismaStateName,
 	UserType as PrismaUserType,
-} from 'ROOT/prisma/generated'
-import { ConversationStateType } from '@/states'
+} from '@prisma/client'
 
 export const toPrismaStateName = (
 	state: ConversationStateType

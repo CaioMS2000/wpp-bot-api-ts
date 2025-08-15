@@ -1,17 +1,17 @@
-import { PrismaClient } from 'ROOT/prisma/generated'
+import { PrismaClient } from '@prisma/client'
 
 declare global {
-    var cachedPrism: PrismaClient
+	var cachedPrism: PrismaClient
 }
 
 let prisma: PrismaClient
 if (process.env.NODE_ENV === 'production') {
-    prisma = new PrismaClient()
+	prisma = new PrismaClient()
 } else {
-    if (!global.cachedPrism) {
-        global.cachedPrism = new PrismaClient()
-    }
-    prisma = global.cachedPrism
+	if (!global.cachedPrism) {
+		global.cachedPrism = new PrismaClient()
+	}
+	prisma = global.cachedPrism
 }
 
 export { prisma }

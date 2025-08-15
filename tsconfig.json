@@ -13,7 +13,6 @@
 
     "paths": {
       "@/*": ["./src/*"],
-      "ROOT/*": ["./*"]
     }
   },
   "include": ["src/**/*", "seed.ts", "seed/**/*", "clear-database.ts"],

@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto'
-import { Prisma } from '../prisma/generated'
+import { Prisma } from '@prisma/client'
 
 export async function seedClientsAndChats(prisma: Prisma.TransactionClient) {
   const company = await prisma.company.findFirstOrThrow()

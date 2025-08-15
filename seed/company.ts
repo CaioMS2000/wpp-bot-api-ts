@@ -1,5 +1,5 @@
 import { hash } from 'bcryptjs'
-import { Prisma } from '../prisma/generated'
+import { Prisma } from '@prisma/client'
 
 export async function seedCompanyAndManager(prisma: Prisma.TransactionClient) {
     const email = 'manager@evolight.com'

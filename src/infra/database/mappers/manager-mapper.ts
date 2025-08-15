@@ -1,5 +1,5 @@
-import { Manager as PrismaManager } from 'ROOT/prisma/generated'
 import { Manager } from '@/entities/manager'
+import { Manager as PrismaManager } from '@prisma/client'
 
 export class ManagerMapper {
 	static toEntity(raw: PrismaManager): Manager {

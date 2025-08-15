@@ -1,28 +1,28 @@
-import {
-	Conversation as PrismaConversation,
-	Client as PrismaClient,
-	Employee as PrismaEmployee,
-	Company as PrismaCompany,
-	Manager as PrismaManager,
-	BusinessHour as PrismaBusinessHour,
-	Message as PrismaMessage,
-	UserType as PrismaUserType,
-	AgentType as PrismaAgentType,
-	StateName as PrismaStateName,
-} from 'ROOT/prisma/generated'
-import { Conversation } from '@/entities/conversation'
 import { AgentType, UserType } from '@/@types'
-import { CompanyMapper } from './company-mapper'
-import { ClientMapper } from './client-mapper'
-import { EmployeeMapper } from './employee-mapper'
-import { MessageMapper } from './message-mapper'
-import { Employee } from '@/entities/employee'
 import { Company } from '@/entities/company'
+import { Conversation } from '@/entities/conversation'
+import { Employee } from '@/entities/employee'
 import {
 	fromPrismaStateName,
 	toPrismaStateName,
 } from '@/infra/database/utils/enumTypeMapping'
+import {
+	AgentType as PrismaAgentType,
+	BusinessHour as PrismaBusinessHour,
+	Client as PrismaClient,
+	Company as PrismaCompany,
+	Conversation as PrismaConversation,
+	Employee as PrismaEmployee,
+	Manager as PrismaManager,
+	Message as PrismaMessage,
+	StateName as PrismaStateName,
+	UserType as PrismaUserType,
+} from '@prisma/client'
 import { fromPrismaUserType } from '../utils/enumTypeMapping'
+import { ClientMapper } from './client-mapper'
+import { CompanyMapper } from './company-mapper'
+import { EmployeeMapper } from './employee-mapper'
+import { MessageMapper } from './message-mapper'
 
 export class ConversationMapper {
 	static toEntity(

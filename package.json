@@ -13,7 +13,10 @@
 		"lint": "biome check .",
 		"lint:hard": "biome check --write --unsafe ./src",
 		"format": "biome format --write ./src",
-		"prepare": "husky"
+		"build": "tsup src --out-dir build",
+		"start": "node build/infra/http/server.js",
+		"start:hard": "tsup src --out-dir build && node build/infra/http/server.js",
+		"postinstall": "prisma generate"
 	},
 	"keywords": [],
 	"author": "",
@@ -24,6 +27,7 @@
 		"@types/bcryptjs": "^2.4.6",
 		"@types/node": "^22.15.29",
 		"prisma": "^6.10.0",
+		"tsup": "^8.5.0",
 		"tsx": "^4.19.4",
 		"typescript": "^5.8.3"
 	},

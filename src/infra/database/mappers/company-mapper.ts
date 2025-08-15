@@ -1,14 +1,14 @@
+import { Company } from '@/entities/company'
 import {
 	BusinessHours,
 	Day,
 	TimeString,
 	WeekDay,
 } from '@/value-objects/business-hours'
-import { Company } from '@/entities/company'
 import {
 	BusinessHour as PrismaBusinessHour,
 	Company as PrismaCompany,
-} from 'ROOT/prisma/generated'
+} from '@prisma/client'
 
 type CompanyWithRelations = PrismaCompany & {
 	businessHours: PrismaBusinessHour[]

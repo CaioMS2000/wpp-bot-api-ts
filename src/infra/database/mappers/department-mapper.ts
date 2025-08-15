@@ -1,5 +1,5 @@
 import { Department } from '@/entities/department'
-import { Department as PrismaDepartment } from 'ROOT/prisma/generated'
+import { Department as PrismaDepartment } from '@prisma/client'
 
 export class DepartmentMapper {
 	static toEntity(raw: PrismaDepartment): Department {
