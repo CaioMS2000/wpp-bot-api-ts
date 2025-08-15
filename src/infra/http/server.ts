@@ -15,6 +15,7 @@ import { router as departmentRouter } from './routes/api/department/router'
 import { router as employeeRouter } from './routes/api/employee/router'
 import { router as faqRouter } from './routes/api/faq/router'
 import { router as metrictsRouter } from './routes/api/metricts/router'
+import { env } from '@/env'
 
 // console.clear()
 logger.info('Starting server setup')
@@ -114,7 +115,7 @@ async function main() {
 
 	logger.debug('Routes registered')
 
-	const serverAddress = await app.listen({ port: 8000 })
+	const serverAddress = await app.listen({ port: env.PORT, host: '0.0.0.0' })
 
 	logger.info(`Server running on -> ${serverAddress}`)
 }

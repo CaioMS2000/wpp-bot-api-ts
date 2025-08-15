@@ -8,26 +8,29 @@ import {
 } from 'fastify-type-provider-zod'
 import { errorHandler } from './routes/api/middlewares/error-handler'
 import { requestLogger } from './routes/api/middlewares/plugins/request-logger'
+import { parseOrigins } from '@/utils/cors'
+import { env } from '@/env'
 
-const app = fastify()
+const app = fastify({ trustProxy: true })
 
 app.setValidatorCompiler(validatorCompiler)
 app.setSerializerCompiler(serializerCompiler)
 app.register(fastifyCors, {
-	origin: [
-		'http://localhost:8082',
-		'http://localhost:8080',
-		'http://localhost:5173',
-	],
+	// origin: [
+	// 	'http://localhost:8082',
+	// 	'http://localhost:8080',
+	// 	'http://localhost:5173',
+	// ],
+	origin: parseOrigins(env.CORS_ORIGINS),
 	credentials: true,
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
 	allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
 })
 app.register(fastifyCookie)
 app.register(fastifyJwt, {
-	secret: 'some secret',
+	secret: env.HTTP_TOKEN_SECRET,
 	cookie: {
-		cookieName: 'token',
+		cookieName: env.HTTP_COOKIE_NAME,
 		signed: false,
 	},
 })
