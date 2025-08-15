@@ -1,4 +1,4 @@
-import { AgentType, UserType } from '@/@types'
+import { AgentType, CloseReason, UserType } from '@/@types'
 import { Entity } from '@/entities/entity'
 import { logger } from '@/logger'
 import { ConversationStateType } from '@/states'
@@ -18,6 +18,9 @@ export type ConversationProps = {
 	resume: Nullable<string>
 	entryActionExecuted: boolean
 	stateMetadata: unknown
+	queuedAt: Nullable<Date>
+	firstHumanResponseAt: Nullable<Date>
+	closeReason: Nullable<CloseReason>
 }
 
 export type CreateConversationInput = RequireOnly<
@@ -40,6 +43,9 @@ export class Conversation extends Entity<ConversationProps> {
 			agentType: null,
 			entryActionExecuted: false,
 			stateMetadata: null,
+			queuedAt: null,
+			firstHumanResponseAt: null,
+			closeReason: null,
 		}
 
 		const builtProps = {

@@ -19,6 +19,7 @@ export class MessageMapper {
 				return Message.create(
 					{
 						conversationId: raw.conversationId,
+						timestamp: raw.timestamp,
 						senderType: SenderType.AI,
 						content: raw.content,
 						aiResponseId: raw.aiResponseId,
@@ -31,6 +32,7 @@ export class MessageMapper {
 				return Message.create(
 					{
 						conversationId: raw.conversationId,
+						timestamp: raw.timestamp,
 						senderType: SenderType.SYSTEM,
 						content: raw.content,
 					},
@@ -49,6 +51,7 @@ export class MessageMapper {
 				return Message.create(
 					{
 						conversationId: raw.conversationId,
+						timestamp: raw.timestamp,
 						senderType: SenderType.CLIENT,
 						content: raw.content,
 						senderId: raw.clientId,
@@ -68,6 +71,7 @@ export class MessageMapper {
 				return Message.create(
 					{
 						conversationId: raw.conversationId,
+						timestamp: raw.timestamp,
 						senderType: SenderType.EMPLOYEE,
 						content: raw.content,
 						senderId: raw.employeeId,

@@ -85,7 +85,7 @@ export class ConversationService {
 				agentType,
 				agentId,
 				companyId: conversation.companyId,
-				currentState: isEmployee ? 'BEGIN' : 'SELECTING_DEPARTMENT',
+				currentState: 'BEGIN',
 				entryActionExecuted: false,
 				id: conversation.id,
 				stateData: conversation.stateMetadata ?? undefined,

@@ -29,3 +29,10 @@ export type UserUnionType =
 			user: Employee
 			userType: UserType.EMPLOYEE
 	  }
+
+export enum CloseReason {
+	EXPLICIT = 'EXPLICIT',
+	RESOLVED = 'RESOLVED',
+	TRANSFERED = 'TRANSFERED',
+	ABANDONED = 'ABANDONED',
+}

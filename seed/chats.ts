@@ -85,10 +85,16 @@ export async function seedClientsAndChats(prisma: Prisma.TransactionClient) {
     },
   ]
 
+  const now = new Date()
+  let acc = 0
   for (const msg of messages) {
+    const createdAt = new Date(now.getTime() + acc * 1000)
+    acc += 1
+
     if (msg.origin === 'CLIENT') {
       await prisma.message.create({
         data: {
+          timestamp: createdAt,
           conversationId: conversation.id,
           content: msg.text,
           from: 'CLIENT',
@@ -98,6 +104,7 @@ export async function seedClientsAndChats(prisma: Prisma.TransactionClient) {
     } else if (msg.origin === 'SYSTEM') {
       await prisma.message.create({
         data: {
+          timestamp: createdAt,
           conversationId: conversation.id,
           content: msg.text,
           from: 'SYSTEM',
@@ -106,6 +113,7 @@ export async function seedClientsAndChats(prisma: Prisma.TransactionClient) {
     } else {
       await prisma.message.create({
         data: {
+          timestamp: createdAt,
           conversationId: conversation.id,
           content: msg.text,
           from: 'AI',

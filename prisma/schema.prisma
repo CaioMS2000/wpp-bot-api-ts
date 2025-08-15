@@ -107,6 +107,13 @@ enum StateName {
   BEGIN
 }
 
+enum CloseReason {
+  EXPLICIT
+  RESOLVED
+  TRANSFERED
+  ABANDONED
+}
+
 model Conversation {
   id                  String     @id @default(uuid())
   clientId            String?
@@ -129,6 +136,13 @@ model Conversation {
   employee            Employee?  @relation("employee", fields: [employeeId], references: [id])
   agent               Employee?  @relation("agent", fields: [agentId], references: [id])
   messages            Message[]
+
+  /**
+   * for metrics
+   */
+  queuedAt             DateTime?
+  firstHumanResponseAt DateTime?
+  closeReason          CloseReason?
 }
 
 enum FromType {

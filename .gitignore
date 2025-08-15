@@ -62,3 +62,4 @@ watch.py
 /prisma/generated
 /prisma/migrations
 whats-app-api-payloads
+*.txt
