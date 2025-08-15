@@ -15,7 +15,7 @@ import { logger } from '@/logger'
 const app = fastify({ trustProxy: true })
 const allowedOrigins = parseOrigins(env.CORS_ORIGINS)
 
-logger.info('allowedOrigins:\n', allowedOrigins)
+logger.info('allowedOrigins:', allowedOrigins)
 
 app.setValidatorCompiler(validatorCompiler)
 app.setSerializerCompiler(serializerCompiler)

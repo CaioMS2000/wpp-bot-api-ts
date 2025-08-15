@@ -46,14 +46,12 @@ export class AuthService {
 
 		const hashedPassword = await hash(password, 6)
 
-		const manager = Manager.create({
+		await this.managerService.create({
 			name,
 			email,
 			password: hashedPassword,
 			phone,
 		})
-
-		await this.managerService.save(manager)
 
 		return {
 			name,
