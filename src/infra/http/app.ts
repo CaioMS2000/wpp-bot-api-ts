@@ -10,18 +10,17 @@ import { errorHandler } from './routes/api/middlewares/error-handler'
 import { requestLogger } from './routes/api/middlewares/plugins/request-logger'
 import { parseOrigins } from '@/utils/cors'
 import { env } from '@/env'
+import { logger } from '@/logger'
 
 const app = fastify({ trustProxy: true })
+const allowedOrigins = parseOrigins(env.CORS_ORIGINS)
+
+logger.info('allowedOrigins:\n', allowedOrigins)
 
 app.setValidatorCompiler(validatorCompiler)
 app.setSerializerCompiler(serializerCompiler)
 app.register(fastifyCors, {
-	// origin: [
-	// 	'http://localhost:8082',
-	// 	'http://localhost:8080',
-	// 	'http://localhost:5173',
-	// ],
-	origin: parseOrigins(env.CORS_ORIGINS),
+	origin: allowedOrigins,
 	credentials: true,
 	methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
 	allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
