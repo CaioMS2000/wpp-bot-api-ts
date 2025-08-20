@@ -35,6 +35,8 @@ logger.debug(`Response file initialized at ${responseFilePath}`)
 // }
 async function main() {
 	// await softDBClear()
+	logger.info('Env variables:', { env })
+
 	const container = new DependenciesContainer()
 
 	app.decorateRequest('authService', {
