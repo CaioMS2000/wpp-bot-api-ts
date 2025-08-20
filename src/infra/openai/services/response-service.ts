@@ -1,24 +1,24 @@
 import path from 'node:path'
-import { logger } from '@/logger'
+import { SenderType, UserType } from '@/@types'
+import { env } from '@/config/env'
 import { Conversation } from '@/entities/conversation'
 import { Message } from '@/entities/message'
-import { SenderType, UserType } from '@/@types'
+import { logger } from '@/logger'
 import { AIService } from '@/modules/whats-app/services/ai-service'
-import { env } from '@/env'
+import { ConversationService } from '@/modules/whats-app/services/conversation-service'
+import { UserService } from '@/modules/whats-app/services/user-service'
 import { appendToLogFile, findProjectRoot } from '@/utils/files'
 import { OpenAI } from 'openai'
 import { z } from 'zod'
 import { systemInstructions } from '../constants'
-import { saveUserDataTool } from './functions/collect-user-data'
 import {
-	Tool,
-	ResponseInput,
 	FunctionCallSchema,
 	FunctionRegistry,
+	ResponseInput,
+	Tool,
 } from '../types'
+import { saveUserDataTool } from './functions/collect-user-data'
 import { functionRegistry } from './functions/registry'
-import { ConversationService } from '@/modules/whats-app/services/conversation-service'
-import { UserService } from '@/modules/whats-app/services/user-service'
 
 export class AIResponseService extends AIService {
 	private client: OpenAI

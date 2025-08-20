@@ -1,10 +1,10 @@
-import { env } from '@/env'
+import { env } from '@/config/env'
+import { ManagerService } from '@/modules/web-api/services/manager-service'
+import { CompanyService } from '@/modules/whats-app/services/company-service'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
-import { ManagerService } from '@/modules/web-api/services/manager-service'
-import { CompanyService } from '@/modules/whats-app/services/company-service'
 
 type Resources = {
 	managerService: ManagerService

@@ -1,3 +1,6 @@
+import { env } from '@/config/env'
+import { logger } from '@/logger'
+import { parseOrigins } from '@/utils/cors'
 import fastifyCookie from '@fastify/cookie'
 import fastifyCors from '@fastify/cors'
 import fastifyJwt from '@fastify/jwt'
@@ -8,9 +11,6 @@ import {
 } from 'fastify-type-provider-zod'
 import { errorHandler } from './routes/api/middlewares/error-handler'
 import { requestLogger } from './routes/api/middlewares/plugins/request-logger'
-import { parseOrigins } from '@/utils/cors'
-import { env } from '@/env'
-import { logger } from '@/logger'
 
 const app = fastify({ trustProxy: true })
 const allowedOrigins = parseOrigins(env.CORS_ORIGINS)

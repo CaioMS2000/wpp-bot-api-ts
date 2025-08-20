@@ -21,7 +21,7 @@ export class GetBaseMetricsUseCase {
 			chat => chat.agentType === AgentType.AI
 		)
 		const todayTotalClientChats = totalClientChats.filter(chat => {
-			const chatDate = chat.startedAt // ou outro campo que represente a data da conversa
+			const chatDate = chat.startedAt
 			const today = new Date()
 
 			return (
@@ -50,6 +50,11 @@ export class GetBaseMetricsUseCase {
 			const x = responseTimeAccumulator / totalClientChats.length
 			averageResponseTime = Math.round(x / 1000) //seconds
 		}
+
+		const amountOfClosedClientChats = totalClientChats.filter(c => !!c.endedAt)
+		const amountOfClosedClientChatsButNotAbandoned = totalClientChats.filter(
+			c => c.closeReason && c.closeReason !== CloseReason.ABANDONED
+		)
 
 		return {
 			totalAiConversations: chatWithAI.length,

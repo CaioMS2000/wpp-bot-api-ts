@@ -1,4 +1,4 @@
-import { env } from '@/env'
+import { env } from '@/config/env'
 import { AuthService } from '@/modules/web-api/services/auth-service'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'

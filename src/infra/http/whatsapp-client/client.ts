@@ -1,4 +1,4 @@
-import { env } from '@/env'
+import { env } from '@/config/env'
 import { logger } from '@/logger'
 
 const BASE_URL = 'https://graph.facebook.com/v22.0'

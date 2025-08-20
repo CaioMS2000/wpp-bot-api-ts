@@ -1,14 +1,15 @@
 import path from 'node:path'
-import { logger } from '@/logger'
-import { FastifyInstance, FastifyListenOptions } from 'fastify'
-import { emptyJsonFile, findProjectRoot } from '@/utils/files'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/logger'
+import { emptyJsonFile, findProjectRoot } from '@/utils/files'
+import { FastifyInstance, FastifyListenOptions } from 'fastify'
 // import { clearDatabase } from '@/../clear-database'
 import { app } from './app'
 import { DependenciesContainer } from './dependencies-container'
 import { whatsAppWebhook } from './routes/message/whats-app-webhook'
 import { webhook } from './routes/whats-app-webhook/token'
 
+import { env } from '@/config/env'
 import { router as authRouter } from './routes/api/auth/router'
 import { router as chatRouter } from './routes/api/chat/router'
 import { router as companyRouter } from './routes/api/company/router'
@@ -16,7 +17,6 @@ import { router as departmentRouter } from './routes/api/department/router'
 import { router as employeeRouter } from './routes/api/employee/router'
 import { router as faqRouter } from './routes/api/faq/router'
 import { router as metrictsRouter } from './routes/api/metricts/router'
-import { env } from '@/env'
 
 // console.clear()
 logger.info('Starting server setup')

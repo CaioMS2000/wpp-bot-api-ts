@@ -1,5 +1,5 @@
 import util from 'node:util'
-import { env } from '@/env'
+import { env } from '@/config/env'
 import dayjs from 'dayjs'
 import 'dayjs/locale/pt-br'
 import localizedFormat from 'dayjs/plugin/localizedFormat'
@@ -70,7 +70,7 @@ export class Logger {
 	}
 
 	private shouldLog(level: LogLevel): boolean {
-		return !(level === LogLevel.DEBUG && env.MODE === 'production')
+		return !(level === LogLevel.DEBUG && env.NODE_ENV === 'production')
 	}
 
 	private getTimestamp(): string {
