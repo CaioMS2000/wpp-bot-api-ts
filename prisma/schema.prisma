@@ -141,7 +141,7 @@ model Conversation {
   queuedAt             DateTime?
   firstHumanResponseAt DateTime?
   closeReason          CloseReason?
-  referredQueueId String?
+  referredQueueId String? @unique
   referredQueue DepartmentQueue? @relation(fields: [referredQueueId], references: [id])
 }
 
@@ -184,6 +184,7 @@ model DepartmentQueue {
   leftAt       DateTime?
   department   Department @relation(fields: [departmentId], references: [id])
   client       Client     @relation(fields: [clientId], references: [id])
+  conversation       Conversation?
 
   @@unique([departmentId, clientId])
   @@index([departmentId, joinedAt])
