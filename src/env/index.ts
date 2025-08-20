@@ -1,10 +1,12 @@
-// import * as dotenv from 'dotenv'
+import * as dotenv from 'dotenv'
 import { z } from 'zod'
 
-// dotenv.config({ override: true })
+dotenv.config({ override: process.env.NODE_ENV !== 'production' })
 
 export const envSchema = z.object({
-	MODE: z.enum(['development', 'production', 'test']).default('development'),
+	NODE_ENV: z
+		.enum(['development', 'production', 'test'])
+		.default('development'),
 	VERIFICATION_TOKEN: z.string(),
 	WPP_TOKEN: z.string(),
 	PHONE_NUMBER_ID: z.string(),
@@ -14,4 +16,5 @@ export const envSchema = z.object({
 	HTTP_COOKIE_NAME: z.string(),
 	CORS_ORIGINS: z.string(),
 })
+
 export const env = envSchema.parse(process.env)

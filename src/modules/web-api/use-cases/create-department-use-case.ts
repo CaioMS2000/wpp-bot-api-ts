@@ -13,9 +13,7 @@ export class CreateDepartmentUseCase {
 	) {}
 
 	async execute(props: Props) {
-		const department = Department.create(props)
-
-		await this.departmentService.save(department)
+		const department = await this.departmentService.createDepartment(props)
 
 		if (props.employeeId) {
 			const employee = await this.userService.getEmployee(

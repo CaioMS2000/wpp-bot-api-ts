@@ -1,8 +1,8 @@
 import { SenderType, User, UserType, UserUnionType } from '@/@types'
 import { NotNullConfig, NotNullParams } from '@/@types/not-null-params'
-import { Client } from '@/entities/client'
+import { Client, CreateClientInput } from '@/entities/client'
 import { Company } from '@/entities/company'
-import { Employee } from '@/entities/employee'
+import { CreateEmployeeInput, Employee } from '@/entities/employee'
 import { ResourceNotFoundError } from '@/errors/errors/resource-not-found-error'
 import { ClientMapper } from '@/infra/database/mappers/client-mapper'
 import { EmployeeMapper } from '@/infra/database/mappers/employee-mapper'
@@ -23,8 +23,49 @@ export type SenderContext =
 			client: null
 	  }
 
+type CreateUserClient = { userType: UserType.CLIENT; data: CreateClientInput }
+type CreateUserEmployee = {
+	userType: UserType.EMPLOYEE
+	data: CreateEmployeeInput
+}
+type CreateUserArgs = CreateUserClient | CreateUserEmployee
+
 export class UserService {
 	constructor(private companyService: CompanyService) {}
+
+	async createUser({ userType, data }: CreateUserClient): Promise<Client>
+	async createUser({ userType, data }: CreateUserEmployee): Promise<Employee>
+	async createUser({ userType, data }: CreateUserArgs) {
+		switch (userType) {
+			case UserType.CLIENT: {
+				const client = Client.create(data)
+
+				await prisma.client.create({
+					data: {
+						name: client.name,
+						email: client.email,
+						profession: client.profession,
+						phone: client.phone,
+						companyId: client.companyId,
+					},
+				})
+				return client
+			}
+			case UserType.EMPLOYEE: {
+				const employee = Employee.create(data)
+
+				await prisma.employee.create({
+					data: {
+						name: employee.name,
+						phone: employee.phone,
+						departmentId: employee.departmentId,
+						companyId: employee.companyId,
+					},
+				})
+				return employee
+			}
+		}
+	}
 
 	async save(data: UserUnionType) {
 		const { user, userType } = data

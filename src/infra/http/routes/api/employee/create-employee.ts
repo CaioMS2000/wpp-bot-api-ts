@@ -20,7 +20,7 @@ const bodySchema = z.object({
 })
 
 const responseSchema = {
-	200: z.object({
+	201: z.object({
 		employee: z.object({
 			name: z.string(),
 			phone: z.string(),

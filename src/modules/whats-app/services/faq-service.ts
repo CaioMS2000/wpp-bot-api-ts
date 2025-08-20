@@ -12,7 +12,27 @@ export class FAQService {
 		category: string,
 		question: string,
 		answer: string
-	) {}
+	) {
+		let faqCategory = await prisma.fAQCategory.findFirst({
+			where: { companyId, name: category },
+		})
+		if (!faqCategory) {
+			faqCategory = await prisma.fAQCategory.create({
+				data: {
+					name: category,
+					companyId,
+				},
+			})
+		}
+
+		await prisma.fAQItem.create({
+			data: {
+				question,
+				answer,
+				categoryId: faqCategory.id,
+			},
+		})
+	}
 
 	async getAllCategories(companyId: string) {
 		const categoryModels = await prisma.fAQCategory.findMany({

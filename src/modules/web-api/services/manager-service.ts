@@ -3,6 +3,13 @@ import { CreateManagerInput, Manager } from '@/entities/manager'
 import { ResourceNotFoundError } from '@/errors/errors/resource-not-found-error'
 import { ManagerMapper } from '@/infra/database/mappers/manager-mapper'
 import { prisma } from '@/lib/prisma'
+import { omitUndefined } from '@/utils/no-undefined'
+
+type UpdateManagerProps = {
+	name?: string
+	email?: string
+	phone?: Nullable<string>
+}
 
 export class ManagerService {
 	async create(props: CreateManagerInput) {
@@ -62,5 +69,14 @@ export class ManagerService {
 		}
 
 		return ManagerMapper.toEntity(model)
+	}
+
+	async update(email: string, data: UpdateManagerProps) {
+		const manager = await this.getByEmail(email, { notNull: true })
+
+		return await prisma.manager.update({
+			where: { id: manager.id },
+			data: omitUndefined(data),
+		})
 	}
 }

@@ -17,6 +17,7 @@ import { MessageHandlerFactory } from '@/modules/whats-app/factory/message-handl
 import { StateContextServiceFactory } from '@/modules/whats-app/factory/state-context-service-factory'
 import { ManagerServiceFactory } from '@/modules/web-api/factories/manager-service-factory'
 import { ManagerService } from '@/modules/web-api/services/manager-service'
+import { CompanyService } from '@/modules/whats-app/services/company-service'
 
 export class DependenciesContainer {
 	public readonly outputPort = new WhatsAppOutputPort()
@@ -47,6 +48,7 @@ export class DependenciesContainer {
 		WhatsAppMessageServiceFactory['getService']
 	>
 	public readonly managerService: ManagerService
+	public readonly companyService: CompanyService
 	public readonly authService: ReturnType<AuthServiceFactory['getService']>
 
 	constructor() {
@@ -114,6 +116,7 @@ export class DependenciesContainer {
 		// Instanciar serviços
 		this.whatsAppMessageService =
 			this.whatsAppMessageServiceFactory.getService()
+		this.companyService = this.companyServiceFactory.getService()
 
 		// Web API Factories
 		this.managerServiceFactory = new ManagerServiceFactory()

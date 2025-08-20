@@ -34,7 +34,7 @@ export async function createCompany(
 					summary: 'Create a new company',
 					security: [{ bearerAuth: [] }],
 					body: bodySchema,
-					response: { 200: z.null() },
+					response: { 204: z.null() },
 				},
 			},
 			async (request, reply) => {
@@ -62,7 +62,7 @@ export async function createCompany(
 					businessHours,
 				})
 
-				return reply.status(201).send()
+				return reply.status(204).send()
 			}
 		)
 }

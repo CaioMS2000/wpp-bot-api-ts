@@ -1,3 +1,4 @@
+import { env } from '@/env'
 import { AuthService } from '@/modules/web-api/services/auth-service'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
@@ -46,7 +47,7 @@ export async function authenticateWithPassword(
 				}
 			)
 
-			reply.setCookie('token', token, {
+			reply.setCookie(env.HTTP_COOKIE_NAME, token, {
 				httpOnly: true,
 				secure: process.env.NODE_ENV === 'production',
 				sameSite: 'lax',

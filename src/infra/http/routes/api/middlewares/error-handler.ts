@@ -1,3 +1,4 @@
+import { env } from '@/env'
 import { logger } from '@/logger'
 import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify'
 
@@ -8,7 +9,7 @@ export function errorHandler(
 ): void {
 	logger.error(`Error in request ${request.method} ${request.url}:\n`, error)
 	if (error.statusCode === 401) {
-		reply.clearCookie('token', { path: '/' })
+		reply.clearCookie(env.HTTP_COOKIE_NAME, { path: '/' })
 		reply.status(401).send({ message: 'Unauthorized' })
 		return
 	}

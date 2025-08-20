@@ -46,7 +46,7 @@ export async function getBaseMetrics(
 				const { company } = await request.getUserMembership(request.params.cnpj)
 				const result = await getBaseMetricsUseCase.execute(company.id)
 
-				return reply.status(201).send({
+				return reply.status(200).send({
 					...result,
 				})
 			}

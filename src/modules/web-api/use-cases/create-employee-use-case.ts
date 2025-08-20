@@ -11,10 +11,12 @@ export class CreateEmployeeUseCase {
 	) {}
 
 	async execute(data: Parameters<typeof Employee.create>[0]) {
-		const employee = Employee.create(data)
 		let department: Nullable<Department> = null
 
-		await this.userService.save({ user: employee, userType: UserType.EMPLOYEE })
+		const employee = await this.userService.createUser({
+			data,
+			userType: UserType.EMPLOYEE,
+		})
 
 		if (employee.departmentId) {
 			department = await this.departmentService.findDepartment(

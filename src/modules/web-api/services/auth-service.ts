@@ -78,7 +78,7 @@ export class AuthService {
 				company,
 			}
 		} catch (error) {
-			console.log(error)
+			logger.error(error)
 			throw error
 		}
 	}

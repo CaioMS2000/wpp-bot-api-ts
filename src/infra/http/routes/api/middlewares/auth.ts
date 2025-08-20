@@ -1,6 +1,7 @@
 import { logger } from '@/logger'
 import type { FastifyInstance } from 'fastify'
 import fastifyPlugin from 'fastify-plugin'
+import { log } from 'node:console'
 
 export const auth = fastifyPlugin(async (app: FastifyInstance) => {
 	app.addHook('preHandler', async (req, reply) => {
@@ -10,6 +11,7 @@ export const auth = fastifyPlugin(async (app: FastifyInstance) => {
 
 				return sub
 			} catch (err) {
+				logger.error(err)
 				throw { statusCode: 401, message: '[getCurrentUserID] Invalid token' }
 			}
 		}

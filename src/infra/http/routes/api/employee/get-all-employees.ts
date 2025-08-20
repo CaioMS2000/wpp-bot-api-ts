@@ -52,7 +52,7 @@ export async function getAllEmployees(
 					company.id
 				)
 
-				return reply.status(201).send({
+				return reply.status(200).send({
 					employees,
 				})
 			}

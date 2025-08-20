@@ -1,12 +1,12 @@
 import { departmentSchema } from '@/modules/web-api/@types/schemas'
-import { GetDepartmentUseCase } from '@/modules/web-api/use-cases/get-department-use-case'
+import { DeleteDepartmentUseCase } from '@/modules/web-api/use-cases/delete-department-use-case'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../middlewares/auth'
 
 type Resources = {
-	getDepartmentUseCase: GetDepartmentUseCase
+	deleteDepartmentUseCase: DeleteDepartmentUseCase
 }
 
 export const paramsSchema = z.object({
@@ -15,45 +15,35 @@ export const paramsSchema = z.object({
 })
 
 export const responseSchema = {
-	200: z.object({
-		department: departmentSchema.extend({
-			employees: z.array(
-				z.object({
-					name: z.string(),
-					phone: z.string(),
-				})
-			),
-		}),
-	}),
+	204: z.null(),
 }
 
-export async function getDepartment(
+export async function deleteDepartment(
 	app: FastifyInstance,
 	resources: Resources
 ) {
 	app
 		.withTypeProvider<ZodTypeProvider>()
 		.register(auth)
-		.get(
+		.delete(
 			'/api/company/:cnpj/departments/:id',
 			{
 				schema: {
 					tags: ['departments'],
-					summary: 'Get a department of a company',
+					summary: 'Delete a department of a company',
 					security: [{ bearerAuth: [] }],
 					params: paramsSchema,
 					response: responseSchema,
 				},
 			},
 			async (request, reply) => {
-				const { getDepartmentUseCase } = resources
+				const { deleteDepartmentUseCase } = resources
 				const { id, cnpj } = request.params
 				const { company } = await request.getUserMembership(cnpj)
-				const department = await getDepartmentUseCase.execute(company.id, id)
 
-				return reply.status(200).send({
-					department,
-				})
+				await deleteDepartmentUseCase.execute(company.id, id)
+
+				return reply.status(204).send()
 			}
 		)
 }

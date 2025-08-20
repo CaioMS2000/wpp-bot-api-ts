@@ -1,4 +1,4 @@
-import { AgentType, UserType } from '@/@types'
+import { AgentType, CloseReason, UserType } from '@/@types'
 import { ConversationService } from '@/modules/whats-app/services/conversation-service'
 
 type Metrics = {
@@ -14,11 +14,11 @@ export class GetBaseMetricsUseCase {
 
 	async execute(companyId: string, day = new Date()): Promise<Metrics> {
 		const totalChats = await this.conversationService.getByMonth(companyId, day)
-		const chatWithAI = totalChats.filter(
-			chat => chat.agentType === AgentType.AI
-		)
 		const totalClientChats = totalChats.filter(
 			chat => chat.userType === UserType.CLIENT
+		)
+		const chatWithAI = totalClientChats.filter(
+			chat => chat.agentType === AgentType.AI
 		)
 		const todayTotalClientChats = totalClientChats.filter(chat => {
 			const chatDate = chat.startedAt // ou outro campo que represente a data da conversa

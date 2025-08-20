@@ -67,7 +67,7 @@ export async function getWeekConversationsMetrics(
 					})),
 				}
 
-				return reply.status(201).send(data)
+				return reply.status(200).send(data)
 			}
 		)
 }

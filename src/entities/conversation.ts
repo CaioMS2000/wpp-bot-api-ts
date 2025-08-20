@@ -21,6 +21,7 @@ export type ConversationProps = {
 	queuedAt: Nullable<Date>
 	firstHumanResponseAt: Nullable<Date>
 	closeReason: Nullable<CloseReason>
+	referredQueueId: Nullable<string>
 }
 
 export type CreateConversationInput = RequireOnly<
@@ -46,6 +47,7 @@ export class Conversation extends Entity<ConversationProps> {
 			queuedAt: null,
 			firstHumanResponseAt: null,
 			closeReason: null,
+			referredQueueId: null,
 		}
 
 		const builtProps = {
@@ -134,6 +136,22 @@ export class Conversation extends Entity<ConversationProps> {
 
 	get stateMetadata() {
 		return this.props.stateMetadata
+	}
+
+	get queuedAt() {
+		return this.props.queuedAt
+	}
+
+	get firstHumanResponseAt() {
+		return this.props.firstHumanResponseAt
+	}
+
+	get closeReason() {
+		return this.props.closeReason
+	}
+
+	get referredQueueId() {
+		return this.props.referredQueueId
 	}
 
 	set state(state: ConversationStateType) {

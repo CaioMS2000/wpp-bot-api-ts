@@ -1,5 +1,5 @@
 import { NotNullConfig, NotNullParams } from '@/@types/not-null-params'
-import { Department } from '@/entities/department'
+import { CreateDepartmentInput, Department } from '@/entities/department'
 import { Employee } from '@/entities/employee'
 import { ResourceNotFoundError } from '@/errors/errors/resource-not-found-error'
 import { ConversationMapper } from '@/infra/database/mappers/conversation-mapper'
@@ -13,6 +13,21 @@ import { UserService } from './user-service'
 
 export class DepartmentService {
 	constructor(private userService: UserService) {}
+
+	async createDepartment(input: CreateDepartmentInput) {
+		const department = Department.create(input)
+
+		await prisma.department.create({
+			data: {
+				name: department.name,
+				description: department.description,
+				companyId: department.companyId,
+				id: department.id,
+			},
+		})
+
+		return department
+	}
 
 	async save(department: Department) {
 		await prisma.department.update({
@@ -148,5 +163,13 @@ export class DepartmentService {
 		})
 
 		return { client, clientConversation: ConversationMapper.toEntity(model) }
+	}
+
+	async deleteDepartment(companyId: string, departmentId: string) {
+		const department = await this.findDepartment(companyId, departmentId, {
+			notNull: true,
+		})
+
+		await prisma.department.delete({ where: { id: department.id } })
 	}
 }

@@ -29,6 +29,7 @@ import { DepartmentQueueServiceFactory } from '@/modules/whats-app/factory/depar
 import { FAQServiceFactory } from '@/modules/whats-app/factory/faq-service-factory'
 import { ConversationServiceFactory } from '@/modules/whats-app/factory/conversation-service-factory'
 import { ManagerServiceFactory } from './manager-service-factory'
+import { DeleteDepartmentUseCase } from '../use-cases/delete-department-use-case'
 
 export class UseCaseFactory {
 	constructor(
@@ -173,6 +174,12 @@ export class UseCaseFactory {
 	getUpdateEmployeeUseCase(): UpdateEmployeeUseCase {
 		return new UpdateEmployeeUseCase(
 			this.userServiceFactory.getService(),
+			this.departmentServiceFactory.getService()
+		)
+	}
+
+	getDeleteDepartmentUseCase(): DeleteDepartmentUseCase {
+		return new DeleteDepartmentUseCase(
 			this.departmentServiceFactory.getService()
 		)
 	}

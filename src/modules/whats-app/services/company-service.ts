@@ -1,11 +1,45 @@
 import { NotNullConfig, NotNullParams } from '@/@types/not-null-params'
-import { Company } from '@/entities/company'
+import { Company, CreateCompanyInput } from '@/entities/company'
 import { ResourceNotFoundError } from '@/errors/errors/resource-not-found-error'
 import { CompanyMapper } from '@/infra/database/mappers/company-mapper'
 import { prisma } from '@/lib/prisma'
 
 export class CompanyService {
 	// constructor() {}
+
+	async createCompany(data: CreateCompanyInput) {
+		const company = Company.create(data)
+
+		await prisma.company.create({
+			data: {
+				id: company.id,
+				name: company.name,
+				email: company.email,
+				website: company.website,
+				description: company.description,
+				cnpj: company.cnpj,
+				phone: company.phone,
+				managerId: company.managerId,
+				businessHours: {
+					createMany: {
+						data: company.businessHours.getDays().map(day => {
+							const { weekDay, openTime, closeTime } = day
+
+							return {
+								day: weekDay,
+								openTime,
+								closeTime,
+							}
+						}),
+					},
+				},
+			},
+		})
+		await prisma.manager.update({
+			where: { id: company.managerId },
+			data: { companyId: company.id },
+		})
+	}
 
 	async save(company: Company) {
 		await prisma.company.update({

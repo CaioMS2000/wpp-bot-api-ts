@@ -32,7 +32,6 @@ model BusinessHour {
   day       WeekDay
   openTime  String
   closeTime String
-  isActive  Boolean
   company   Company @relation(fields: [companyId], references: [id])
   companyId String
 
@@ -142,6 +141,8 @@ model Conversation {
   queuedAt             DateTime?
   firstHumanResponseAt DateTime?
   closeReason          CloseReason?
+  referredQueueId String?
+  referredQueue DepartmentQueue? @relation(fields: [referredQueueId], references: [id])
 }
 
 enum FromType {

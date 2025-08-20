@@ -42,6 +42,17 @@ export class UpdateDepartmentUseCase {
 		if (data.employeeId === null) {
 			await this.unAssignCurrentEmployee(companyId, department.id)
 		}
+
+		await this.departmentService.save(
+			Department.create(
+				{
+					companyId: department.companyId,
+					name: data.name ?? department.name,
+					description: data.description ?? department.description,
+				},
+				department.id
+			)
+		)
 	}
 
 	private async unAssignCurrentEmployee(

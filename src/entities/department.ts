@@ -7,11 +7,13 @@ export type DepartmentProps = {
 	companyId: string
 }
 
+export type CreateDepartmentInput = RequireOnly<
+	DepartmentProps,
+	'name' | 'companyId'
+>
+
 export class Department extends Entity<DepartmentProps> {
-	static create(
-		props: RequireOnly<DepartmentProps, 'name' | 'companyId'>,
-		id?: string
-	) {
+	static create(props: CreateDepartmentInput, id?: string) {
 		const defaults: Omit<DepartmentProps, 'name' | 'companyId'> = {
 			description: '',
 		}

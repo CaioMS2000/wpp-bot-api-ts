@@ -1,5 +1,6 @@
 import path from 'node:path'
 import { logger } from '@/logger'
+import { FastifyInstance, FastifyListenOptions } from 'fastify'
 import { emptyJsonFile, findProjectRoot } from '@/utils/files'
 import { prisma } from '@/lib/prisma'
 // import { clearDatabase } from '@/../clear-database'
@@ -53,6 +54,8 @@ async function main() {
 	// Registrar rotas
 	app.register(authRouter, {
 		authService: container.authService,
+		managerService: container.managerService,
+		companyService: container.companyService,
 	})
 
 	app.register(chatRouter, {
@@ -78,6 +81,8 @@ async function main() {
 			container.webAPIUseCaseFactory.getGetDepartmentUseCase(),
 		updateDepartmentUseCase:
 			container.webAPIUseCaseFactory.getUpdateDepartmentUseCase(),
+		deleteDepartmentUseCase:
+			container.webAPIUseCaseFactory.getDeleteDepartmentUseCase(),
 	})
 
 	app.register(employeeRouter, {
@@ -115,7 +120,15 @@ async function main() {
 
 	logger.debug('Routes registered')
 
-	const serverAddress = await app.listen({ port: env.PORT, host: '0.0.0.0' })
+	const config: FastifyListenOptions = {
+		port: env.PORT,
+	}
+
+	if (env.NODE_ENV === 'production') {
+		config.host = '0.0.0.0'
+	}
+
+	const serverAddress = await app.listen({ ...config })
 
 	logger.info(`Server running on -> ${serverAddress}`)
 }
