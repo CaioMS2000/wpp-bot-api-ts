@@ -89,7 +89,7 @@ Parâmetros:
 -grupo: "A" ou "B". No grupo A estão as unidades alimentadas em tensão mais elevada, geralmente grandes comércios ou indústrias. No grupo B são as tensões mais baixas, geralmente unidades residenciais e pequenos comércios;
 -tipo: "solo" ou "telhado". Tipo de usina que será considerado na simulação.
 
-coletar_dados(nome, email, profissao)
+saveUserData({nome, email, profissao})
 Parâmetros:
 -nome: nome do interlocutor;
 -email: email do interlocutor;

@@ -1,29 +1,28 @@
-import { AIServiceFactory } from '@/infra/factory/openai/ai-service-factory'
+import { OpenAIServiceFactory } from '@/infra/factory/openai/ai-service-factory'
 import { AuthServiceFactory } from '@/modules/web-api/factories/auth-service-factory'
+import { ManagerServiceFactory } from '@/modules/web-api/factories/manager-service-factory'
 import { UseCaseFactory as WebAPIUseCaseFactory } from '@/modules/web-api/factories/use-case-factory'
-import { DepartmentQueueServiceFactory } from '@/modules/whats-app/factory/department-queue-service-factory'
-import { DepartmentServiceFactory } from '@/modules/whats-app/factory/department-service-factory'
-import { ProcessClientMessageServiceFactory } from '@/modules/whats-app/factory/process-client-message-service-factory'
-import { ProcessEmployeeMessageServiceFactory } from '@/modules/whats-app/factory/process-employee-message-service-factory'
-import { StateServiceFactory } from '@/modules/whats-app/factory/state-service-factory'
-import { WhatsAppMessageServiceFactory } from '@/modules/whats-app/factory/whats-app-message-service-factory'
-import { WhatsAppOutputPort } from './output/whats-app-output-port'
-import { UserServiceFactory } from '@/modules/whats-app/factory/user-service-factory'
+import { ManagerService } from '@/modules/web-api/services/manager-service'
 import { CompanyServiceFactory } from '@/modules/whats-app/factory/company-service-factory'
 import { ConversationServiceFactory } from '@/modules/whats-app/factory/conversation-service-factory'
-import { StateOrchestratorFactory } from '@/modules/whats-app/factory/state-orchestrator-factory'
+import { DepartmentQueueServiceFactory } from '@/modules/whats-app/factory/department-queue-service-factory'
+import { DepartmentServiceFactory } from '@/modules/whats-app/factory/department-service-factory'
 import { FAQServiceFactory } from '@/modules/whats-app/factory/faq-service-factory'
 import { MessageHandlerFactory } from '@/modules/whats-app/factory/message-handler-factory'
+import { ProcessClientMessageServiceFactory } from '@/modules/whats-app/factory/process-client-message-service-factory'
+import { ProcessEmployeeMessageServiceFactory } from '@/modules/whats-app/factory/process-employee-message-service-factory'
 import { StateContextServiceFactory } from '@/modules/whats-app/factory/state-context-service-factory'
-import { ManagerServiceFactory } from '@/modules/web-api/factories/manager-service-factory'
-import { ManagerService } from '@/modules/web-api/services/manager-service'
+import { StateOrchestratorFactory } from '@/modules/whats-app/factory/state-orchestrator-factory'
+import { StateServiceFactory } from '@/modules/whats-app/factory/state-service-factory'
+import { UserServiceFactory } from '@/modules/whats-app/factory/user-service-factory'
+import { WhatsAppMessageServiceFactory } from '@/modules/whats-app/factory/whats-app-message-service-factory'
 import { CompanyService } from '@/modules/whats-app/services/company-service'
+import { WhatsAppOutputPort } from './output/whats-app-output-port'
 
 export class DependenciesContainer {
 	public readonly outputPort = new WhatsAppOutputPort()
 
 	// WhatsApp Factories
-	public readonly aiServiceFactory: AIServiceFactory
 	public readonly companyServiceFactory: CompanyServiceFactory
 	public readonly conversationServiceFactory: ConversationServiceFactory
 	public readonly departmentServiceFactory: DepartmentServiceFactory
@@ -42,6 +41,9 @@ export class DependenciesContainer {
 	public readonly authServiceFactory: AuthServiceFactory
 	public readonly webAPIUseCaseFactory: WebAPIUseCaseFactory
 	public readonly managerServiceFactory: ManagerServiceFactory
+
+	// other factories
+	public readonly aiServiceFactory: OpenAIServiceFactory
 
 	// Services
 	public readonly whatsAppMessageService: ReturnType<
@@ -68,7 +70,7 @@ export class DependenciesContainer {
 			this.companyServiceFactory,
 			this.departmentQueueServiceFactory
 		)
-		this.aiServiceFactory = new AIServiceFactory(
+		this.aiServiceFactory = new OpenAIServiceFactory(
 			this.conversationServiceFactory,
 			this.userServiceFactory
 		)
@@ -82,6 +84,7 @@ export class DependenciesContainer {
 		)
 		this.stateOrchestratorFactory = new StateOrchestratorFactory(
 			this.outputPort,
+			this.aiServiceFactory,
 			this.stateServiceFactory,
 			this.faqServiceFactory,
 			this.conversationServiceFactory,

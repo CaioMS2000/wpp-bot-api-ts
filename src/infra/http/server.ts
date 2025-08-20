@@ -6,7 +6,7 @@ import { FastifyInstance, FastifyListenOptions } from 'fastify'
 // import { clearDatabase } from '@/../clear-database'
 import { app } from './app'
 import { DependenciesContainer } from './dependencies-container'
-import { whatsAppWebhook } from './routes/message/whats-app-webhook'
+import { receiveMessage } from './routes/message/receive-message'
 import { webhook } from './routes/whats-app-webhook/token'
 
 import { env } from '@/config/env'
@@ -46,7 +46,7 @@ async function main() {
 	// WhatsApp
 	// Registrar rotas
 	app.register(webhook)
-	app.register(whatsAppWebhook, {
+	app.register(receiveMessage, {
 		whatsAppMessageService: container.whatsAppMessageService,
 	})
 

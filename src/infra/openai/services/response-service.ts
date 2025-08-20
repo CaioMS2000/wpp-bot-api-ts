@@ -9,16 +9,20 @@ import { ConversationService } from '@/modules/whats-app/services/conversation-s
 import { UserService } from '@/modules/whats-app/services/user-service'
 import { appendToLogFile, findProjectRoot } from '@/utils/files'
 import { OpenAI } from 'openai'
-import { z } from 'zod'
 import { systemInstructions } from '../constants'
 import {
+	FunctionCallOutputSchema,
 	FunctionCallSchema,
-	FunctionRegistry,
+	OutputItem,
 	ResponseInput,
 	Tool,
 } from '../types'
-import { saveUserDataTool } from './functions/collect-user-data'
 import { functionRegistry } from './functions/registry'
+import { saveUserDataTool } from './functions/save-user-data'
+
+function isFunctionCall(i: OutputItem): boolean {
+	return FunctionCallSchema.safeParse(i).success
+}
 
 export class AIResponseService extends AIService {
 	private client: OpenAI
@@ -99,44 +103,46 @@ export class AIResponseService extends AIService {
 
 		appendToLogFile(savePath, response)
 
-		const toolCalls = (response.output ?? []).filter(
-			(out): out is z.infer<typeof FunctionCallSchema> => {
-				try {
-					FunctionCallSchema.parse(out)
-					return true
-				} catch {
-					return false
-				}
-			}
-		)
+		const outputs = response.output ?? []
+		const calls = outputs.filter(isFunctionCall)
 
-		if (toolCalls.length > 0) {
-			for (const call of toolCalls) {
-				const args: Record<string, unknown> = JSON.parse(call.arguments)
+		if (calls.length) {
+			const results: OpenAI.Responses.ResponseInput = []
+
+			for (const raw of calls) {
+				const parsed = FunctionCallSchema.parse(raw)
+				const { name, arguments: strArgs, call_id } = parsed
+
+				let args: unknown
+				try {
+					args = JSON.parse(strArgs || '{}')
+				} catch {
+					args = {}
+				}
+
+				const entry = functionRegistry[name]
 				let output: string
 
-				const registryEntry: Nullable<FunctionRegistry> =
-					functionRegistry[call.name] ?? null
-
-				if (registryEntry) {
-					const data = registryEntry.schema.parse(args)
-					output = await registryEntry.fn(data)
+				if (entry) {
+					const checked = entry.schema.parse(args)
+					const res = await entry.fn(checked)
+					output = typeof res === 'string' ? res : JSON.stringify(res)
 				} else {
-					output = `Não foi possível processar a solicitação. Função '${call.name}' não está registrada`
+					output = `Função '${name}' não registrada`
 				}
 
-				inputs.push(call)
-				inputs.push({
+				const outputItem = FunctionCallOutputSchema.parse({
 					type: 'function_call_output',
-					call_id: call.call_id,
+					call_id,
 					output,
 				})
+
+				results.push(outputItem)
 			}
 
-			const followup = await this.answer(conversation, inputs, lastResponseId)
+			const followup = await this.answer(conversation, results, response.id)
 
 			appendToLogFile(savePath, followup)
-
 			return { message: followup.output_text, responseId: followup.id }
 		}
 
@@ -148,7 +154,6 @@ export class AIResponseService extends AIService {
 			logger.debug(
 				'[AIResponseService] Generating response for message: ',
 				message.content
-				// this.client.
 			)
 			const messages = conversation.messages.toReversed()
 			const lastGeneratedByAIResponse = messages.find(
@@ -161,11 +166,11 @@ export class AIResponseService extends AIService {
 				: null
 
 			if (conversation.messages.length > 20) {
-				const resume = await this.generateResponse(
+				const summary = await this.generateResponse(
 					conversation,
 					'Resuma tudo que conversamos até momento.'
 				)
-				input = `Esse é o resumo da nossa conversa até o momento:\n${resume}\n\nAgora me reponda o seguinte:\n${message}`
+				input = `Esse é o resumo da nossa conversa até o momento:\n${summary.message}\n\nAgora responda o seguinte:\n${message.content}`
 				lastResponseId = null
 			}
 

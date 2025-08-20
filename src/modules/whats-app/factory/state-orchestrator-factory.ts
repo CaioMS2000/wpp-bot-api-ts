@@ -7,10 +7,12 @@ import { DepartmentQueueServiceFactory } from './department-queue-service-factor
 import { StateContextServiceFactory } from './state-context-service-factory'
 import { UserServiceFactory } from './user-service-factory'
 import { ConversationStateOrchestrator } from '../services/state-orchestrator'
+import { AIServiceFactory } from './ai-service-factory'
 
 export class StateOrchestratorFactory {
 	constructor(
 		private outputPort: OutputPort,
+		private aiServiceFactory: AIServiceFactory,
 		private stateServiceFactory: StateServiceFactory,
 		private faqServiceFactory: FAQServiceFactory,
 		private conversationServiceFactory: ConversationServiceFactory,
@@ -23,6 +25,7 @@ export class StateOrchestratorFactory {
 	getOrchestrator() {
 		return new ConversationStateOrchestrator(
 			this.outputPort,
+			this.aiServiceFactory.getService(),
 			this.stateServiceFactory.getService(),
 			this.faqServiceFactory.getService(),
 			this.conversationServiceFactory.getService(),

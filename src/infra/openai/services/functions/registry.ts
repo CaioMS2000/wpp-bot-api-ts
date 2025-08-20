@@ -1,13 +1,13 @@
 import { FunctionRegistry } from '../../types'
 import {
-	collectUserDataArgsSchema,
+	saveUserDataArgsSchema,
 	saveUserDataFn,
 	saveUserDataTool,
-} from './collect-user-data'
+} from './save-user-data'
 
-export const functionRegistry = {
+export const functionRegistry: FunctionRegistry = {
 	[saveUserDataTool.name]: {
+		schema: saveUserDataArgsSchema,
 		fn: saveUserDataFn,
-		schema: collectUserDataArgsSchema,
 	},
-} satisfies Record<string, FunctionRegistry>
+}

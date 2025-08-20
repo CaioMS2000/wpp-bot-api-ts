@@ -18,6 +18,7 @@ import { FAQService } from './faq-service'
 import { StateContextService } from './state-context-service'
 import { StateService } from './state-service'
 import { UserService } from './user-service'
+import { AIService } from './ai-service'
 
 type ComomParams = {
 	company: Company
@@ -47,6 +48,7 @@ export class ConversationStateOrchestrator {
 
 	constructor(
 		private outputPort: OutputPort,
+		private aIService: AIService,
 		private stateService: StateService,
 		private faqService: FAQService,
 		private conversationService: ConversationService,
@@ -250,7 +252,15 @@ export class ConversationStateOrchestrator {
 			}
 
 			case ConversationStateType.CHATTING_WITH_AI: {
-				// TODO: sendo message to AI
+				const generatedMessage = this.aIService.makeResponse(
+					conversation,
+					message
+				)
+
+				await this.outputPort.handle(user, {
+					type: 'text',
+					content: `*Evo*\n${(await generatedMessage).content}`,
+				})
 
 				return null
 			}
