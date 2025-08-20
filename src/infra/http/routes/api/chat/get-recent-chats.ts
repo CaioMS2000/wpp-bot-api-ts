@@ -51,7 +51,7 @@ export async function getRecentChats(
 				const { company } = await request.getUserMembership(request.params.cnpj)
 				const chats = await getRecentChatsUseCase.execute(company.id)
 
-				return reply.status(201).send({
+				return reply.status(200).send({
 					chats,
 				})
 			}

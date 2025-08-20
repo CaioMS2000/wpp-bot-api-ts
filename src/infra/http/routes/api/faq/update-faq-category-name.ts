@@ -47,7 +47,7 @@ export async function updateFAQCategoryName(
 
 				await updateFAQCategoryNameUseCase.execute(company.id, categoryId, name)
 
-				return reply.status(201).send()
+				return reply.status(200).send()
 			}
 		)
 }

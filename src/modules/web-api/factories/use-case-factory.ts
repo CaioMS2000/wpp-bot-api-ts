@@ -118,9 +118,7 @@ export class UseCaseFactory {
 	}
 
 	getGetBaseMetricsUseCase(): GetBaseMetricsUseCase {
-		return new GetBaseMetricsUseCase(
-			this.conversationServiceFactory.getService()
-		)
+		return new GetBaseMetricsUseCase()
 	}
 
 	getGetDepartmentsMetricsUseCase(): GetDepartmentsMetricsUseCase {
@@ -139,9 +137,7 @@ export class UseCaseFactory {
 	}
 
 	getGetWeekConversationsMetrics(): GetWeekConversationsMetrics {
-		return new GetWeekConversationsMetrics(
-			this.conversationServiceFactory.getService()
-		)
+		return new GetWeekConversationsMetrics()
 	}
 
 	getUpdateDepartmentUseCase(): UpdateDepartmentUseCase {

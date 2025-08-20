@@ -49,7 +49,7 @@ export async function getAllChats(app: FastifyInstance, resources: Resources) {
 					company.id
 				)
 
-				return reply.status(201).send({ chats, clientsInQueue })
+				return reply.status(200).send({ chats, clientsInQueue })
 			}
 		)
 }

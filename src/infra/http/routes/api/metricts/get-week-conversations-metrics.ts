@@ -16,18 +16,14 @@ export const responseSchema = {
 	200: z.object({
 		from: z.date(),
 		to: z.date(),
-		metrics: z.array(
+		days: z.array(
 			z.object({
 				date: z.date(),
-				dayOfWeek: z.number(),
-				total: z.number(),
-				conversations: z.array(
-					z.object({
-						id: z.string(),
-						startedAt: z.date(),
-						endedAt: z.date().nullable(),
-					})
-				),
+				dayOfWeek: z.number().int().min(0).max(6),
+				label: z.string(),
+				total: z.number().int().nonnegative(),
+				resolved: z.number().int().nonnegative(),
+				pending: z.number().int().nonnegative(),
 			})
 		),
 	}),
@@ -45,7 +41,7 @@ export async function getWeekConversationsMetrics(
 			{
 				schema: {
 					tags: ['metrics'],
-					summary: 'Get departments metrics of a company',
+					summary: 'Get weekly conversations metrics (per weekday)',
 					security: [{ bearerAuth: [] }],
 					params: paramsSchema,
 					response: responseSchema,
@@ -54,20 +50,10 @@ export async function getWeekConversationsMetrics(
 			async (request, reply) => {
 				const { getWeekConversationsMetrics } = resources
 				const { company } = await request.getUserMembership(request.params.cnpj)
-				const result = await getWeekConversationsMetrics.execute(company.id)
-				const data = {
-					...result,
-					metrics: result.metrics.map(m => ({
-						...m,
-						conversations: m.conversations.map(c => ({
-							id: c.id,
-							startedAt: c.startedAt,
-							endedAt: c.endedAt,
-						})),
-					})),
-				}
 
-				return reply.status(200).send(data)
+				const result = await getWeekConversationsMetrics.execute(company.id)
+
+				return reply.status(200).send(result)
 			}
 		)
 }

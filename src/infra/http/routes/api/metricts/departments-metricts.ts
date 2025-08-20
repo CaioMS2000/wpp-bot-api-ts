@@ -44,7 +44,7 @@ export async function getDepartmentsMetrics(
 				const { company } = await request.getUserMembership(request.params.cnpj)
 				const result = await getDepartmentsMetricsUseCase.execute(company.id)
 
-				return reply.status(201).send(result)
+				return reply.status(200).send(result)
 			}
 		)
 }
