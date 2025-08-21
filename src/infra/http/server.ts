@@ -49,6 +49,16 @@ async function main() {
 		},
 	})
 
+	// health check
+	app.get('/health', async (request, reply) => {
+		return {
+			status: 'OK',
+			message: 'Service is healthy',
+			timestamp: new Date().toISOString(),
+			uptime: process.uptime(),
+		}
+	})
+
 	// WhatsApp
 	// Registrar rotas
 	app.register(webhook)
