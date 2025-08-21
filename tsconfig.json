@@ -4,15 +4,20 @@
 
   "compilerOptions": {
     "lib": ["ES2023"],
-    "module": "nodenext",
     "target": "ES2023",
+    // "module": "nodenext",
+    "module": "CommonJS",
+    "moduleResolution": "Node",
 
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
 
+    "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
+      "[ROOT]/*": ["./*"]
+
     }
   },
   "include": ["src/**/*", "seed.ts", "seed/**/*", "clear-database.ts"],

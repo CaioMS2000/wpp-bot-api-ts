@@ -13,9 +13,9 @@
     "lint": "biome check .",
     "lint:hard": "biome check --write --unsafe ./src",
     "format": "biome format --write ./src",
-    "build": "tsup src --out-dir build",
+    "build": "clear && tsup src --out-dir build",
     "start": "node build/infra/http/server.js",
-    "start:hard": "tsup src --out-dir build && node build/infra/http/server.js",
+    "start:hard": "clear && tsup src --out-dir build && node build/infra/http/server.js",
     "postinstall": "prisma generate"
   },
   "keywords": [],

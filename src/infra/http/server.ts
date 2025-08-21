@@ -1,15 +1,10 @@
 import path from 'node:path'
-import { prisma } from '@/lib/prisma'
+import { env } from '@/config/env'
 import { logger } from '@/logger'
 import { emptyJsonFile, findProjectRoot } from '@/utils/files'
-import { FastifyInstance, FastifyListenOptions } from 'fastify'
-import { clearDatabase } from '@/../clear-database'
+import { FastifyListenOptions } from 'fastify'
 import { app } from './app'
 import { DependenciesContainer } from './dependencies-container'
-import { receiveMessage } from './routes/message/receive-message'
-import { webhook } from './routes/whats-app-webhook/token'
-
-import { env } from '@/config/env'
 import { router as authRouter } from './routes/api/auth/router'
 import { router as chatRouter } from './routes/api/chat/router'
 import { router as companyRouter } from './routes/api/company/router'
@@ -17,6 +12,8 @@ import { router as departmentRouter } from './routes/api/department/router'
 import { router as employeeRouter } from './routes/api/employee/router'
 import { router as faqRouter } from './routes/api/faq/router'
 import { router as metrictsRouter } from './routes/api/metricts/router'
+import { receiveMessage } from './routes/message/receive-message'
+import { webhook } from './routes/whats-app-webhook/token'
 
 // console.clear()
 logger.info('Starting server setup')
@@ -28,6 +25,9 @@ emptyJsonFile(responseFilePath)
 logger.debug(`Response file initialized at ${responseFilePath}`)
 
 async function softDBClear() {
+	const { clearDatabase } = await import('[ROOT]/clear-database')
+	const { prisma } = await import('@/lib/prisma')
+
 	await prisma.$transaction(async tx => {
 		logger.debug('Clearing database collections')
 		await clearDatabase(tx, [
@@ -39,7 +39,7 @@ async function softDBClear() {
 	})
 }
 async function main() {
-	await softDBClear()
+	// await softDBClear()
 
 	const container = new DependenciesContainer()
 

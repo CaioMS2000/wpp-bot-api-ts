@@ -1,4 +1,3 @@
-// tsup.config.ts
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
@@ -10,4 +9,5 @@ export default defineConfig({
   splitting: false,
   sourcemap: true,
   outDir: 'build',
+  tsconfig: 'tsconfig.json',
 });
