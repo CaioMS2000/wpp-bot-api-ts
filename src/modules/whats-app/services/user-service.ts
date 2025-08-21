@@ -42,6 +42,7 @@ export class UserService {
 
 				await prisma.client.create({
 					data: {
+						id: client.id,
 						name: client.name,
 						email: client.email,
 						profession: client.profession,
@@ -56,6 +57,7 @@ export class UserService {
 
 				await prisma.employee.create({
 					data: {
+						id: employee.id,
 						name: employee.name,
 						phone: employee.phone,
 						departmentId: employee.departmentId,
@@ -255,24 +257,33 @@ export class UserService {
 		toPhone: string,
 		name?: string
 	): Promise<SenderContext> {
-		const company = await this.companyService.getByPhone(toPhone, {
-			notNull: true,
-		})
-		const employee = await this.getEmployeeByPhone(company.id, fromPhone)
+		try {
+			const company = await this.companyService.getByPhone(toPhone, {
+				notNull: true,
+			})
+			const employee = await this.getEmployeeByPhone(company.id, fromPhone)
 
-		if (employee) {
-			return { type: SenderType.EMPLOYEE, company, employee, client: null }
-		}
+			if (employee) {
+				return { type: SenderType.EMPLOYEE, company, employee, client: null }
+			}
 
-		const client = await this.getClientByPhone(company.id, fromPhone)
+			let client = await this.getClientByPhone(company.id, fromPhone)
 
-		if (client) {
+			if (!client) {
+				client = await this.createUser({
+					userType: UserType.CLIENT,
+					data: {
+						companyId: company.id,
+						phone: fromPhone,
+						...(name ? { name } : {}),
+					},
+				})
+			}
+
 			return { type: SenderType.CLIENT, company, client, employee: null }
+		} catch (error) {
+			throw new Error(`Could not resolve any user for phone: ${fromPhone}`)
 		}
-
-		throw new ResourceNotFoundError(
-			`Could not resolve any user for phone: ${fromPhone}`
-		)
 	}
 
 	async getAllEmployeesByCompany(companyId: string) {

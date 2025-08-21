@@ -1,4 +1,4 @@
-import { AgentType, UserType } from '@/@types'
+import { AgentType, SenderType, UserType } from '@/@types'
 import { NotNullConfig, NotNullParams } from '@/@types/not-null-params'
 import { Client } from '@/entities/client'
 import { Conversation, CreateConversationInput } from '@/entities/conversation'
@@ -108,6 +108,19 @@ export class ConversationService {
 				stateData: conversation.stateMetadata ?? undefined,
 			},
 		})
+
+		await Promise.all(
+			conversation.messages.map(m => {
+				const messageModel = MessageMapper.toModel(m)
+				return prisma.message.upsert({
+					where: { id: m.id },
+					update: {},
+					create: {
+						...messageModel,
+					},
+				})
+			})
+		)
 
 		return conversation
 	}

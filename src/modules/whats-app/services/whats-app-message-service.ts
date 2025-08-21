@@ -1,8 +1,8 @@
+import { SenderType, User } from '@/@types'
 import { logger } from '@/logger'
 import { isClient, isEmployee } from '@/utils/entity'
 import { MessageHandlerFactory } from '../factory/message-handler-factory'
 import { MessageHandler } from '../handler/message-handler'
-import { SenderType, User } from '@/@types'
 import { UserService } from './user-service'
 
 export class WhatsAppMessageService {

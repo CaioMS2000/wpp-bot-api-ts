@@ -13,8 +13,9 @@ export class ClientMapper {
 		)
 	}
 
-	static toModel(entity: Client): Omit<PrismaClient, 'id'> {
+	static toModel(entity: Client): PrismaClient {
 		return {
+			id: entity.id,
 			name: entity.name,
 			phone: entity.phone,
 			companyId: entity.companyId,

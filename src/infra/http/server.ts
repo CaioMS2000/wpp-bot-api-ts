@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { logger } from '@/logger'
 import { emptyJsonFile, findProjectRoot } from '@/utils/files'
 import { FastifyInstance, FastifyListenOptions } from 'fastify'
-// import { clearDatabase } from '@/../clear-database'
+import { clearDatabase } from '@/../clear-database'
 import { app } from './app'
 import { DependenciesContainer } from './dependencies-container'
 import { receiveMessage } from './routes/message/receive-message'
@@ -27,15 +27,19 @@ const responseFilePath = path.join(projectRoot, 'request-logs.json')
 emptyJsonFile(responseFilePath)
 logger.debug(`Response file initialized at ${responseFilePath}`)
 
-// async function softDBClear() {
-// 	await prisma.$transaction(async tx => {
-// 		logger.debug('Clearing database collections')
-// 		await clearDatabase(tx, ['message', 'conversation', 'departmentQueue'])
-// 	})
-// }
+async function softDBClear() {
+	await prisma.$transaction(async tx => {
+		logger.debug('Clearing database collections')
+		await clearDatabase(tx, [
+			'message',
+			'conversation',
+			'departmentQueue',
+			'client',
+		])
+	})
+}
 async function main() {
-	// await softDBClear()
-	logger.info('Env variables:', { env })
+	await softDBClear()
 
 	const container = new DependenciesContainer()
 

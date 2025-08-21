@@ -105,9 +105,10 @@ export class ConversationMapper {
 			lastStateChange: entity.lastStateChange,
 			resume: entity.resume,
 			entryActionExecuted: entity.entryActionExecuted,
-			queuedAt: null,
-			firstHumanResponseAt: null,
-			closeReason: null,
+			queuedAt: entity.queuedAt,
+			firstHumanResponseAt: entity.firstHumanResponseAt,
+			closeReason: entity.closeReason,
+			referredQueueId: entity.referredQueueId,
 		}
 	}
 }

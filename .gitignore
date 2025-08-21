@@ -63,3 +63,4 @@ watch.py
 /prisma/migrations
 whats-app-api-payloads
 *.txt
+openai-responses.json

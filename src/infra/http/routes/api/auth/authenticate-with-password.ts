@@ -55,9 +55,6 @@ export async function authenticateWithPassword(
 				maxAge: 60 * 60 * 24 * 7,
 			})
 
-			console.log('\n\nauthenticateWithPassword -> token:\n', token)
-			console.log('\n\nauthenticateWithPassword -> reply:\n', reply)
-
 			return reply.status(200).send({
 				user: {
 					id,
