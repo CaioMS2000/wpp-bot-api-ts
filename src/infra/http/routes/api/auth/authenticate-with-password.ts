@@ -50,10 +50,13 @@ export async function authenticateWithPassword(
 			reply.setCookie(env.HTTP_COOKIE_NAME, token, {
 				httpOnly: true,
 				secure: process.env.NODE_ENV === 'production',
-				sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+				sameSite: 'none',
 				path: '/',
 				maxAge: 60 * 60 * 24 * 7,
 			})
+
+			console.log('\n\nauthenticateWithPassword -> token:\n', token)
+			console.log('\n\nauthenticateWithPassword -> reply:\n', reply)
 
 			return reply.status(200).send({
 				user: {
