@@ -50,7 +50,7 @@ export async function authenticateWithPassword(
 			reply.setCookie(env.HTTP_COOKIE_NAME, token, {
 				httpOnly: true,
 				secure: process.env.NODE_ENV === 'production',
-				sameSite: 'none',
+				sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
 				path: '/',
 				maxAge: 60 * 60 * 24 * 7,
 			})
