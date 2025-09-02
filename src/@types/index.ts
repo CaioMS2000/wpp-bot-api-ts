@@ -1,38 +1,5 @@
-import { type Client } from '@/entities/client'
-import { type Employee } from '@/entities/employee'
-
-export type User = Client | Employee
-
-export enum UserType {
-	CLIENT = 'CLIENT',
-	EMPLOYEE = 'EMPLOYEE',
-}
-
-export enum AgentType {
-	AI = 'AI',
-	EMPLOYEE = 'EMPLOYEE',
-}
-
-export enum SenderType {
-	CLIENT = 'CLIENT',
-	EMPLOYEE = 'EMPLOYEE',
-	AI = 'AI',
-	SYSTEM = 'SYSTEM',
-}
-
-export type UserUnionType =
-	| {
-			user: Client
-			userType: UserType.CLIENT
-	  }
-	| {
-			user: Employee
-			userType: UserType.EMPLOYEE
-	  }
-
-export enum CloseReason {
-	EXPLICIT = 'EXPLICIT',
-	RESOLVED = 'RESOLVED',
-	TRANSFERED = 'TRANSFERED',
-	ABANDONED = 'ABANDONED',
-}
+export * from './conversation'
+export * from './user'
+export * from './file'
+export * from './not-null-params'
+export * from './pagination-params'

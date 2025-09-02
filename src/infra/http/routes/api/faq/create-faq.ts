@@ -39,7 +39,7 @@ export async function createFAQ(app: FastifyInstance, resources: Resources) {
 				schema: {
 					tags: ['faqs'],
 					summary: 'Criar um FAQ para a empresa',
-					security: [{ bearerAuth: [] }],
+
 					params: paramsSchema,
 					body: bodySchema,
 					response: responseSchema,

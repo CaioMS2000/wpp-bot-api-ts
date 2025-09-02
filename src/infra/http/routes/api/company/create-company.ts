@@ -32,9 +32,9 @@ export async function createCompany(
 				schema: {
 					tags: ['Companies'],
 					summary: 'Create a new company',
-					security: [{ bearerAuth: [] }],
+
 					body: bodySchema,
-					response: { 204: z.null() },
+					response: { 204: z.null().describe('No Content') },
 				},
 			},
 			async (request, reply) => {

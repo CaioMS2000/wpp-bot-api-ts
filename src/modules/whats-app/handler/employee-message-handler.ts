@@ -1,7 +1,7 @@
-import { logger } from '@/logger'
+import { User } from '@/@types'
 import { Client } from '@/entities/client'
 import { Company } from '@/entities/company'
-import { User } from '@/@types'
+import { logger } from '@/logger'
 import { ProcessEmployeeMessageService } from '../services/process-employee-message-service'
 import { MessageHandler } from './message-handler'
 

@@ -1,7 +1,7 @@
 import { SenderType } from '@/@types'
-import { ChatMessage } from '../@types'
 import { ConversationService } from '@/modules/whats-app/services/conversation-service'
 import { UserService } from '@/modules/whats-app/services/user-service'
+import { ChatMessage } from '../@types'
 
 export class ParseChatUseCase {
 	constructor(

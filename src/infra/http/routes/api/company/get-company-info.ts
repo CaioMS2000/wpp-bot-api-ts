@@ -40,7 +40,7 @@ export async function getCompanyInfo(
 				schema: {
 					tags: ['company'],
 					summary: 'Obter informações da empresa',
-					security: [{ bearerAuth: [] }],
+
 					params: paramsSchema,
 					response: {
 						'200': responseSchema,

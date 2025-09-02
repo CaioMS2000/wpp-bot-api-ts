@@ -38,10 +38,10 @@ export async function updateCompany(
 				schema: {
 					tags: ['company'],
 					summary: 'Atualizar informações da empresa',
-					security: [{ bearerAuth: [] }],
+
 					body: bodySchema,
 					params: paramsSchema,
-					response: { 200: z.null() },
+					response: { 204: z.null().describe('No Content') },
 				},
 			},
 			async (request, reply) => {
@@ -52,7 +52,7 @@ export async function updateCompany(
 					request.body
 				)
 
-				return reply.status(200).send()
+				return reply.status(204).send()
 			}
 		)
 }

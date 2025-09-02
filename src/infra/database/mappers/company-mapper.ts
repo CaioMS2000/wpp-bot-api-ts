@@ -34,6 +34,7 @@ export class CompanyMapper {
 				website: raw.website,
 				description: raw.description,
 				managerId: raw.managerId,
+				storageId: raw.storageId,
 				businessHours: new BusinessHours(days),
 			},
 			raw.id
@@ -52,6 +53,7 @@ export class CompanyMapper {
 			website: entity.website,
 			description: entity.description,
 			managerId: entity.managerId,
+			storageId: entity.storageId,
 		}
 	}
 

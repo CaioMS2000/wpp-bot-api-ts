@@ -17,6 +17,8 @@ import { StateServiceFactory } from '@/modules/whats-app/factory/state-service-f
 import { UserServiceFactory } from '@/modules/whats-app/factory/user-service-factory'
 import { WhatsAppMessageServiceFactory } from '@/modules/whats-app/factory/whats-app-message-service-factory'
 import { CompanyService } from '@/modules/whats-app/services/company-service'
+import { WhatsAppMediaService } from '@/modules/whats-app/services/whatsapp-media-service'
+import { FileServiceFactory } from '../factory/storage/file-service-factory'
 import { WhatsAppOutputPort } from './output/whats-app-output-port'
 
 export class DependenciesContainer {
@@ -41,6 +43,7 @@ export class DependenciesContainer {
 	public readonly authServiceFactory: AuthServiceFactory
 	public readonly webAPIUseCaseFactory: WebAPIUseCaseFactory
 	public readonly managerServiceFactory: ManagerServiceFactory
+	public readonly fileServiceFactory: FileServiceFactory
 
 	// other factories
 	public readonly aiServiceFactory: OpenAIServiceFactory
@@ -49,11 +52,13 @@ export class DependenciesContainer {
 	public readonly whatsAppMessageService: ReturnType<
 		WhatsAppMessageServiceFactory['getService']
 	>
+	public readonly whatsAppMediaService: WhatsAppMediaService
 	public readonly managerService: ManagerService
 	public readonly companyService: CompanyService
 	public readonly authService: ReturnType<AuthServiceFactory['getService']>
 
 	constructor() {
+		this.whatsAppMediaService = new WhatsAppMediaService()
 		this.companyServiceFactory = new CompanyServiceFactory()
 		this.faqServiceFactory = new FAQServiceFactory()
 		this.userServiceFactory = new UserServiceFactory(this.companyServiceFactory)
@@ -72,7 +77,9 @@ export class DependenciesContainer {
 		)
 		this.aiServiceFactory = new OpenAIServiceFactory(
 			this.conversationServiceFactory,
-			this.userServiceFactory
+			this.userServiceFactory,
+			this.companyServiceFactory,
+			this.whatsAppMediaService
 		)
 
 		this.stateServiceFactory = new StateServiceFactory(
@@ -122,6 +129,7 @@ export class DependenciesContainer {
 		this.companyService = this.companyServiceFactory.getService()
 
 		// Web API Factories
+		this.fileServiceFactory = new FileServiceFactory()
 		this.managerServiceFactory = new ManagerServiceFactory()
 		this.authServiceFactory = new AuthServiceFactory(
 			this.companyServiceFactory,

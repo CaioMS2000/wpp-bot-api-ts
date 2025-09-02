@@ -36,7 +36,7 @@ export async function getBaseMetrics(
 				schema: {
 					tags: ['metrics'],
 					summary: 'Get base metrics of a company',
-					security: [{ bearerAuth: [] }],
+
 					params: paramsSchema,
 					response: responseSchema,
 				},

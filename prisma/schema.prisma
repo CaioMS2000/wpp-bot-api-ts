@@ -46,6 +46,7 @@ model Company {
   description   String?
   cnpj          String         @unique
   phone         String         @unique
+  storageId     String?        @unique
   clients       Client[]
   conversations Conversation[]
   departments   Department[]
@@ -54,6 +55,7 @@ model Company {
   managerId     String         @unique
   manager       Manager        @relation(fields: [managerId], references: [id])
   businessHours BusinessHour[]
+  files         File[]
 }
 
 model Client {
@@ -128,7 +130,10 @@ model Conversation {
   endedAt             DateTime?
   lastStateChange     DateTime?
   resume              String?
+  aiResponseTrack     String?
+  tokensCount         Int        @default(0)
   entryActionExecuted Boolean
+  intentTags          Json?
   client              Client?    @relation(fields: [clientId], references: [id])
   company             Company    @relation(fields: [companyId], references: [id])
   employee            Employee?  @relation("employee", fields: [employeeId], references: [id])
@@ -141,8 +146,8 @@ model Conversation {
   queuedAt             DateTime?
   firstHumanResponseAt DateTime?
   closeReason          CloseReason?
-  referredQueueId String?
-  referredQueue DepartmentQueue? @relation(fields: [referredQueueId], references: [id])
+  referredQueueId      String?          @unique
+  referredQueue        DepartmentQueue? @relation(fields: [referredQueueId], references: [id])
 }
 
 enum FromType {
@@ -154,10 +159,11 @@ enum FromType {
 
 model Message {
   id             String       @id @default(uuid())
-  content        String
+  content        String?
   from           FromType
   timestamp      DateTime     @default(now())
   conversationId String
+  mediaId   String?
   aiResponseId   String?
   clientId       String?
   employeeId     String?
@@ -177,13 +183,14 @@ model Department {
 }
 
 model DepartmentQueue {
-  id           String     @id @default(uuid())
+  id           String        @id @default(uuid())
   departmentId String
   clientId     String
-  joinedAt     DateTime   @default(now())
+  joinedAt     DateTime      @default(now())
   leftAt       DateTime?
-  department   Department @relation(fields: [departmentId], references: [id])
-  client       Client     @relation(fields: [clientId], references: [id])
+  department   Department    @relation(fields: [departmentId], references: [id])
+  client       Client        @relation(fields: [clientId], references: [id])
+  conversation Conversation?
 
   @@unique([departmentId, clientId])
   @@index([departmentId, joinedAt])
@@ -205,4 +212,16 @@ model FAQItem {
   answer     String
   categoryId String
   category   FAQCategory @relation(fields: [categoryId], references: [id])
+}
+
+model File {
+  id             String   @id @default(cuid())
+  name           String
+  key            String   @unique
+  contentType    String
+  createdAt      DateTime @default(now())
+  meta           Json
+  indexInStorage String
+  companyId      String
+  company        Company  @relation(fields: [companyId], references: [id])
 }

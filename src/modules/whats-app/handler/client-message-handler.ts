@@ -1,7 +1,8 @@
-import { logger } from '@/logger'
+import { User } from '@/@types'
 import { Company } from '@/entities/company'
 import { Employee } from '@/entities/employee'
-import { User } from '@/@types'
+import { logger } from '@/logger'
+import { WppIncomingContent } from '../@types/messages'
 import { ProcessClientMessageService } from '../services/process-client-message-service'
 import { MessageHandler } from './message-handler'
 
@@ -15,7 +16,7 @@ export class ClientMessageHandler extends MessageHandler {
 	async process(
 		company: Company,
 		user: User,
-		messageContent: string,
+		messageContent: WppIncomingContent,
 		name?: string
 	): Promise<void> {
 		if (user instanceof Employee) {
@@ -23,7 +24,8 @@ export class ClientMessageHandler extends MessageHandler {
 		}
 		try {
 			logger.debug(
-				`Client handler processing message from ${user.phone}: ${messageContent}`
+				`Client handler processing message from ${user.phone}:`,
+				messageContent
 			)
 			await this.processClientMessageService.process(
 				company,

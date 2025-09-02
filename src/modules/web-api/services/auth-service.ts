@@ -1,9 +1,9 @@
-import { logger } from '@/logger'
 import { Manager } from '@/entities/manager'
-import { hash, compare } from 'bcryptjs'
+import { logger } from '@/logger'
 import { CompanyService } from '@/modules/whats-app/services/company-service'
-import { ManagerService } from './manager-service'
+import { compare, hash } from 'bcryptjs'
 import { ConflictError } from '../error/conflict'
+import { ManagerService } from './manager-service'
 
 export class AuthService {
 	constructor(

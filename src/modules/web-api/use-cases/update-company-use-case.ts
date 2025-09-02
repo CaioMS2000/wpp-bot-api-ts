@@ -1,9 +1,9 @@
 import { Company } from '@/entities/company'
 import { logger } from '@/logger'
+import { CompanyService } from '@/modules/whats-app/services/company-service'
 import { BusinessHours } from '@/value-objects/business-hours'
 import { CompanyType } from '../@types'
 import { parseBusinessHours } from '../utils/parse-business-hours'
-import { CompanyService } from '@/modules/whats-app/services/company-service'
 
 export class UpdateCompanyUseCase {
 	constructor(private companyService: CompanyService) {}

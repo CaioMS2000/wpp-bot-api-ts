@@ -1,13 +1,13 @@
 import { OutputPort } from '@/output/output-port'
-import { StateServiceFactory } from './state-service-factory'
-import { FAQServiceFactory } from './faq-service-factory'
-import { ConversationServiceFactory } from './conversation-service-factory'
-import { DepartmentServiceFactory } from './department-service-factory'
-import { DepartmentQueueServiceFactory } from './department-queue-service-factory'
-import { StateContextServiceFactory } from './state-context-service-factory'
-import { UserServiceFactory } from './user-service-factory'
 import { ConversationStateOrchestrator } from '../services/state-orchestrator'
 import { AIServiceFactory } from './ai-service-factory'
+import { ConversationServiceFactory } from './conversation-service-factory'
+import { DepartmentQueueServiceFactory } from './department-queue-service-factory'
+import { DepartmentServiceFactory } from './department-service-factory'
+import { FAQServiceFactory } from './faq-service-factory'
+import { StateContextServiceFactory } from './state-context-service-factory'
+import { StateServiceFactory } from './state-service-factory'
+import { UserServiceFactory } from './user-service-factory'
 
 export class StateOrchestratorFactory {
 	constructor(

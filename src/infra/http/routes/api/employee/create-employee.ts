@@ -42,7 +42,7 @@ export async function createEmployee(
 				schema: {
 					tags: ['employees'],
 					summary: 'Create a new employee',
-					security: [{ bearerAuth: [] }],
+
 					params: paramsSchema,
 					body: bodySchema,
 					response: responseSchema,

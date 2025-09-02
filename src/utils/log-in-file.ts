@@ -1,6 +1,6 @@
-import { logger } from '@/logger'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
+import { logger } from '@/logger'
 
 const REQUEST_LOG_PATH = path.resolve(process.cwd(), 'request-logs.json')
 

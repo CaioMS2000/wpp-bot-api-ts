@@ -41,7 +41,7 @@ export async function getRecentChats(
 				schema: {
 					tags: ['chats'],
 					summary: 'Get recent chats of a company',
-					security: [{ bearerAuth: [] }],
+
 					params: paramsSchema,
 					response: responseSchema,
 				},

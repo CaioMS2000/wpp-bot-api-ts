@@ -1,3 +1,4 @@
+import { User } from '@/@types'
 import { logger } from '@/logger'
 import { OutputMessage, OutputPort } from '@/output/output-port'
 import { sendButtonMessage } from '../whatsapp-client/sendButtonMessage'
@@ -7,7 +8,6 @@ import {
 } from '../whatsapp-client/sendDocumentMessage'
 import { sendListMessage } from '../whatsapp-client/sendListMessage'
 import { sendTextMessage } from '../whatsapp-client/sendTextMessage'
-import { User } from '@/@types'
 
 export class WhatsAppOutputPort implements OutputPort {
 	async handle(toUser: User, output: OutputMessage) {

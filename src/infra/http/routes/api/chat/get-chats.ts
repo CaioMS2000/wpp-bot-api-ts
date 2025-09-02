@@ -37,7 +37,7 @@ export async function getAllChats(app: FastifyInstance, resources: Resources) {
 				schema: {
 					tags: ['chats'],
 					summary: 'Get all chats of a company',
-					security: [{ bearerAuth: [] }],
+
 					params: paramsSchema,
 					response: responseSchema,
 				},

@@ -1,8 +1,9 @@
+import { SenderType, User } from '@/@types'
 import { logger } from '@/logger'
 import { isClient, isEmployee } from '@/utils/entity'
+import { WppIncomingContent } from '../@types/messages'
 import { MessageHandlerFactory } from '../factory/message-handler-factory'
 import { MessageHandler } from '../handler/message-handler'
-import { SenderType, User } from '@/@types'
 import { UserService } from './user-service'
 
 export class WhatsAppMessageService {
@@ -18,12 +19,13 @@ export class WhatsAppMessageService {
 	async processIncomingMessage(
 		fromPhone: string,
 		toPhone: string,
-		messageContent: string,
+		messageContent: WppIncomingContent,
 		userName?: string
 	) {
 		try {
 			logger.debug(
-				`Incoming message from ${fromPhone} to ${toPhone}: ${messageContent}`
+				`Incoming message from ${fromPhone} to ${toPhone}:`,
+				messageContent
 			)
 			const { type, company, client, employee } =
 				await this.userService.resolveSenderContext(

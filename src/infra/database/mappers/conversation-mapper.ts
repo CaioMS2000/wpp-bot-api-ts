@@ -1,27 +1,14 @@
 import { AgentType, UserType } from '@/@types'
-import { Company } from '@/entities/company'
 import { Conversation } from '@/entities/conversation'
-import { Employee } from '@/entities/employee'
 import {
 	fromPrismaStateName,
 	toPrismaStateName,
 } from '@/infra/database/utils/enumTypeMapping'
 import {
-	AgentType as PrismaAgentType,
-	BusinessHour as PrismaBusinessHour,
-	Client as PrismaClient,
-	Company as PrismaCompany,
 	Conversation as PrismaConversation,
-	Employee as PrismaEmployee,
-	Manager as PrismaManager,
 	Message as PrismaMessage,
-	StateName as PrismaStateName,
-	UserType as PrismaUserType,
 } from '@prisma/client'
 import { fromPrismaUserType } from '../utils/enumTypeMapping'
-import { ClientMapper } from './client-mapper'
-import { CompanyMapper } from './company-mapper'
-import { EmployeeMapper } from './employee-mapper'
 import { MessageMapper } from './message-mapper'
 
 export class ConversationMapper {
@@ -35,6 +22,9 @@ export class ConversationMapper {
 		const lastStateChange: Nullable<Date> = raw.lastStateChange
 		const agentId: Nullable<string> = raw.agentId
 		const resume: Nullable<string> = raw.resume
+		const intentTags: Nullable<string[]> = raw.intentTags
+			? (raw.intentTags as any)
+			: null
 		let userId: string
 		let agentType: Nullable<AgentType> = null
 
@@ -69,6 +59,9 @@ export class ConversationMapper {
 				state: fromPrismaStateName(raw.currentState),
 				stateMetadata: raw.stateData,
 				entryActionExecuted: raw.entryActionExecuted,
+				aiResponseTrack: raw.aiResponseTrack,
+				tokensCount: raw.tokensCount,
+				intentTags,
 				messages: rawMessages.map(MessageMapper.toEntity),
 			},
 			raw.id
@@ -105,9 +98,13 @@ export class ConversationMapper {
 			lastStateChange: entity.lastStateChange,
 			resume: entity.resume,
 			entryActionExecuted: entity.entryActionExecuted,
-			queuedAt: null,
-			firstHumanResponseAt: null,
-			closeReason: null,
+			queuedAt: entity.queuedAt,
+			firstHumanResponseAt: entity.firstHumanResponseAt,
+			closeReason: entity.closeReason,
+			referredQueueId: entity.referredQueueId,
+			aiResponseTrack: entity.aiResponseTrack,
+			tokensCount: entity.tokensCount,
+			intentTags: entity.intentTags,
 		}
 	}
 }

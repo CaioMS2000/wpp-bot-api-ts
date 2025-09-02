@@ -23,6 +23,7 @@ export class MessageMapper {
 						senderType: SenderType.AI,
 						content: raw.content,
 						aiResponseId: raw.aiResponseId,
+						mediaId: raw.mediaId,
 					},
 					raw.id
 				)
@@ -55,6 +56,7 @@ export class MessageMapper {
 						senderType: SenderType.CLIENT,
 						content: raw.content,
 						senderId: raw.clientId,
+						mediaId: raw.mediaId,
 					},
 					raw.id
 				)
@@ -75,6 +77,7 @@ export class MessageMapper {
 						senderType: SenderType.EMPLOYEE,
 						content: raw.content,
 						senderId: raw.employeeId,
+						mediaId: raw.mediaId,
 					},
 					raw.id
 				)
@@ -109,6 +112,7 @@ export class MessageMapper {
 			timestamp: entity.timestamp,
 			conversationId: entity.conversationId,
 			aiResponseId: entity.aiResponseId,
+			mediaId: entity.mediaId,
 			clientId,
 			employeeId,
 		}

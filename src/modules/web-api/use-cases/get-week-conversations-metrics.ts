@@ -1,6 +1,6 @@
-import { prisma } from '@/lib/prisma'
 import { CloseReason, UserType } from '@/@types'
-import { dayjs, TIMEZONE } from '@/config/date-and-time'
+import { TIMEZONE, dayjs } from '@/config/date-and-time'
+import { prisma } from '@/lib/prisma'
 
 type DayMetric = {
 	date: Date // meia-noite local do dia

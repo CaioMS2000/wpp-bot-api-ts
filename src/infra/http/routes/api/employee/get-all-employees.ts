@@ -40,7 +40,7 @@ export async function getAllEmployees(
 				schema: {
 					tags: ['employees'],
 					summary: 'Get all employees of a company',
-					security: [{ bearerAuth: [] }],
+
 					params: paramsSchema,
 					response: responseSchema,
 				},

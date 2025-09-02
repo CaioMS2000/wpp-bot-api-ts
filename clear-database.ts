@@ -1,7 +1,30 @@
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { PrismaClient, Prisma } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { logger } from '@/logger'
+import { Prisma, PrismaClient } from '@prisma/client'
+
+const esmUrl: string | undefined = (() => {
+	try {
+		return Function('return import.meta && import.meta.url || undefined')() as
+			| string
+			| undefined
+	} catch {
+		return undefined
+	}
+})()
+
+const isMainModule = (() => {
+	// CJS
+	if (typeof require !== 'undefined' && typeof module !== 'undefined') {
+		return require.main === module
+	}
+	// ESM
+	if (esmUrl && process.argv?.[1]) {
+		return path.resolve(process.argv[1]) === fileURLToPath(esmUrl)
+	}
+	return false
+})()
 
 export async function clearDatabase(
 	prisma: PrismaClient | Prisma.TransactionClient,
@@ -47,9 +70,6 @@ async function main() {
 		await clearDatabase(tx)
 	})
 }
-
-// @ts-ignore
-const isMainModule = process.argv[1] === fileURLToPath(import.meta.url)
 
 if (isMainModule) {
 	console.clear()

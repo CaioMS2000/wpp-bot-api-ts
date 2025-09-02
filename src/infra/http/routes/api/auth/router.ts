@@ -3,8 +3,8 @@ import fastifyPlugin from 'fastify-plugin'
 import { ExtractResources } from '../@types'
 import { authenticateWithPassword } from './authenticate-with-password'
 import { logout } from './logout'
-import { register } from './register-manager'
 import { me } from './me'
+import { register } from './register-manager'
 import { updateManager } from './update-manager'
 
 const routes = [

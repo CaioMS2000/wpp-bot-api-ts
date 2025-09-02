@@ -33,7 +33,7 @@ export async function getEmployee(app: FastifyInstance, resources: Resources) {
 				schema: {
 					tags: ['employees'],
 					summary: 'Get an employee of a company',
-					security: [{ bearerAuth: [] }],
+
 					params: paramsSchema,
 					response: responseSchema,
 				},

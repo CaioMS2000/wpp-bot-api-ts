@@ -33,25 +33,25 @@ export const businessHoursSchema = z
 
 export const chatMessageSchema = z.discriminatedUnion('sender', [
 	z.object({
-		content: z.string(),
+		content: z.string().nullable(),
 		sender: z.literal('client'),
 		senderName: z.string(),
 		timestamp: z.date(),
 	}),
 	z.object({
-		content: z.string(),
+		content: z.string().nullable(),
 		sender: z.literal('employee'),
 		senderName: z.string(),
 		timestamp: z.date(),
 	}),
 	z.object({
-		content: z.string(),
+		content: z.string().nullable(),
 		sender: z.literal('ai'),
 		senderName: z.literal('AI'),
 		timestamp: z.date(),
 	}),
 	z.object({
-		content: z.string(),
+		content: z.string().nullable(),
 		sender: z.literal('system'),
 		senderName: z.literal('SYSTEM'),
 		timestamp: z.date(),

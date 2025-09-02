@@ -1,0 +1,6 @@
+export enum CloseReason {
+	EXPLICIT = 'EXPLICIT',
+	RESOLVED = 'RESOLVED',
+	TRANSFERED = 'TRANSFERED',
+	ABANDONED = 'ABANDONED',
+}

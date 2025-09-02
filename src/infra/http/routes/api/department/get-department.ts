@@ -40,7 +40,7 @@ export async function getDepartment(
 				schema: {
 					tags: ['departments'],
 					summary: 'Get a department of a company',
-					security: [{ bearerAuth: [] }],
+
 					params: paramsSchema,
 					response: responseSchema,
 				},

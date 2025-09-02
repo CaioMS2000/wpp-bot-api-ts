@@ -1,5 +1,5 @@
 import { OpenAI } from 'openai'
-import { z, ZodSchema } from 'zod'
+import { ZodSchema, z } from 'zod'
 
 /** Item de saída quando o modelo pede uma execução de função */
 export const FunctionCallSchema = z.object({

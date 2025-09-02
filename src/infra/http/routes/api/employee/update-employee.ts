@@ -20,7 +20,7 @@ const bodySchema = z.object({
 })
 
 export const responseSchema = {
-	200: z.null(),
+	204: z.null().describe('No Content'),
 }
 
 export async function updateEmployee(
@@ -36,7 +36,7 @@ export async function updateEmployee(
 				schema: {
 					tags: ['employees'],
 					summary: 'Update an employee of a company',
-					security: [{ bearerAuth: [] }],
+
 					params: paramsSchema,
 					response: responseSchema,
 					body: bodySchema,
@@ -49,7 +49,7 @@ export async function updateEmployee(
 
 				await updateEmployeeUseCase.execute(company.id, phone, request.body)
 
-				return reply.status(200).send()
+				return reply.status(204).send()
 			}
 		)
 }

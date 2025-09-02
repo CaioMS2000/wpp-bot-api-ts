@@ -18,7 +18,7 @@ export const bodySchema = z.object({
 })
 
 export const responseSchema = {
-	200: z.null(),
+	204: z.null().describe('No Content'),
 }
 export async function updateFAQCategoryName(
 	app: FastifyInstance,
@@ -33,7 +33,7 @@ export async function updateFAQCategoryName(
 				schema: {
 					tags: ['faqs'],
 					summary: 'Criar um FAQ para a empresa',
-					security: [{ bearerAuth: [] }],
+
 					params: paramsSchema,
 					body: bodySchema,
 					response: responseSchema,
@@ -47,7 +47,7 @@ export async function updateFAQCategoryName(
 
 				await updateFAQCategoryNameUseCase.execute(company.id, categoryId, name)
 
-				return reply.status(200).send()
+				return reply.status(204).send()
 			}
 		)
 }

@@ -12,7 +12,8 @@ type Resources = {
 	whatsAppMessageService: WhatsAppMessageService
 }
 const tempOutput = new WhatsAppOutputPort()
-const testPhones = ['556292476996', '556293765723']
+const testPhones = env.TEST_NUMBERS.split(';')
+console.log('\n\ntestPhones:\n', testPhones)
 
 function shouldForward(req: any, from: string): boolean {
 	// evita loop: se já chegou com o cabeçalho e o segredo certo, não reenvia
@@ -57,7 +58,7 @@ export async function receiveMessage(
 			const _name = change0?.value?.contacts?.[0]?.profile?.name ?? undefined
 
 			// 2) Regra temporária de "ignorar alguns números"
-			if (!testPhones.includes(_from)) {
+			if (!testPhones.includes(_from) && env.TESTING_APP === 'yes') {
 				await appendRequestLog({
 					at: new Date().toISOString(),
 					reason: 'rejected_phone',
@@ -118,26 +119,28 @@ export async function receiveMessage(
 				}
 			}
 
+			console.log('\nraw body:\n', JSON.stringify(req.body, null, 2))
 			const parsed = parseWhatsAppMessage(req.body)
+			console.log('\nparsed body:\n', parsed)
 
 			if (!parsed) {
 				logger.debug('Evento não é uma mensagem de usuário. Ignorado.')
 				return reply.status(200).send({ status: 'ignored' })
 			}
 
-			const { from, to, message, name } = parsed
+			const { from, to, name, content } = parsed
 
 			try {
-				logger.debug(`Mensagem recebida de ${from} para ${to}: ${message}`)
+				logger.debug(`Mensagem recebida de ${from} para ${to}:\n`, content)
 
 				await whatsAppMessageService.processIncomingMessage(
 					from,
 					to,
-					message,
+					content,
 					name
 				)
 
-				logger.debug('Mensagem encaminhada ao serviço com sucesso')
+				logger.debug('Mensagem processada ao serviço com sucesso')
 				return reply.status(200).send({ status: 'ok' })
 			} catch (err: any) {
 				logger.error({ err }, 'Erro ao processar mensagem')

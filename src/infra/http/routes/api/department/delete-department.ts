@@ -15,7 +15,7 @@ export const paramsSchema = z.object({
 })
 
 export const responseSchema = {
-	204: z.null(),
+	204: z.null().describe('No Content'),
 }
 
 export async function deleteDepartment(
@@ -31,7 +31,7 @@ export async function deleteDepartment(
 				schema: {
 					tags: ['departments'],
 					summary: 'Delete a department of a company',
-					security: [{ bearerAuth: [] }],
+
 					params: paramsSchema,
 					response: responseSchema,
 				},

@@ -1,6 +1,6 @@
+import { Entity } from '@/entities/entity'
 import { BusinessHours, Day } from '@/value-objects/business-hours'
 import type { Manager } from './manager'
-import { Entity } from '@/entities/entity'
 
 export type CompanyProps = {
 	cnpj: string
@@ -12,6 +12,7 @@ export type CompanyProps = {
 	businessHours: BusinessHours
 	managerId: string
 	manager: Manager
+	storageId: Nullable<string>
 }
 
 export type CreateCompanyInput = {
@@ -23,6 +24,7 @@ export type CreateCompanyInput = {
 	email?: Nullable<string>
 	website?: Nullable<string>
 	description?: Nullable<string>
+	storageId?: Nullable<string>
 	businessHours?: BusinessHours
 }
 
@@ -53,6 +55,7 @@ export class Company extends Entity<CompanyProps> {
 				businessHours: props.businessHours ?? Company.DEFAULT_BUSINESS_HOURS,
 				managerId: props.managerId,
 				manager: props.manager ?? Company.TEMPORARY_MANAGER,
+				storageId: null,
 			},
 			id
 		)
@@ -90,6 +93,10 @@ export class Company extends Entity<CompanyProps> {
 
 	get managerId() {
 		return this.props.managerId
+	}
+
+	get storageId() {
+		return this.props.storageId
 	}
 
 	get manager() {

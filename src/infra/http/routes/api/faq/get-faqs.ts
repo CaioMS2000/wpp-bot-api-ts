@@ -28,7 +28,7 @@ export async function getFAQs(app: FastifyInstance, resources: Resources) {
 				schema: {
 					tags: ['faqs'],
 					summary: 'Obter todas as FAQs da empresa',
-					security: [{ bearerAuth: [] }],
+
 					params: paramsSchema,
 					response: responseSchema,
 				},

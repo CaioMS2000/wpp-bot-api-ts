@@ -2,6 +2,7 @@ import { Client } from '@/entities/client'
 import { Company } from '@/entities/company'
 import { ClientMapper } from '@/infra/database/mappers/client-mapper'
 import { prisma } from '@/lib/prisma'
+import { ClientAlreadyInQueueError } from '../errors/client-already-in-queue'
 import { InconsistencyError } from '../errors/inconsistency'
 import { DepartmentService } from './department-service'
 import { UserService } from './user-service'
@@ -32,7 +33,9 @@ export class DepartmentQueueService {
 		)
 
 		if (clientPosition !== null) {
-			throw new Error(`Client already in queue: ${clientId}`)
+			throw new ClientAlreadyInQueueError(
+				`Client already in queue: ${clientId}`
+			)
 		}
 
 		await prisma.departmentQueue.create({

@@ -32,10 +32,10 @@ export async function updateDepartment(
 				schema: {
 					tags: ['departments'],
 					summary: 'Update Department',
-					security: [{ bearerAuth: [] }],
+
 					params: paramsSchema,
 					body: bodySchema,
-					response: { 204: z.null() },
+					response: { 204: z.null().describe('No Content') },
 				},
 			},
 			async (request, reply) => {

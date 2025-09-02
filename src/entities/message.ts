@@ -4,21 +4,17 @@ import { Entity } from '@/entities/entity'
 export type MessageProps = {
 	conversationId: string
 	timestamp: Date
-	content: string
+	content: Nullable<string>
 	aiResponseId: Nullable<string>
 	senderType: SenderType
 	senderId: Nullable<string>
+	mediaId: Nullable<string>
 }
 
 type CreateMessageInputCommon = RequireOnly<
 	MessageProps,
 	'conversationId' | 'senderType' | 'content'
 >
-
-// type CreateMessageInputCommon = {
-//   conversationId: string
-//   content: string
-// }
 
 type CreateMessageInputBySender =
 	| {
@@ -64,6 +60,7 @@ export class Message extends Entity<MessageProps> {
 			aiResponseId:
 				props.senderType === SenderType.AI ? props.aiResponseId : null,
 			senderId: null,
+			mediaId: null,
 		}
 		const message = new Message(
 			{
@@ -99,5 +96,9 @@ export class Message extends Entity<MessageProps> {
 
 	get conversationId() {
 		return this.props.conversationId
+	}
+
+	get mediaId() {
+		return this.props.mediaId
 	}
 }

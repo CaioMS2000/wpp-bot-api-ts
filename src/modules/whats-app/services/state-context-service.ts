@@ -6,7 +6,6 @@ import { NotImplementedError } from '@/errors/errors/not-implemented-error'
 import { ConversationStateType } from '@/states'
 import { StateParamType } from '@/states/types'
 import { assertFn } from '@/utils/assert'
-import { ParamsOfState } from './state-service'
 import { isClient } from '@/utils/entity'
 import {
 	chattingWithClientMetadataSchema,
@@ -15,6 +14,8 @@ import {
 	listingDepartmentQueueMetadataSchema,
 	listingFAQItemsMetadataSchema,
 } from '@/validators/states-metadata'
+import { StateAccessDeniedError } from '../errors/state-access-denied'
+import { ParamsOfState } from './state-service'
 
 export type ContextOfState<S extends ConversationStateType> = Extract<
 	StateParamType,
@@ -95,7 +96,7 @@ export class StateContextService {
 
 			case ConversationStateType.SELECTING_DEPARTMENT: {
 				if (!isClient(user) || userType !== UserType.CLIENT) {
-					throw new Error(
+					throw new StateAccessDeniedError(
 						"Only clients can use 'ConversationStateType.SELECTING_DEPARTMENT'"
 					)
 				}
@@ -114,7 +115,7 @@ export class StateContextService {
 
 			case ConversationStateType.DEPARTMENT_QUEUE: {
 				if (!isClient(user) || userType !== UserType.CLIENT) {
-					throw new Error(
+					throw new StateAccessDeniedError(
 						"Only clients can use 'ConversationStateType.DEPARTMENT_QUEUE'"
 					)
 				}
@@ -137,7 +138,7 @@ export class StateContextService {
 			}
 			case ConversationStateType.CHATTING_WITH_EMPLOYEE: {
 				if (!isClient(user) || userType !== UserType.CLIENT) {
-					throw new Error(
+					throw new StateAccessDeniedError(
 						"Only clients can use 'ConversationStateType.SELECTING_DEPARTMENT'"
 					)
 				}

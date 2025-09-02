@@ -1,7 +1,4 @@
-import * as dotenv from 'dotenv'
 import { z } from 'zod'
-
-dotenv.config({ override: process.env.NODE_ENV !== 'production' })
 
 export const envSchema = z.object({
 	NODE_ENV: z
@@ -16,8 +13,16 @@ export const envSchema = z.object({
 	HTTP_TOKEN_SECRET: z.string(),
 	HTTP_COOKIE_NAME: z.string(),
 	CORS_ORIGINS: z.string(),
+	TEST_NUMBERS: z.string().default(''),
 	LOCAL_FORWARD_URL: z.string().url().optional(),
 	FORWARD_SECRET: z.string().min(10).optional(),
+	UPLOAD_FILES_LIMIT: z.number().default(10),
+	UPLOAD_FILE_SIZE_LIMIT: z.number().default(10), // in MB
+	AWS_ACCESS_KEY_ID: z.string(),
+	AWS_SECRET_ACCESS_KEY: z.string(),
+	AWS_BUCKET_NAME: z.string(),
+	CLOUDFLARE_ACCOUNT_ID: z.string(),
+	CLOUDFLARE_ENDPOINT: z.string(),
 })
 
 export const env = envSchema.parse(process.env)

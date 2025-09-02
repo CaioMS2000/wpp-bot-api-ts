@@ -4,13 +4,17 @@ import { Company } from '@/entities/company'
 import { Conversation } from '@/entities/conversation'
 import { Employee } from '@/entities/employee'
 import { Message } from '@/entities/message'
+import { UnsupportedMessageTypeError } from '@/errors/errors/unsupported-message-type-error'
 import { logger } from '@/logger'
 import { OutputPort } from '@/output/output-port'
 import { ConversationStateType } from '@/states'
 import { StateParamType } from '@/states/types'
 import { isClient, isEmployee } from '@/utils/entity'
+import { WppIncomingContent } from '../@types/messages'
 import { AgentNotCompatibleError } from '../errors/agent-no-compatible'
 import { InconsistencyError } from '../errors/inconsistency'
+import { InvalidMenuOptionError } from '../errors/invalid-menu-option'
+import { AIService } from './ai-service'
 import { ConversationService } from './conversation-service'
 import { DepartmentQueueService } from './department-queue-service'
 import { DepartmentService } from './department-service'
@@ -18,12 +22,12 @@ import { FAQService } from './faq-service'
 import { StateContextService } from './state-context-service'
 import { StateService } from './state-service'
 import { UserService } from './user-service'
-import { AIService } from './ai-service'
 
 type ComomParams = {
 	company: Company
 	conversation: Conversation
 	message: Message
+	wppIncomingContent: WppIncomingContent
 }
 
 type HandleParams = UserUnionType & ComomParams
@@ -58,13 +62,19 @@ export class ConversationStateOrchestrator {
 		private stateContextService: StateContextService
 	) {}
 
+	getOutputPort() {
+		return this.outputPort
+	}
+
 	async handle({
 		company,
 		user,
 		userType,
 		conversation,
 		message,
+		wppIncomingContent,
 	}: HandleParams) {
+		console.log('\n\nhandling this:\n', wppIncomingContent)
 		let userRef: Nullable<UserUnionType> = null
 		if (!conversation.entryActionExecuted) {
 			const stateParam = this.stateContextService.getContextFor(
@@ -95,23 +105,31 @@ export class ConversationStateOrchestrator {
 			throw new InconsistencyError('Could not mach user as userType')
 		}
 
-		await this.runAutoTransitions(conversation, company, userRef)
+		let hops = await this.runAutoTransitions(conversation, company, userRef)
 
-		const inputParam = await this.handleOnInput(
-			conversation,
-			company,
-			userRef,
-			message
-		)
+		if (hops === 0) {
+			const inputParam = await this.handleOnInput(
+				conversation,
+				company,
+				userRef,
+				message,
+				wppIncomingContent
+			)
 
-		if (inputParam) {
-			const next = await this.stateService.resolveStateData(inputParam)
+			if (inputParam) {
+				const next = await this.stateService.resolveStateData(inputParam)
 
-			conversation.transitionToState(next.target)
-			await this.execOnEnter(next)
-			conversation.markEntryActionExecuted()
-			await this.conversationService.save(conversation)
-			await this.runAutoTransitions(conversation, company, userRef)
+				conversation.transitionToState(next.target)
+				await this.execOnEnter(next)
+				conversation.markEntryActionExecuted()
+				await this.conversationService.save(conversation)
+				hops = await this.runAutoTransitions(conversation, company, userRef)
+			}
+		} else {
+			logger.debug(
+				"Isso aqui n fez nada depois da primeira chamada de 'runAutoTransitions'",
+				wppIncomingContent
+			)
 		}
 	}
 
@@ -142,260 +160,342 @@ export class ConversationStateOrchestrator {
 				'Auto-transition hop limit reached'
 			)
 		}
+
+		return hops
 	}
 
 	private async handleOnInput(
 		conversation: Conversation,
 		company: Company,
 		userRef: UserUnionType,
-		message: Message
+		message: Message,
+		wppIncomingContent: WppIncomingContent
 	): Promise<Nullable<StateParamType>> {
 		const { user, userType } = userRef
 
-		/* COMMOM */
-		switch (conversation.state) {
-			case ConversationStateType.INITIAL_MENU: {
-				if (message.content === 'Ver departamentos') {
-					return {
-						target: ConversationStateType.SELECTING_DEPARTMENT,
-						context: { clientPhone: user.phone, companyId: company.id },
-					}
-				}
-				if (message.content === 'Conversar com a nossa IA') {
-					return {
-						target: ConversationStateType.CHATTING_WITH_AI,
-						context: {
-							userId: user.id,
-							userType: userType,
-							companyId: company.id,
-						},
-					}
-				}
-				if (message.content === 'Ver FAQ') {
-					return {
-						target: ConversationStateType.SELECTING_FAQ_CATEGORY,
-						context: {
-							userId: user.id,
-							userType: userType,
-							companyId: company.id,
-						},
-					}
+		switch (wppIncomingContent.kind) {
+			case 'list_reply':
+			case 'button_reply':
+			case 'text': {
+				const textContent = message.content
+
+				if (!textContent) {
+					throw new Error("'message.content' should be defined")
 				}
 
-				if (isEmployee(user) && user.departmentId) {
-					if (message.content === 'Ver fila') {
-						conversation.stateMetadata = { departmentId: user.departmentId }
-
-						return {
-							target: ConversationStateType.LISTING_DEPARTMENT_QUEUE,
-							context: {
-								departmentId: user.departmentId,
-								companyId: company.id,
-							},
-						}
-					}
-
-					if (message.content === 'Atender próximo') {
-						const client = await this.conversationService.startChatWithClient(
-							user,
-							user.departmentId
-						)
-
-						if (!client) {
-							await this.outputPort.handle(user, {
-								type: 'text',
-								content: '‼️ *Não foi encontrado nenhum cliente na fila*',
-							})
-						} else {
+				/* COMMOM */
+				switch (conversation.state) {
+					case ConversationStateType.INITIAL_MENU: {
+						if (message.content === 'Ver departamentos') {
 							return {
-								target: ConversationStateType.CHATTING_WITH_CLIENT,
+								target: ConversationStateType.SELECTING_DEPARTMENT,
+								context: { clientPhone: user.phone, companyId: company.id },
+							}
+						}
+						if (message.content === 'Conversar com a nossa IA') {
+							await this.conversationService.startChatWithAI(conversation)
+
+							return {
+								target: ConversationStateType.CHATTING_WITH_AI,
 								context: {
-									companyId: user.companyId,
-									departmentId: user.departmentId,
-									clientPhone: client.phone,
+									userId: user.id,
+									userType: userType,
+									companyId: company.id,
 								},
 							}
 						}
-					}
-				}
-
-				return null
-			}
-
-			case ConversationStateType.SELECTING_FAQ_CATEGORY: {
-				const categories = await this.faqService.getAllCategories(company.id)
-				const selectedCategory = categories.find(
-					c => c.name === message.content
-				)
-
-				if (selectedCategory) {
-					conversation.stateMetadata = { categoryId: selectedCategory.id }
-
-					return {
-						target: ConversationStateType.LISTING_FAQ_ITEMS,
-						context: {
-							categoryId: selectedCategory.id,
-							companyId: company.id,
-							userId: user.id,
-							userType: userType,
-						},
-					}
-				}
-
-				await this.outputPort.handle(user, {
-					type: 'text',
-					content:
-						'‼️ *Não entendi sua escolha. Por favor, selecione uma opção válida.*',
-				})
-
-				return null
-			}
-
-			case ConversationStateType.CHATTING_WITH_AI: {
-				const generatedMessage = this.aIService.makeResponse(
-					conversation,
-					message
-				)
-
-				await this.outputPort.handle(user, {
-					type: 'text',
-					content: `*Evo*\n${(await generatedMessage).content}`,
-				})
-
-				return null
-			}
-		}
-
-		/* CLIENT ONLY */
-		if (isClient(user)) {
-			switch (conversation.state) {
-				case ConversationStateType.SELECTING_DEPARTMENT: {
-					const departments = await this.departmentService.findAllDepartments(
-						company.id
-					)
-
-					if (!departments.length) return null
-
-					const normalized = (s: string) =>
-						s
-							.normalize('NFD')
-							.replace(/\p{Diacritic}/gu, '')
-							.trim()
-							.toLowerCase()
-
-					const byName = departments.find(
-						d => normalized(d.name) === normalized(message.content)
-					)
-					if (byName) {
-						await this.departmentQueueService.insertClientInQueue(
-							company,
-							byName.id,
-							user.id
-						)
-
-						conversation.stateMetadata = { departmentId: byName.id }
-
-						return {
-							target: ConversationStateType.DEPARTMENT_QUEUE,
-							context: {
-								clientPhone: user.phone,
-								departmentId: byName.id,
-								companyId: company.id,
-							},
+						if (message.content === 'Ver FAQ') {
+							return {
+								target: ConversationStateType.SELECTING_FAQ_CATEGORY,
+								context: {
+									userId: user.id,
+									userType: userType,
+									companyId: company.id,
+								},
+							}
 						}
+
+						if (isEmployee(user) && user.departmentId) {
+							if (message.content === 'Ver fila') {
+								conversation.stateMetadata = { departmentId: user.departmentId }
+
+								return {
+									target: ConversationStateType.LISTING_DEPARTMENT_QUEUE,
+									context: {
+										departmentId: user.departmentId,
+										companyId: company.id,
+									},
+								}
+							}
+
+							if (message.content === 'Atender próximo') {
+								const client =
+									await this.conversationService.startChatWithClient(
+										user,
+										user.departmentId
+									)
+
+								if (!client) {
+									await this.outputPort.handle(user, {
+										type: 'text',
+										content: '‼️ *Não foi encontrado nenhum cliente na fila*',
+									})
+								} else {
+									return {
+										target: ConversationStateType.CHATTING_WITH_CLIENT,
+										context: {
+											companyId: user.companyId,
+											departmentId: user.departmentId,
+											clientPhone: client.phone,
+										},
+									}
+								}
+							}
+						}
+
+						throw new InvalidMenuOptionError()
 					}
 
-					await this.outputPort.handle(user, {
-						type: 'text',
-						content:
-							'‼️ *Não entendi sua escolha. Por favor, selecione um departamento da lista.*',
-					})
-					await this.execOnEnter({
-						target: ConversationStateType.SELECTING_DEPARTMENT,
-						data: { client: user, activeDepartments: departments },
-					} as any)
-					return null
-				}
-				case ConversationStateType.DEPARTMENT_QUEUE: {
-					if (message.content === 'sair!') {
-						await this.departmentQueueService.removeCLientFromQueue(user.id)
-					}
-
-					await this.outputPort.handle(user, {
-						type: 'text',
-						content:
-							'🔔 *Você está na fila para ser atendido, aguarde seu atendimento comçar.*\nSe quiser sair da fila digite *sair!*',
-					})
-
-					return null
-				}
-				case ConversationStateType.CHATTING_WITH_EMPLOYEE: {
-					if (
-						!conversation.agentId ||
-						conversation.agentType !== AgentType.EMPLOYEE
-					) {
-						throw new AgentNotCompatibleError()
-					}
-
-					const employee = await this.userService.getEmployee(
-						company.id,
-						conversation.agentId,
-						{ notNull: true }
-					)
-
-					await this.outputPort.handle(employee, {
-						type: 'text',
-						content: `🔵 *[Cliente] ${user.name}*\n📞 *${user.phone}*\n\n${message.content}`,
-					})
-
-					return null
-				}
-			}
-		}
-
-		/* EMPLOYEE ONLY */
-		if (isEmployee(user)) {
-			switch (conversation.state) {
-				case ConversationStateType.CHATTING_WITH_CLIENT: {
-					const department =
-						await this.departmentService.getDepartmentFromEmployee(
-							company.id,
-							user.id
+					case ConversationStateType.SELECTING_FAQ_CATEGORY: {
+						const categories = await this.faqService.getAllCategories(
+							company.id
 						)
-					const { client, clientConversation } =
-						await this.departmentService.getInChatClient(company.id, user.id)
-
-					if (message.content === '!finalizar') {
-						await this.conversationService.finishClientChat(
-							client,
-							clientConversation.id
+						const selectedCategory = categories.find(
+							c => c.name === message.content
 						)
-						await this.outputPort.handle(client, {
-							type: 'text',
-							content: '🔔 *Seu atendimento foi finalizado*',
-						})
+
+						if (selectedCategory) {
+							conversation.stateMetadata = { categoryId: selectedCategory.id }
+
+							return {
+								target: ConversationStateType.LISTING_FAQ_ITEMS,
+								context: {
+									categoryId: selectedCategory.id,
+									companyId: company.id,
+									userId: user.id,
+									userType: userType,
+								},
+							}
+						}
+
 						await this.outputPort.handle(user, {
 							type: 'text',
-							content: '✅ *Atendimento foi finalizado*',
+							content:
+								'‼️ *Não entendi sua escolha. Por favor, selecione uma opção válida.*',
 						})
 
-						return {
-							target: ConversationStateType.INITIAL_MENU,
-							context: {
-								userId: user.id,
-								userType: UserType.EMPLOYEE,
-								companyId: company.id,
-							},
-						}
-					} else {
-						await this.outputPort.handle(client, {
-							type: 'text',
-							content: `🔵 *[Funcionário] ${user.name}*\n🚩 *${department.name}*\n\n${message.content}`,
-						})
+						return null
 					}
 
-					return null
+					case ConversationStateType.CHATTING_WITH_AI: {
+						const willFinish =
+							message.content.toLowerCase().trim() === 'finalizar' &&
+							userType === UserType.CLIENT
+
+						if (willFinish) {
+							await this.conversationService.finishClientChat(
+								user,
+								conversation.id
+							)
+							await this.outputPort.handle(user, {
+								type: 'text',
+								content: '🔔 *Seu atendimento foi finalizado*',
+							})
+							return null
+						}
+
+						const generatedMessage = await this.aIService.makeResponse(
+							conversation,
+							message,
+							wppIncomingContent
+						)
+
+						await this.outputPort.handle(user, {
+							type: 'text',
+							content: `*Evo*\n${generatedMessage.content}`,
+						})
+						return null
+					}
 				}
+
+				/* CLIENT ONLY */
+				if (isClient(user)) {
+					switch (conversation.state) {
+						case ConversationStateType.SELECTING_DEPARTMENT: {
+							const departments =
+								await this.departmentService.findAllDepartments(company.id)
+
+							if (!departments.length) return null
+
+							const normalized = (s: string) =>
+								s
+									.normalize('NFD')
+									.replace(/\p{Diacritic}/gu, '')
+									.trim()
+									.toLowerCase()
+
+							const byName = departments.find(
+								d => normalized(d.name) === normalized(textContent)
+							)
+							if (byName) {
+								await this.departmentQueueService.insertClientInQueue(
+									company,
+									byName.id,
+									user.id
+								)
+
+								conversation.stateMetadata = { departmentId: byName.id }
+
+								return {
+									target: ConversationStateType.DEPARTMENT_QUEUE,
+									context: {
+										clientPhone: user.phone,
+										departmentId: byName.id,
+										companyId: company.id,
+									},
+								}
+							}
+
+							await this.outputPort.handle(user, {
+								type: 'text',
+								content:
+									'‼️ *Não entendi sua escolha. Por favor, selecione um departamento da lista.*',
+							})
+							await this.execOnEnter({
+								target: ConversationStateType.SELECTING_DEPARTMENT,
+								data: { client: user, activeDepartments: departments },
+							} as any)
+							return null
+						}
+						case ConversationStateType.DEPARTMENT_QUEUE: {
+							if (message.content === 'sair!') {
+								await this.departmentQueueService.removeCLientFromQueue(user.id)
+							}
+
+							await this.outputPort.handle(user, {
+								type: 'text',
+								content:
+									'🔔 *Você está na fila para ser atendido, aguarde seu atendimento comçar.*\nSe quiser sair da fila digite *sair!*',
+							})
+
+							return null
+						}
+						case ConversationStateType.CHATTING_WITH_EMPLOYEE: {
+							if (
+								!conversation.agentId ||
+								conversation.agentType !== AgentType.EMPLOYEE
+							) {
+								throw new AgentNotCompatibleError()
+							}
+
+							const employee = await this.userService.getEmployee(
+								company.id,
+								conversation.agentId,
+								{ notNull: true }
+							)
+
+							await this.outputPort.handle(employee, {
+								type: 'text',
+								content: `🔵 *[Cliente] ${user.name}*\n📞 *${user.phone}*\n\n${message.content}`,
+							})
+
+							return null
+						}
+					}
+				}
+
+				/* EMPLOYEE ONLY */
+				if (isEmployee(user)) {
+					switch (conversation.state) {
+						case ConversationStateType.CHATTING_WITH_CLIENT: {
+							const department =
+								await this.departmentService.getDepartmentFromEmployee(
+									company.id,
+									user.id
+								)
+							const { client, clientConversation } =
+								await this.departmentService.getInChatClient(
+									company.id,
+									user.id
+								)
+
+							if (message.content === '!finalizar') {
+								await this.conversationService.finishClientChat(
+									client,
+									clientConversation.id
+								)
+								await this.outputPort.handle(client, {
+									type: 'text',
+									content: '🔔 *Seu atendimento foi finalizado*',
+								})
+								await this.outputPort.handle(user, {
+									type: 'text',
+									content: '✅ *Atendimento foi finalizado*',
+								})
+
+								return {
+									target: ConversationStateType.INITIAL_MENU,
+									context: {
+										userId: user.id,
+										userType: UserType.EMPLOYEE,
+										companyId: company.id,
+									},
+								}
+							} else {
+								await this.outputPort.handle(client, {
+									type: 'text',
+									content: `🔵 *[Funcionário] ${user.name}*\n🚩 *${department.name}*\n\n${message.content}`,
+								})
+							}
+
+							return null
+						}
+					}
+				}
+				break
+			}
+			case 'document': {
+				/* COMMOM */
+				switch (conversation.state) {
+					case ConversationStateType.CHATTING_WITH_AI: {
+						const generatedMessage = await this.aIService.makeResponse(
+							conversation,
+							message,
+							wppIncomingContent
+						)
+
+						await this.outputPort.handle(user, {
+							type: 'text',
+							content: `*Evo*\n${generatedMessage.content}`,
+						})
+						return null
+					}
+				}
+				break
+			}
+			case 'audio': {
+				/* COMMOM */
+				switch (conversation.state) {
+					case ConversationStateType.CHATTING_WITH_AI: {
+						const generatedMessage = await this.aIService.makeResponse(
+							conversation,
+							message,
+							wppIncomingContent
+						)
+
+						await this.outputPort.handle(user, {
+							type: 'text',
+							content: `*Evo*\n${generatedMessage.content}`,
+						})
+						return null
+					}
+				}
+				break
+			}
+			default: {
+				throw new UnsupportedMessageTypeError(
+					`This kind(${wppIncomingContent.kind}) of message is not supported yet.`
+				)
 			}
 		}
 
@@ -523,7 +623,7 @@ export class ConversationStateOrchestrator {
 				if (!categories.length) {
 					await this.outputPort.handle(user, {
 						type: 'text',
-						content: 'Não há FAQs no sistema.',
+						content: '🔔 *Não há FAQs no sistema.*',
 					})
 					return
 				}

@@ -1,11 +1,11 @@
 import { prisma } from '@/lib/prisma'
-import { seedCompanyAndManager } from './seed/company'
+import { logger } from '@/logger'
 import { seedBusinessHours } from './seed/business-hours'
-import { seedFAQs } from './seed/faqs'
+import { seedClientsAndChats } from './seed/chats'
+import { seedCompanyAndManager } from './seed/company'
 import { seedDepartments } from './seed/departments'
 import { seedEmployees } from './seed/employees'
-import { seedClientsAndChats } from './seed/chats'
-import { logger } from '@/logger'
+import { seedFAQs } from './seed/faqs'
 
 async function main() {
 	console.clear()

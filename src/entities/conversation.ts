@@ -22,6 +22,9 @@ export type ConversationProps = {
 	firstHumanResponseAt: Nullable<Date>
 	closeReason: Nullable<CloseReason>
 	referredQueueId: Nullable<string>
+	tokensCount: number
+	aiResponseTrack: Nullable<string>
+	intentTags: Nullable<string[]>
 }
 
 export type CreateConversationInput = RequireOnly<
@@ -39,6 +42,7 @@ export class Conversation extends Entity<ConversationProps> {
 			lastStateChange: new Date(),
 			endedAt: null,
 			resume: null,
+			tokensCount: 0,
 			messages: [],
 			agentId: null,
 			agentType: null,
@@ -48,6 +52,8 @@ export class Conversation extends Entity<ConversationProps> {
 			firstHumanResponseAt: null,
 			closeReason: null,
 			referredQueueId: null,
+			aiResponseTrack: null,
+			intentTags: null,
 		}
 
 		const builtProps = {
@@ -114,6 +120,18 @@ export class Conversation extends Entity<ConversationProps> {
 		return this.props.resume
 	}
 
+	set resume(value: Nullable<string>) {
+		this.props.resume = value
+	}
+
+	get tokensCount() {
+		return this.props.tokensCount
+	}
+
+	set tokensCount(value: number) {
+		this.props.tokensCount = value
+	}
+
 	get companyId() {
 		return this.props.companyId
 	}
@@ -154,6 +172,14 @@ export class Conversation extends Entity<ConversationProps> {
 		return this.props.referredQueueId
 	}
 
+	get aiResponseTrack() {
+		return this.props.aiResponseTrack
+	}
+
+	get intentTags() {
+		return this.props.intentTags
+	}
+
 	set state(state: ConversationStateType) {
 		this.props.state = state
 	}
@@ -164,5 +190,21 @@ export class Conversation extends Entity<ConversationProps> {
 
 	set stateMetadata(value: CreateConversationInput['stateMetadata']) {
 		this.props.stateMetadata = value
+	}
+
+	set aiResponseTrack(value: Nullable<string>) {
+		this.props.aiResponseTrack = value
+	}
+
+	set agentType(value: Nullable<AgentType>) {
+		this.props.agentType = value
+	}
+
+	set agentId(value: Nullable<string>) {
+		this.props.agentId = value
+	}
+
+	set intentTags(value: Nullable<string[]>) {
+		this.props.intentTags = value
 	}
 }

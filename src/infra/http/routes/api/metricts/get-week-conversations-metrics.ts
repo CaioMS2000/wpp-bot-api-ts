@@ -42,7 +42,7 @@ export async function getWeekConversationsMetrics(
 				schema: {
 					tags: ['metrics'],
 					summary: 'Get weekly conversations metrics (per weekday)',
-					security: [{ bearerAuth: [] }],
+
 					params: paramsSchema,
 					response: responseSchema,
 				},

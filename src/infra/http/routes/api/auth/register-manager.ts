@@ -18,13 +18,13 @@ export async function register(app: FastifyInstance, resources: Resources) {
 	app.withTypeProvider<ZodTypeProvider>().post('/api/sessions/signup', {
 		schema: {
 			body: bodySchema,
-			response: { 200: z.null() },
+			response: { 204: z.null().describe('No Content') },
 		},
 		handler: async (req, reply) => {
 			const { email, password, name, phone } = req.body
 			await resources.authService.registerManager(name, email, password, phone)
 
-			return reply.status(200).send()
+			return reply.status(204).send()
 		},
 	})
 }

@@ -14,7 +14,7 @@ export const paramsSchema = z.object({
 })
 
 export const responseSchema = {
-	200: z.null(),
+	204: z.null().describe('No Content'),
 }
 export async function deleteFAQCategory(
 	app: FastifyInstance,
@@ -29,7 +29,7 @@ export async function deleteFAQCategory(
 				schema: {
 					tags: ['faqs'],
 					summary: 'Deletar uma categoria de FAQ da empresa',
-					security: [{ bearerAuth: [] }],
+
 					params: paramsSchema,
 					response: responseSchema,
 				},
@@ -41,7 +41,7 @@ export async function deleteFAQCategory(
 
 				await deleteFAQCategoryUseCase.execute(company.id, categoryId)
 
-				return reply.status(200).send()
+				return reply.status(204).send()
 			}
 		)
 }

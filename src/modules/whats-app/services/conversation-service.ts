@@ -1,8 +1,9 @@
-import { AgentType, UserType } from '@/@types'
+import { AgentType, SenderType, UserType, UserUnionType } from '@/@types'
 import { NotNullConfig, NotNullParams } from '@/@types/not-null-params'
 import { Client } from '@/entities/client'
 import { Conversation, CreateConversationInput } from '@/entities/conversation'
 import { Employee } from '@/entities/employee'
+import { ConversationResolutionError } from '@/errors/errors/conversation-resolution-error'
 import { ResourceNotFoundError } from '@/errors/errors/resource-not-found-error'
 import { ConversationMapper } from '@/infra/database/mappers/conversation-mapper'
 import { MessageMapper } from '@/infra/database/mappers/message-mapper'
@@ -44,7 +45,7 @@ export class ConversationService {
 		}
 
 		if (!conversation) {
-			throw new Error('Invalid conversation')
+			throw new ConversationResolutionError('Invalid conversation')
 		}
 
 		return conversation
@@ -105,9 +106,23 @@ export class ConversationService {
 			},
 			data: {
 				...model,
+				intentTags: conversation.intentTags ?? undefined,
 				stateData: conversation.stateMetadata ?? undefined,
 			},
 		})
+
+		await Promise.all(
+			conversation.messages.map(m => {
+				const messageModel = MessageMapper.toModel(m)
+				return prisma.message.upsert({
+					where: { id: m.id },
+					update: {},
+					create: {
+						...messageModel,
+					},
+				})
+			})
+		)
 
 		return conversation
 	}
@@ -249,7 +264,7 @@ export class ConversationService {
 				clientId: client.id,
 				companyId: client.companyId,
 			},
-			data: { endedAt: new Date() },
+			data: { endedAt: new Date(), closeReason: 'EXPLICIT' },
 		})
 	}
 
@@ -295,6 +310,33 @@ export class ConversationService {
 		await this.departmentQueueService.removeCLientFromQueue(client.id)
 
 		return client
+	}
+
+	async startChatWithAI(conversation: Conversation) {
+		const renewedConversation = Conversation.create(
+			{
+				companyId: conversation.companyId,
+				userType: conversation.userType,
+				userId: conversation.userId,
+				startedAt: conversation.startedAt,
+				endedAt: conversation.endedAt,
+				lastStateChange: conversation.lastStateChange,
+				agentType: AgentType.AI,
+				agentId: 'AI',
+				messages: conversation.messages,
+				state: ConversationStateType.CHATTING_WITH_AI,
+				resume: conversation.resume,
+				entryActionExecuted: conversation.entryActionExecuted,
+			},
+			conversation.id
+		)
+
+		await this.save(renewedConversation)
+
+		conversation.agentType = renewedConversation.agentType
+		conversation.agentId = renewedConversation.agentId
+
+		return renewedConversation
 	}
 
 	async getAllBelongingToClient(companyId: string) {
@@ -428,5 +470,25 @@ export class ConversationService {
 		const messages = await this.loadMessages(model.id)
 
 		return ConversationMapper.toEntity(model, messages)
+	}
+
+	async updateAIResponseTrack(
+		companyId: string,
+		conversationId: string,
+		aiResponseTrack: string
+	) {
+		await prisma.conversation.update({
+			where: { id: conversationId, companyId },
+			data: { aiResponseTrack },
+		})
+	}
+
+	async getConversationMessages(companyId: string, conversationId: string) {
+		const models = await prisma.message.findMany({
+			where: { conversationId, conversation: { companyId } },
+			orderBy: { timestamp: 'desc' },
+		})
+
+		return models.map(MessageMapper.toEntity)
 	}
 }

@@ -1,9 +1,9 @@
-import type { FastifyInstance } from 'fastify'
-import fastifyPlugin from 'fastify-plugin'
 import fs from 'node:fs'
 import path from 'node:path'
 import { logger } from '@/logger'
 import { findProjectRoot } from '@/utils/files'
+import type { FastifyInstance } from 'fastify'
+import fastifyPlugin from 'fastify-plugin'
 
 export const requestLogger = fastifyPlugin(async (app: FastifyInstance) => {
 	const projectRoot = findProjectRoot(__dirname)

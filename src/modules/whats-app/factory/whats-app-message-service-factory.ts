@@ -1,5 +1,5 @@
-import { MessageHandlerFactory } from './message-handler-factory'
 import { WhatsAppMessageService } from '../services/whats-app-message-service'
+import { MessageHandlerFactory } from './message-handler-factory'
 import { UserServiceFactory } from './user-service-factory'
 
 export class WhatsAppMessageServiceFactory {

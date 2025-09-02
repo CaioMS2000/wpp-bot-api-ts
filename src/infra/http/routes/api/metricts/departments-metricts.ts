@@ -34,7 +34,7 @@ export async function getDepartmentsMetrics(
 				schema: {
 					tags: ['metrics'],
 					summary: 'Get departments metrics of a company',
-					security: [{ bearerAuth: [] }],
+
 					params: paramsSchema,
 					response: responseSchema,
 				},

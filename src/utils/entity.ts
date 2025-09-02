@@ -1,8 +1,8 @@
+import { User } from '@/@types'
 import { Client } from '@/entities/client'
 import { Department } from '@/entities/department'
 import { Employee } from '@/entities/employee'
 import { FAQItem } from '@/entities/faq-item'
-import { User } from '@/@types'
 
 // export function isClient(user: Client | Employee): user is Client {
 // export function isClient(user: unknown): user is Client {

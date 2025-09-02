@@ -1,13 +1,15 @@
+import { env } from '@/config/env'
 import { logger } from '@/logger'
 import type { FastifyInstance } from 'fastify'
 import fastifyPlugin from 'fastify-plugin'
-import { log } from 'node:console'
 
 export const auth = fastifyPlugin(async (app: FastifyInstance) => {
 	app.addHook('preHandler', async (req, reply) => {
 		req.getCurrentUserID = async () => {
 			try {
-				const { sub } = await req.jwtVerify<{ sub: string }>()
+				const { sub } = await req.jwtVerify<{ sub: string }>({
+					onlyCookie: true,
+				})
 
 				return sub
 			} catch (err) {

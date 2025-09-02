@@ -37,7 +37,7 @@ export async function createDepartment(
 				schema: {
 					tags: ['departments'],
 					summary: 'Create Department',
-					security: [{ bearerAuth: [] }],
+
 					params: paramsSchema,
 					body: bodySchema,
 					response: responseSchema,
