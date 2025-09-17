@@ -1,27 +1,13 @@
-import { departmentSchema } from '@/modules/web-api/@types/schemas'
-import { CreateDepartmentUseCase } from '@/modules/web-api/use-cases/create-department-use-case'
+import type { DepartmentRepository } from '@/repository/DepartmentRepository'
+import type { EmployeeRepository } from '@/repository/EmployeeRepository'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
-import { z } from 'zod'
-import { auth } from '../middlewares/auth'
+import { auth } from '../../middlewares/auth'
+import { createBody, departmentResponse, paramsByCnpj } from './schemas'
 
 type Resources = {
-	createDepartmentUseCase: CreateDepartmentUseCase
-}
-
-export const paramsSchema = z.object({
-	cnpj: z.string(),
-})
-
-export const bodySchema = z.object({
-	name: z.string().min(1, 'Name is required'),
-	description: z.string().optional(),
-})
-
-export const responseSchema = {
-	200: z.object({
-		department: departmentSchema,
-	}),
+	departmentRepository: DepartmentRepository
+	employeeRepository: EmployeeRepository
 }
 
 export async function createDepartment(
@@ -31,30 +17,50 @@ export async function createDepartment(
 	app
 		.withTypeProvider<ZodTypeProvider>()
 		.register(auth)
-		.post(
-			'/api/company/:cnpj/departments',
-			{
-				schema: {
-					tags: ['departments'],
-					summary: 'Create Department',
-					security: [{ bearerAuth: [] }],
-					params: paramsSchema,
-					body: bodySchema,
-					response: responseSchema,
-				},
+		.post('/api/tenant/:cnpj/department', {
+			schema: {
+				tags: ['Department'],
+				summary: 'Create a new department',
+				params: paramsByCnpj,
+				body: createBody,
+				response: departmentResponse,
 			},
-			async (request, reply) => {
-				const { createDepartmentUseCase } = resources
-				const { cnpj } = request.params
-				const { company } = await request.getUserMembership(cnpj)
-				const department = await createDepartmentUseCase.execute({
-					...request.body,
-					companyId: company.id,
+			handler: async (req, reply) => {
+				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { name, description, leadEmployeeId, employees } = req.body
+				const dept = await resources.departmentRepository.create(
+					tenant.id,
+					name,
+					description ?? null
+				)
+				if (leadEmployeeId) {
+					await resources.departmentRepository.assignEmployee(
+						tenant.id,
+						dept.id,
+						leadEmployeeId
+					)
+				}
+				if (Array.isArray(employees)) {
+					const merged = [
+						...employees,
+						...(leadEmployeeId ? [leadEmployeeId] : []),
+					]
+					await resources.departmentRepository.replaceEmployees(
+						tenant.id,
+						dept.id,
+						merged
+					)
+				}
+				// Build response with employees + total
+				const emps = await resources.employeeRepository.listByDepartment(
+					tenant.id,
+					dept.id
+				)
+				return reply.send({
+					...dept,
+					employees: emps.map(e => ({ id: e.id, name: e.name })),
+					totalEmployees: emps.length,
 				})
-
-				return reply.status(200).send({
-					department,
-				})
-			}
-		)
+			},
+		})
 }

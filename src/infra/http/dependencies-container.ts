@@ -1,144 +1,188 @@
-import { OpenAIServiceFactory } from '@/infra/factory/openai/ai-service-factory'
-import { AuthServiceFactory } from '@/modules/web-api/factories/auth-service-factory'
-import { ManagerServiceFactory } from '@/modules/web-api/factories/manager-service-factory'
-import { UseCaseFactory as WebAPIUseCaseFactory } from '@/modules/web-api/factories/use-case-factory'
-import { ManagerService } from '@/modules/web-api/services/manager-service'
-import { CompanyServiceFactory } from '@/modules/whats-app/factory/company-service-factory'
-import { ConversationServiceFactory } from '@/modules/whats-app/factory/conversation-service-factory'
-import { DepartmentQueueServiceFactory } from '@/modules/whats-app/factory/department-queue-service-factory'
-import { DepartmentServiceFactory } from '@/modules/whats-app/factory/department-service-factory'
-import { FAQServiceFactory } from '@/modules/whats-app/factory/faq-service-factory'
-import { MessageHandlerFactory } from '@/modules/whats-app/factory/message-handler-factory'
-import { ProcessClientMessageServiceFactory } from '@/modules/whats-app/factory/process-client-message-service-factory'
-import { ProcessEmployeeMessageServiceFactory } from '@/modules/whats-app/factory/process-employee-message-service-factory'
-import { StateContextServiceFactory } from '@/modules/whats-app/factory/state-context-service-factory'
-import { StateOrchestratorFactory } from '@/modules/whats-app/factory/state-orchestrator-factory'
-import { StateServiceFactory } from '@/modules/whats-app/factory/state-service-factory'
-import { UserServiceFactory } from '@/modules/whats-app/factory/user-service-factory'
-import { WhatsAppMessageServiceFactory } from '@/modules/whats-app/factory/whats-app-message-service-factory'
-import { CompanyService } from '@/modules/whats-app/services/company-service'
-import { WhatsAppOutputPort } from './output/whats-app-output-port'
+import { env } from '@/config/env'
+import { PrismaTenantVectorStoreRepository } from '@/infra/database/repository/PrismaTenantVectorStoreRepository'
+import { OpenAIResponsePort } from '@/infra/openai/OpenAIResponsePort'
+import { AIChatFinalSummaryService } from '@/infra/openai/AIChatFinalSummaryService'
+import { ConversationFinalSummaryService } from '@/infra/openai/ConversationFinalSummaryService'
+import { EnergyBillIngestionService } from '@/infra/openai/EnergyBillIngestionService'
+import { VectorStoreManager } from '@/infra/openai/VectorStoreManager'
+import { OpenAIClientRegistry } from '@/infra/openai/OpenAIClientRegistry'
+import { ConversationLogger } from '@/infra/openai/ConversationLogger'
+import { FunctionToolRegistry } from '@/infra/openai/tools/FunctionTools'
+import { registerBuiltinTools } from '@/infra/openai/tools'
+import { InMemoryMessageQueue } from '@/infra/jobs/InMemoryMessageQueue'
+import type { MessageQueue, QueueJob } from '@/infra/jobs/MessageQueue'
+import type { IdempotencyStore } from '@/infra/jobs/IdempotencyStore'
+import { InMemoryIdempotencyStore } from '@/infra/jobs/InMemoryIdempotencyStore'
+import { ProcessIncomingMessageJob } from '@/infra/jobs/handlers/ProcessIncomingMessageJob'
+import { ProcessToolIntentJob } from '@/infra/jobs/handlers/ProcessToolIntentJob'
+import { CustomerServiceContextManager } from '@/modules/main/CustomerServiceContextManager'
+import type { AIResponsePort } from '@/modules/main/ports/AIResponsePort'
+import {
+	ConsoleMessagingPort,
+	MessagingPort,
+} from '@/modules/main/ports/MessagingPort'
+import { WhatsAppMessagingPort } from '@/modules/main/ports/WhatsAppMessagingPort'
+import { AuthService } from '@/modules/web-api/services/auth-service'
+import type { AIChatSessionRepository } from '@/repository/AIChatSessionRepository'
+import { ConversationRepository } from '@/repository/ConversationRepository'
+import { CustomerRepository } from '@/repository/CustomerRepository'
+import { DepartmentRepository } from '@/repository/DepartmentRepository'
+import { EmployeeRepository } from '@/repository/EmployeeRepository'
+import { FaqRepository } from '@/repository/FaqRepository'
+import { StateStore } from '@/repository/StateStore'
+import type { TenantRepository } from '@/repository/TenantRepository'
+import type { TenantVectorStoreRepository } from '@/repository/TenantVectorStoreRepository'
+import type { UserRepository } from '@/repository/UserRepository'
+import { PrismaClient } from '@prisma/client'
+import OpenAI from 'openai'
+import { PrismaAIChatSessionRepository } from '../database/repository/PrismaAIChatSessionRepository'
+import { PrismaConversationRepository } from '../database/repository/PrismaConversationRepository'
+import { PrismaCustomerRepository } from '../database/repository/PrismaCustomerRepository'
+import { PrismaDepartmentRepository } from '../database/repository/PrismaDepartmentRepository'
+import { PrismaEmployeeRepository } from '../database/repository/PrismaEmployeeRepository'
+import { PrismaFaqRepository } from '../database/repository/PrismaFaqRepository'
+import { PrismaStateStore } from '../database/repository/PrismaStateStore'
+import { PrismaTenantRepository } from '../database/repository/PrismaTenantRepository'
+import { PrismaUserRepository } from '../database/repository/PrismaUserRepository'
+import { CloudFlareFileService } from '../storage/cloudflare/CloudFlareFileService'
+import type { FileService } from '../storage/file-service'
 
 export class DependenciesContainer {
-	public readonly outputPort = new WhatsAppOutputPort()
-
-	// WhatsApp Factories
-	public readonly companyServiceFactory: CompanyServiceFactory
-	public readonly conversationServiceFactory: ConversationServiceFactory
-	public readonly departmentServiceFactory: DepartmentServiceFactory
-	public readonly departmentQueueServiceFactory: DepartmentQueueServiceFactory
-	public readonly faqServiceFactory: FAQServiceFactory
-	public readonly messageHandlerFactory: MessageHandlerFactory
-	public readonly stateServiceFactory: StateServiceFactory
-	public readonly stateOrchestratorFactory: StateOrchestratorFactory
-	public readonly stateContextServiceFactory: StateContextServiceFactory
-	public readonly processClientMessageServiceFactory: ProcessClientMessageServiceFactory
-	public readonly processEmployeeMessageServiceFactory: ProcessEmployeeMessageServiceFactory
-	public readonly userServiceFactory: UserServiceFactory
-	public readonly whatsAppMessageServiceFactory: WhatsAppMessageServiceFactory
-
-	// Web API Factories
-	public readonly authServiceFactory: AuthServiceFactory
-	public readonly webAPIUseCaseFactory: WebAPIUseCaseFactory
-	public readonly managerServiceFactory: ManagerServiceFactory
-
-	// other factories
-	public readonly aiServiceFactory: OpenAIServiceFactory
-
-	// Services
-	public readonly whatsAppMessageService: ReturnType<
-		WhatsAppMessageServiceFactory['getService']
-	>
-	public readonly managerService: ManagerService
-	public readonly companyService: CompanyService
-	public readonly authService: ReturnType<AuthServiceFactory['getService']>
-
+	public prisma: PrismaClient
+	public messagingPort: MessagingPort
+	public conversationRepository: ConversationRepository
+	public departmentRepository: DepartmentRepository
+	public faqRepository: FaqRepository
+	public employeeRepository: EmployeeRepository
+	public prismaTenantRepository: TenantRepository
+	public usersRepository: UserRepository
+	public customerServiceManager: CustomerServiceContextManager
+	public stateStore: StateStore
+	public customerRepository: CustomerRepository
+	public aiResponsePort: AIResponsePort
+	public authService: AuthService
+	public fileService: FileService<any>
+	public vectorStoreManager: VectorStoreManager
+	public openai: OpenAI
+	public openaiRegistry: OpenAIClientRegistry
+	public aiChatFinalSummaryService: AIChatFinalSummaryService
+	public conversationFinalSummaryService: ConversationFinalSummaryService
+	public conversationLogger: ConversationLogger
+	public functionToolRegistry: FunctionToolRegistry
+	public messageQueue: MessageQueue
+	public idempotencyStore: IdempotencyStore
 	constructor() {
-		this.companyServiceFactory = new CompanyServiceFactory()
-		this.faqServiceFactory = new FAQServiceFactory()
-		this.userServiceFactory = new UserServiceFactory(this.companyServiceFactory)
-		this.departmentServiceFactory = new DepartmentServiceFactory(
-			this.userServiceFactory
+		// third party clients
+		const prisma = new PrismaClient()
+		this.prisma = prisma
+		const openaiClient = new OpenAI({ apiKey: env.OPENAI_API_KEY })
+		this.openai = openaiClient
+
+		// main
+		// this.messagingPort = new ConsoleMessagingPort()
+		this.messagingPort = new WhatsAppMessagingPort()
+		this.conversationRepository = new PrismaConversationRepository(prisma)
+		this.stateStore = new PrismaStateStore(prisma)
+		this.customerRepository = new PrismaCustomerRepository(prisma)
+		this.departmentRepository = new PrismaDepartmentRepository(prisma)
+		this.employeeRepository = new PrismaEmployeeRepository(prisma)
+		this.faqRepository = new PrismaFaqRepository(prisma)
+		this.prismaTenantRepository = new PrismaTenantRepository(prisma)
+		const aiChatRepository: AIChatSessionRepository =
+			new PrismaAIChatSessionRepository(prisma)
+		const tenantVectorRepository: TenantVectorStoreRepository =
+			new PrismaTenantVectorStoreRepository(prisma)
+
+		// Per-tenant OpenAI client + Vector Store registry
+		this.openaiRegistry = new OpenAIClientRegistry(
+			this.prismaTenantRepository,
+			tenantVectorRepository
 		)
-		this.stateContextServiceFactory = new StateContextServiceFactory()
-		this.departmentQueueServiceFactory = new DepartmentQueueServiceFactory(
-			this.departmentServiceFactory,
-			this.userServiceFactory
+		const vectorStoreManager = new VectorStoreManager(
+			openaiClient,
+			tenantVectorRepository
 		)
-		this.conversationServiceFactory = new ConversationServiceFactory(
-			this.userServiceFactory,
-			this.companyServiceFactory,
-			this.departmentQueueServiceFactory
+		this.vectorStoreManager = vectorStoreManager
+		const energyBillService = new EnergyBillIngestionService(
+			this.openaiRegistry
 		)
-		this.aiServiceFactory = new OpenAIServiceFactory(
-			this.conversationServiceFactory,
-			this.userServiceFactory
+		this.aiChatFinalSummaryService = new AIChatFinalSummaryService(
+			this.prisma,
+			this.openaiRegistry
+		)
+		this.conversationFinalSummaryService = new ConversationFinalSummaryService(
+			this.prisma,
+			this.openaiRegistry
+		)
+		// Desabilita logs de conversa em produção (evita IO de arquivos em prod)
+		this.conversationLogger = new ConversationLogger(
+			env.NODE_ENV !== 'production'
+		)
+		this.functionToolRegistry = new FunctionToolRegistry()
+		registerBuiltinTools(this.functionToolRegistry, {
+			tenantRepo: this.prismaTenantRepository,
+			departmentRepo: this.departmentRepository,
+			customerRepo: this.customerRepository,
+		})
+		this.messageQueue = new InMemoryMessageQueue()
+		this.idempotencyStore = new InMemoryIdempotencyStore()
+		this.aiResponsePort = new OpenAIResponsePort(
+			this.customerRepository,
+			this.departmentRepository,
+			this.employeeRepository,
+			this.openaiRegistry,
+			this.prismaTenantRepository,
+			this.stateStore,
+			this.conversationLogger,
+			this.functionToolRegistry,
+			this.messageQueue,
+			aiChatRepository
+		)
+		this.customerServiceManager = new CustomerServiceContextManager(
+			this.faqRepository,
+			this.departmentRepository,
+			this.employeeRepository,
+			this.conversationRepository,
+			this.messagingPort,
+			this.stateStore,
+			this.customerRepository,
+			this.prismaTenantRepository,
+			this.aiResponsePort,
+			aiChatRepository,
+			energyBillService,
+			this.aiChatFinalSummaryService,
+			this.conversationFinalSummaryService
 		)
 
-		this.stateServiceFactory = new StateServiceFactory(
-			this.faqServiceFactory,
-			this.departmentServiceFactory,
-			this.userServiceFactory,
-			this.conversationServiceFactory,
-			this.companyServiceFactory
+		// Start queue consumer (ACK rápido no webhook)
+		const processor = new ProcessIncomingMessageJob(
+			this.prisma,
+			this.customerServiceManager,
+			this.idempotencyStore
 		)
-		this.stateOrchestratorFactory = new StateOrchestratorFactory(
-			this.outputPort,
-			this.aiServiceFactory,
-			this.stateServiceFactory,
-			this.faqServiceFactory,
-			this.conversationServiceFactory,
-			this.departmentServiceFactory,
-			this.departmentQueueServiceFactory,
-			this.userServiceFactory,
-			this.stateContextServiceFactory
+		const intentProcessor = new ProcessToolIntentJob(
+			this.customerServiceManager
 		)
-
-		// WhatsApp Message Services
-		this.processClientMessageServiceFactory =
-			new ProcessClientMessageServiceFactory(
-				this.conversationServiceFactory,
-				this.stateOrchestratorFactory
-			)
-
-		this.processEmployeeMessageServiceFactory =
-			new ProcessEmployeeMessageServiceFactory(
-				this.conversationServiceFactory,
-				this.stateOrchestratorFactory
-			)
-
-		this.messageHandlerFactory = new MessageHandlerFactory(
-			this.processClientMessageServiceFactory.getService(),
-			this.processEmployeeMessageServiceFactory.getService()
-		)
-		this.whatsAppMessageServiceFactory = new WhatsAppMessageServiceFactory(
-			this.messageHandlerFactory,
-			this.userServiceFactory
+		this.messageQueue.startConsumer(
+			(job: QueueJob) => {
+				if ((job as any).kind === 'intent') {
+					return intentProcessor.handle(job as any)
+				}
+				return processor.handle(job as any)
+			},
+			{
+				concurrency: 3,
+			}
 		)
 
-		// Instanciar serviços
-		this.whatsAppMessageService =
-			this.whatsAppMessageServiceFactory.getService()
-		this.companyService = this.companyServiceFactory.getService()
-
-		// Web API Factories
-		this.managerServiceFactory = new ManagerServiceFactory()
-		this.authServiceFactory = new AuthServiceFactory(
-			this.companyServiceFactory,
-			this.managerServiceFactory
-		)
-		this.webAPIUseCaseFactory = new WebAPIUseCaseFactory(
-			this.departmentServiceFactory,
-			this.departmentQueueServiceFactory,
-			this.companyServiceFactory,
-			this.faqServiceFactory,
-			this.userServiceFactory,
-			this.conversationServiceFactory,
-			this.managerServiceFactory
+		// web API
+		this.usersRepository = new PrismaUserRepository(prisma)
+		this.authService = new AuthService(
+			this.usersRepository,
+			this.prismaTenantRepository
 		)
 
-		// Web API services
-		this.authService = this.authServiceFactory.getService()
-		this.managerService = this.managerServiceFactory.getService()
+		// files
+		this.fileService = new CloudFlareFileService()
 	}
 }

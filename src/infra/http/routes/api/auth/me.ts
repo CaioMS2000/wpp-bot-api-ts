@@ -1,61 +1,58 @@
-import { env } from '@/config/env'
-import { ManagerService } from '@/modules/web-api/services/manager-service'
-import { CompanyService } from '@/modules/whats-app/services/company-service'
+import type { TenantRepository } from '@/repository/TenantRepository'
+import { UserRepository } from '@/repository/UserRepository'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
-import { z } from 'zod'
-import { auth } from '../middlewares/auth'
+import z from 'zod'
+import { auth } from '../../middlewares/auth'
 
 type Resources = {
-	managerService: ManagerService
-	companyService: CompanyService
+	userRepository: UserRepository
+	tenantRepository: TenantRepository
 }
 
-export const responseSchema = {
+const responseSchema = {
 	200: z.object({
 		user: z.object({
-			name: z.string(),
-			email: z.string(),
 			id: z.string(),
-			phone: z.string().nullable(),
-			managedCompanyCNPJ: z.string().nullable(),
+			email: z.string(),
+			name: z.string(),
+			phone: z.string(),
+			tenantCnpj: z.string().nullable(),
 		}),
 	}),
-	401: z.object({
-		error: z.string(),
-	}),
+	204: z.null(),
 }
-
 export async function me(app: FastifyInstance, resources: Resources) {
 	app
 		.withTypeProvider<ZodTypeProvider>()
 		.register(auth)
-		.get('/api/sessions/me', {
+		.get('/api/me', {
 			schema: {
+				tags: ['Auth'],
+				summary: 'Me',
 				response: responseSchema,
 			},
 			handler: async (req, reply) => {
-				let managedCompanyCNPJ: Nullable<string> = null
-				const id = await req.getCurrentUserID()
-				const manager = await resources.managerService.getManager(id)
+				const userId = await req.getCurrentUserID()
+				const user = await resources.userRepository.getAdminById(userId)
 
-				if (!manager) {
-					return reply.status(401).send({ error: 'Manager not found' })
+				if (!user) {
+					return reply.status(204).send()
 				}
 
-				const company = await resources.companyService.getCompanyByManagerId(id)
-
-				if (company) {
-					managedCompanyCNPJ = company.cnpj
+				let tenantCnpj: string | null = null
+				if (user.tenantId) {
+					const tenant = await resources.tenantRepository.get(user.tenantId)
+					tenantCnpj = tenant?.cnpj ?? null
 				}
 
 				return reply.status(200).send({
 					user: {
-						id,
-						name: manager.name,
-						email: manager.email,
-						phone: manager.phone,
-						managedCompanyCNPJ,
+						id: user.id,
+						email: user.email,
+						name: user.name,
+						phone: user.phone,
+						tenantCnpj,
 					},
 				})
 			},

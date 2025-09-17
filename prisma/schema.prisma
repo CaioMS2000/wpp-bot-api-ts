@@ -7,203 +7,215 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Manager {
+model Tenant {
   id        String   @id @default(uuid())
+  cnpj      String   @unique
+  phone     String   @unique
   name      String
-  companyId String?
-  email     String   @unique
-  password  String
-  phone     String?  @unique
-  company   Company?
+  site      String?
+  email     String?
+  description String?
+  businessHours Json?
+  aiTokenApi    String?
+  metaTokenApi  String?
+  agentInstruction String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-enum WeekDay {
-  monday
-  tuesday
-  wednesday
-  thursday
-  friday
-  saturday
-  sunday
+model FaqCategory {
+  id       String     @id @default(uuid())
+  tenantId String
+  name     String @unique
+  entries  FaqEntry[]
+
+  @@unique([tenantId, name])
 }
 
-model BusinessHour {
-  id        String  @id @default(uuid())
-  day       WeekDay
-  openTime  String
-  closeTime String
-  company   Company @relation(fields: [companyId], references: [id])
-  companyId String
-
-  @@unique([companyId, day])
-}
-
-model Company {
-  id            String         @id @default(uuid())
-  name          String
-  email         String?
-  website       String?
-  description   String?
-  cnpj          String         @unique
-  phone         String         @unique
-  clients       Client[]
-  conversations Conversation[]
-  departments   Department[]
-  employees     Employee[]
-  faqs          FAQCategory[]
-  managerId     String         @unique
-  manager       Manager        @relation(fields: [managerId], references: [id])
-  businessHours BusinessHour[]
-}
-
-model Client {
-  id            String            @id @default(uuid())
-  name          String
-  email         String?
-  profession    String?
-  phone         String            @unique
-  companyId     String
-  company       Company           @relation(fields: [companyId], references: [id])
-  conversations Conversation[]
-  messages      Message[]
-  queue         DepartmentQueue[]
-}
-
-model Employee {
-  id                 String         @id @default(uuid())
-  name               String
-  phone              String         @unique
-  companyId          String
-  departmentId       String?
-  company            Company        @relation(fields: [companyId], references: [id])
-  department         Department?    @relation(fields: [departmentId], references: [id])
-  messages           Message[]
-  conversations      Conversation[] @relation("employee")
-  agentConversations Conversation[] @relation("agent")
-}
-
-enum UserType {
-  CLIENT
-  EMPLOYEE
-}
-
-enum AgentType {
-  EMPLOYEE
-  AI
-}
-
-enum StateName {
-  CHATTING_WITH_EMPLOYEE
-  CHATTING_WITH_CLIENT
-  CHATTING_WITH_AI
-  DEPARTMENT_QUEUE
-  SELECTING_DEPARTMENT
-  LISTING_DEPARTMENT_QUEUE
-  SELECTING_FAQ_CATEGORY
-  LISTING_FAQ_ITEMS
-  INITIAL_MENU
-  BEGIN
-}
-
-enum CloseReason {
-  EXPLICIT
-  RESOLVED
-  TRANSFERED
-  ABANDONED
-}
-
-model Conversation {
-  id                  String     @id @default(uuid())
-  clientId            String?
-  employeeId          String?
-  userType            UserType
-  agentType           AgentType?
-  agentId             String?
-  companyId           String
-  currentState        StateName
-  stateData           Json?
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
-  startedAt           DateTime   @default(now())
-  endedAt             DateTime?
-  lastStateChange     DateTime?
-  resume              String?
-  entryActionExecuted Boolean
-  client              Client?    @relation(fields: [clientId], references: [id])
-  company             Company    @relation(fields: [companyId], references: [id])
-  employee            Employee?  @relation("employee", fields: [employeeId], references: [id])
-  agent               Employee?  @relation("agent", fields: [agentId], references: [id])
-  messages            Message[]
-
-  /**
-   * for metrics
-   */
-  queuedAt             DateTime?
-  firstHumanResponseAt DateTime?
-  closeReason          CloseReason?
-  referredQueueId String? @unique
-  referredQueue DepartmentQueue? @relation(fields: [referredQueueId], references: [id])
-}
-
-enum FromType {
-  CLIENT
-  EMPLOYEE
-  AI
-  SYSTEM
-}
-
-model Message {
-  id             String       @id @default(uuid())
-  content        String
-  from           FromType
-  timestamp      DateTime     @default(now())
-  conversationId String
-  aiResponseId   String?
-  clientId       String?
-  employeeId     String?
-  client         Client?      @relation(fields: [clientId], references: [id])
-  conversation   Conversation @relation(fields: [conversationId], references: [id])
-  employee       Employee?    @relation(fields: [employeeId], references: [id])
+model FaqEntry {
+  id         String      @id @default(uuid())
+  question   String @unique
+  answer     String
+  categoryId String
+  category   FaqCategory @relation(fields: [categoryId], references: [id])
 }
 
 model Department {
-  id          String            @id @default(uuid())
-  name        String            @unique
-  description String?           @default("")
-  companyId   String
-  company     Company           @relation(fields: [companyId], references: [id])
-  employees   Employee[]
-  queue       DepartmentQueue[]
+  id            String                 @id @default(uuid())
+  tenantId      String
+  name          String
+  description   String?
+  queues        DepartmentQueueEntry[]
+  employees     Employee[]
+  conversations Conversation[]
+
+  @@unique([tenantId, name])
 }
 
-model DepartmentQueue {
-  id           String     @id @default(uuid())
-  departmentId String
-  clientId     String
-  joinedAt     DateTime   @default(now())
-  leftAt       DateTime?
-  department   Department @relation(fields: [departmentId], references: [id])
-  client       Client     @relation(fields: [clientId], references: [id])
-  conversation       Conversation?
+model DepartmentQueueEntry {
+  id            String     @id @default(uuid())
+  tenantId      String
+  departmentId  String
+  department    Department @relation(fields: [departmentId], references: [id])
+  customerPhone String
+  createdAt     DateTime   @default(now())
 
-  @@unique([departmentId, clientId])
-  @@index([departmentId, joinedAt])
+  @@unique([departmentId, customerPhone])
 }
 
-model FAQCategory {
-  id        String    @id @default(uuid())
-  name      String    @unique
-  companyId String
-  company   Company   @relation(fields: [companyId], references: [id])
-  items     FAQItem[]
+model Employee {
+  id            String         @id @default(uuid())
+  tenantId      String
+  name          String
+  phone         String
+  departmentId  String?
+  department    Department?    @relation(fields: [departmentId], references: [id])
+  conversations Conversation[]
 
-  @@unique([companyId, name])
+  @@unique([tenantId, phone])
 }
 
-model FAQItem {
-  id         String      @id @default(uuid())
-  question   String
-  answer     String
-  categoryId String
-  category   FAQCategory @relation(fields: [categoryId], references: [id])
+model Conversation {
+  id            String                  @id @default(uuid())
+  tenantId      String
+  employeeId    String
+  employee      Employee                @relation(fields: [employeeId], references: [id])
+  customerPhone String
+  departmentId  String?
+  department    Department?             @relation(fields: [departmentId], references: [id])
+  active        Boolean                 @default(true)
+  startedAt     DateTime                @default(now())
+  endedAt       DateTime?
+  // When the customer arrived in the queue that originated this conversation (if any)
+  arrivedAt     DateTime?
+  // Resolution classification to distinguish successful vs. unfinished endings
+  resolution    ConversationResolution?
+  messages      Message[]
+  aiChatSession AIChatSession?
+  finalSummary  String?
+
+  @@index([tenantId, employeeId, active])
+  @@index([tenantId, customerPhone, active])
+}
+
+enum ConversationResolution {
+  RESOLVED
+  UNRESOLVED
+}
+
+model SessionContext {
+  id        String   @id @default(uuid())
+  tenantId  String
+  phone     String
+  state     String
+  data      String? // JSON-serialized snapshot data (if any)
+  aiSessionId String?
+  version   Int      @default(1)
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, phone])
+}
+
+// Tracks AI-only chat sessions for metrics (count per period) and analysis
+model AIChatSession {
+  id             String        @id @default(uuid())
+  tenantId       String
+  phone          String
+  startedAt      DateTime      @default(now())
+  endedAt        DateTime?
+  endReason      String? // e.g. COMPLETED, ESCALATED, USER_EXITED, TIMEOUT
+  conversationId String?       @unique
+  conversation   Conversation? @relation(fields: [conversationId], references: [id])
+  messages       AIMessage[]
+  finalSummary   String?
+
+  @@index([tenantId, phone, startedAt])
+}
+
+enum AIMessageSender {
+  USER
+  AI
+}
+
+model AIMessage {
+  id               String           @id @default(uuid())
+  aiChatSessionId  String
+  aiChatSession    AIChatSession    @relation(fields: [aiChatSessionId], references: [id])
+  sender           AIMessageSender
+  text             String
+  createdAt        DateTime         @default(now())
+
+  @@index([aiChatSessionId, createdAt])
+}
+
+/// Known customers (by phone) per tenant
+model Customer {
+  id         String   @id @default(uuid())
+  tenantId   String
+  phone      String
+  name       String
+  email      String?
+  profession String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([tenantId, phone])
+}
+
+enum MessageSender {
+  EMPLOYEE
+  CUSTOMER
+}
+
+model Message {
+  id             String        @id @default(uuid())
+  conversationId String
+  conversation   Conversation  @relation(fields: [conversationId], references: [id])
+  sender         MessageSender
+  text           String
+  createdAt      DateTime      @default(now())
+
+  @@index([conversationId, createdAt])
+}
+
+enum UserRole {
+  ADMIN
+  EMPLOYEE
+}
+
+model User {
+  id           String   @id @default(uuid())
+  tenantId     String?
+  email        String
+  phone        String
+  name         String
+  passwordHash String
+  role         UserRole @default(ADMIN)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([tenantId, email])
+  @@unique([tenantId, phone])
+  @@unique([tenantId, id])
+}
+
+/// Maps each tenant to its OpenAI Vector Store ID
+model TenantVectorStore {
+  id            String   @id @default(uuid())
+  tenantId      String   @unique
+  vectorStoreId String
+  createdAt     DateTime @default(now())
+}
+
+/// Stored files metadata per tenant (for S3/R2 and OpenAI indexing)
+model File {
+  id             String   @id @default(uuid())
+  tenantId       String
+  key            String   @unique
+  name           String
+  contentType    String
+  meta           Json?
+  indexInStorage String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 }

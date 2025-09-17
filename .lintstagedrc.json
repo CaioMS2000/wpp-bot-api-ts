@@ -1,3 +1,5 @@
 {
-    "*.{js,jsx,ts,tsx,mjs,cjs}": ["npx biome format --write"]
+    "*.{js,jsx,ts,tsx,mjs,cjs}": [
+        "biome format --write --no-errors-on-unmatched --files-ignore-unknown=true"
+    ]
 }

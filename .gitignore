@@ -23,6 +23,7 @@ out/
 *.swo
 .DS_Store
 Thumbs.db
+AGENTS.md
 
 # Logs
 logs/
@@ -40,9 +41,6 @@ temp/
 
 # Optional npm cache directory
 .npm
-
-# Optional eslint cache
-.eslintcache
 
 # TypeScript cache
 *.tsbuildinfo
@@ -64,3 +62,5 @@ watch.py
 whats-app-api-payloads
 *.txt
 openai-responses.json
+CLAUDE.md
+docs/

@@ -1,33 +1,37 @@
 import type { FastifyInstance } from 'fastify'
 import fastifyPlugin from 'fastify-plugin'
-import { ExtractResources } from '../@types'
+import { ExtractResources } from '../../@types'
 import { createEmployee } from './create-employee'
-import { getAllEmployees } from './get-all-employees'
+import { deleteEmployee } from './delete-employee'
 import { getEmployee } from './get-employee'
+import { listEmployees } from './list-employees'
 import { updateEmployee } from './update-employee'
 
 const routes = [
-	getEmployee,
-	getAllEmployees,
 	createEmployee,
 	updateEmployee,
+	getEmployee,
+	listEmployees,
+	deleteEmployee,
 ] as const
-
 type Resources = ExtractResources<typeof routes>
 
 export const router = fastifyPlugin(
 	async (app: FastifyInstance, resources: Resources) => {
-		app.register(getEmployee, {
-			getEmployeeByPhoneUseCase: resources.getEmployeeByPhoneUseCase,
-		})
-		app.register(getAllEmployees, {
-			getAllCompanyEmployeesUseCase: resources.getAllCompanyEmployeesUseCase,
-		})
 		app.register(createEmployee, {
-			createEmployeeUseCase: resources.createEmployeeUseCase,
+			employeeRepository: resources.employeeRepository,
 		})
 		app.register(updateEmployee, {
-			updateEmployeeUseCase: resources.updateEmployeeUseCase,
+			employeeRepository: resources.employeeRepository,
+		})
+		app.register(getEmployee, {
+			employeeRepository: resources.employeeRepository,
+		})
+		app.register(listEmployees, {
+			employeeRepository: resources.employeeRepository,
+		})
+		app.register(deleteEmployee, {
+			employeeRepository: resources.employeeRepository,
 		})
 	}
 )
