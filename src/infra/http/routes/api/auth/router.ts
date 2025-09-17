@@ -1,35 +1,25 @@
 import type { FastifyInstance } from 'fastify'
 import fastifyPlugin from 'fastify-plugin'
-import { ExtractResources } from '../@types'
-import { authenticateWithPassword } from './authenticate-with-password'
+import { ExtractResources } from '../../@types'
+import { loginWithPassword } from './login-with-password'
 import { logout } from './logout'
 import { me } from './me'
-import { register } from './register-manager'
-import { updateManager } from './update-manager'
+import { signUp } from './sign-up'
+import { updateMe } from './update-me'
 
-const routes = [
-	authenticateWithPassword,
-	register,
-	logout,
-	me,
-	updateManager,
-] as const
+const routes = [logout, signUp, loginWithPassword, me, updateMe] as const
 
 type Resources = ExtractResources<typeof routes>
 
 export const router = fastifyPlugin(
 	async (app: FastifyInstance, resources: Resources) => {
-		app.register(authenticateWithPassword, {
-			authService: resources.authService,
-		})
-		app.register(register, { authService: resources.authService })
+		app.register(logout, { authService: resources.authService })
+		app.register(signUp, { authService: resources.authService })
+		app.register(loginWithPassword, { authService: resources.authService })
 		app.register(me, {
-			managerService: resources.managerService,
-			companyService: resources.companyService,
+			userRepository: resources.userRepository,
+			tenantRepository: resources.tenantRepository,
 		})
-		app.register(updateManager, {
-			managerService: resources.managerService,
-		})
-		app.register(logout)
+		app.register(updateMe, { authService: resources.authService })
 	}
 )

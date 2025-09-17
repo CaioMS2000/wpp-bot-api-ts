@@ -1,27 +1,10 @@
-import { UpdateEmployeeUseCase } from '@/modules/web-api/use-cases/update-employee-use-case'
+import type { EmployeeRepository } from '@/repository/EmployeeRepository'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
-import { z } from 'zod'
-import { auth } from '../middlewares/auth'
+import { auth } from '../../middlewares/auth'
+import { employeeResponse, idParam, paramsByCnpj, updateBody } from './schemas'
 
-type Resources = {
-	updateEmployeeUseCase: UpdateEmployeeUseCase
-}
-
-export const paramsSchema = z.object({
-	cnpj: z.string(),
-	phone: z.string(),
-})
-
-const bodySchema = z.object({
-	name: z.string().optional(),
-	phone: z.string().optional(),
-	departmentId: z.string().nullable().optional(),
-})
-
-export const responseSchema = {
-	204: z.null().describe('No Content'),
-}
+type Resources = { employeeRepository: EmployeeRepository }
 
 export async function updateEmployee(
 	app: FastifyInstance,
@@ -30,26 +13,22 @@ export async function updateEmployee(
 	app
 		.withTypeProvider<ZodTypeProvider>()
 		.register(auth)
-		.put(
-			'/api/company/:cnpj/employees/:phone',
-			{
-				schema: {
-					tags: ['employees'],
-					summary: 'Update an employee of a company',
-
-					params: paramsSchema,
-					response: responseSchema,
-					body: bodySchema,
-				},
+		.put('/api/tenant/:cnpj/employee/:id', {
+			schema: {
+				tags: ['Employee'],
+				summary: 'Update an employee',
+				params: paramsByCnpj.merge(idParam),
+				body: updateBody,
+				response: employeeResponse,
 			},
-			async (request, reply) => {
-				const { updateEmployeeUseCase } = resources
-				const { company } = await request.getUserMembership(request.params.cnpj)
-				const { phone } = request.params
-
-				await updateEmployeeUseCase.execute(company.id, phone, request.body)
-
-				return reply.status(204).send()
-			}
-		)
+			handler: async (req, reply) => {
+				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const emp = await resources.employeeRepository.update(
+					tenant.id,
+					req.params.id,
+					req.body
+				)
+				return reply.send(emp)
+			},
+		})
 }

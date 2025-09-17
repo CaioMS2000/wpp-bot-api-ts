@@ -1,85 +1,84 @@
-import { Manager } from '@/entities/manager'
-import { logger } from '@/logger'
-import { CompanyService } from '@/modules/whats-app/services/company-service'
-import { compare, hash } from 'bcryptjs'
-import { ConflictError } from '../error/conflict'
-import { ManagerService } from './manager-service'
+import { AppError } from '@/infra/http/errors'
+import type { TenantRepository } from '@/repository/TenantRepository'
+import type { UserRepository } from '@/repository/UserRepository'
+import bcrypt from 'bcryptjs'
+import { User } from '../@types/user'
 
 export class AuthService {
 	constructor(
-		private companyService: CompanyService,
-		private managerService: ManagerService
+		private usersRepository: UserRepository,
+		private readonly prismaTenantRepository: TenantRepository
 	) {}
 
-	async authenticateWithPassword(email: string, password: string) {
-		const manager = await this.managerService.getByEmail(email, {
-			notNull: true,
-		})
-		const isPasswordValid = await compare(password, manager.password)
-
-		if (!isPasswordValid) {
-			throw new Error('Invalid password')
-		}
-
-		const company = await this.companyService.getCompanyByManagerId(manager.id)
-
-		return {
-			name: manager.name,
-			email: manager.email,
-			phone: manager.phone,
-			managedCompanyCNPJ: company ? company.cnpj : null,
-			id: manager.id,
-		}
-	}
-
-	async registerManager(
-		name: string,
+	async signup(
 		email: string,
 		password: string,
-		phone: Nullable<string> = null
-	) {
-		const existingManager = await this.managerService.getByEmail(email)
-
-		if (existingManager) {
-			throw new ConflictError('Manager already exists')
-		}
-
-		const hashedPassword = await hash(password, 6)
-
-		await this.managerService.create({
-			name,
+		name: string,
+		phone: string
+	): Promise<User> {
+		const existing = await this.usersRepository.findRegistredAdmin(phone, email)
+		if (existing)
+			throw AppError.conflict(
+				'EMAIL_ALREADY_REGISTERED',
+				'Email já cadastrado.'
+			)
+		const passwordHash = await bcrypt.hash(password, 10)
+		const newUser = await this.usersRepository.create({
 			email,
-			password: hashedPassword,
+			name,
 			phone,
+			passwordHash,
+			tenantId: null,
+			role: 'ADMIN',
 		})
-
-		return {
-			name,
-			email,
-			phone,
+		const user: User = {
+			email: newUser.email,
+			id: newUser.id,
+			name: newUser.name,
+			phone: newUser.phone,
+			passwordHash: newUser.passwordHash,
+			tenantId: newUser.tenantId,
+			role: 'ADMIN',
 		}
+
+		return user
 	}
 
-	async getManagerMembership(companyCNPJ: string, managerId: string) {
-		try {
-			const manager = await this.managerService.getManager(managerId, {
-				notNull: true,
-			})
-			const company = await this.companyService.getCompanyByCNPJ(companyCNPJ, {
-				notNull: true,
-			})
+	async loginWithPassword(email: string, password: string): Promise<User> {
+		const existingUser = await this.usersRepository.getAdminByEmail(email)
 
-			if (manager.companyId !== company.id) {
-				throw new Error('Could not resolve manager membership')
-			}
+		if (!existingUser)
+			throw AppError.authInvalidCredentials('Email ou senha inválidos.')
 
-			return {
-				manager,
-				company,
-			}
-		} catch (error) {
-			logger.error(error)
-			throw error
-		}
+		const ok = await bcrypt.compare(password, existingUser.passwordHash)
+
+		if (!ok) throw AppError.authInvalidCredentials('Email ou senha inválidos.')
+
+		return existingUser
+	}
+
+	async updateAdminProfile(
+		userId: string,
+		data: { name?: string; phone?: string; email?: string }
+	): Promise<User> {
+		const patch: { name?: string; phone?: string; email?: string } = {}
+		if (data.name !== undefined) patch.name = data.name
+		if (data.phone !== undefined) patch.phone = data.phone
+		if (data.email !== undefined) patch.email = data.email
+		const updated = await this.usersRepository.updateAdminById(userId, patch)
+		return updated
+	}
+
+	async getAdminMembership(cnpj: string, userId: string) {
+		const tenant = await this.prismaTenantRepository.getByCNPJ(cnpj)
+
+		if (!tenant) throw AppError.notFound('NOT_FOUND', 'Tenant não encontrado.')
+
+		const tenantAdmin = await this.usersRepository.getAdmin(tenant.id, userId)
+
+		if (!tenantAdmin)
+			throw AppError.forbidden('Você não é administrador desse tenant.')
+
+		return { tenant, admin: tenantAdmin }
 	}
 }

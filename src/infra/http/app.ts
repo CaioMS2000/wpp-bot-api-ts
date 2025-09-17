@@ -1,6 +1,4 @@
 import { env } from '@/config/env'
-import { logger } from '@/logger'
-import { parseOrigins } from '@/utils/cors'
 import fastifyCookie from '@fastify/cookie'
 import fastifyCors from '@fastify/cors'
 import fastifyJwt from '@fastify/jwt'
@@ -15,8 +13,9 @@ import {
 	validatorCompiler,
 } from 'fastify-type-provider-zod'
 import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes'
-import { errorHandler } from './routes/api/middlewares/error-handler'
-import { requestLogger } from './routes/api/middlewares/plugins/request-logger'
+import { parseOrigins } from '@/utils/cors'
+import { requestLogger } from './routes/middlewares/plugins/request-logger'
+import { errorHandler } from './routes/middlewares/error-handler'
 
 const app = fastify({ trustProxy: true })
 const allowedOrigins = parseOrigins(env.CORS_ORIGINS)
@@ -24,6 +23,16 @@ const allowedOrigins = parseOrigins(env.CORS_ORIGINS)
 // third-party resources
 app.setValidatorCompiler(validatorCompiler)
 app.setSerializerCompiler(serializerCompiler)
+
+// zod -> JSON Schema transform com fallback para esquemas já em JSON Schema
+const safeTransform: typeof jsonSchemaTransform = input => {
+	try {
+		return jsonSchemaTransform(input)
+	} catch {
+		return input.schema as any
+	}
+}
+
 app.register(swagger, {
 	openapi: {
 		openapi: '3.1.0',
@@ -39,7 +48,7 @@ app.register(swagger, {
 		},
 		security: [{ cookieAuth: [] }],
 	},
-	transform: jsonSchemaTransform,
+	transform: safeTransform,
 })
 
 const theme = new SwaggerTheme()

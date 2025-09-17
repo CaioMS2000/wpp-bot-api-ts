@@ -1,4 +1,11 @@
+import { config } from 'dotenv'
 import { z } from 'zod'
+
+config({
+	path: '.env',
+	// override: process.env.NODE_ENV !== 'production',
+	override: true,
+})
 
 export const envSchema = z.object({
 	NODE_ENV: z
@@ -23,6 +30,10 @@ export const envSchema = z.object({
 	AWS_BUCKET_NAME: z.string(),
 	CLOUDFLARE_ACCOUNT_ID: z.string(),
 	CLOUDFLARE_ENDPOINT: z.string(),
+	AUTO_CLOSE_SLA_MINUTES: z.coerce.number().default(10),
+	AUTO_CLOSE_IDLE_HOURS: z.coerce.number().default(24),
 })
 
-export const env = envSchema.parse(process.env)
+const env = envSchema.parse(process.env)
+
+export { env }

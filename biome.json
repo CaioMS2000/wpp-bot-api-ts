@@ -2,5 +2,16 @@
   "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
   "extends": [
     "@caioms/biomejs-config/biome"
-  ]
+  ],
+  "linter":{
+    "rules":{
+      "complexity":{
+        "useLiteralKeys": "warn"
+      },
+      "style":{
+        "noInferrableTypes": "info",
+        "useTemplate": "info"
+      }
+    }
+  }
 }

@@ -1,33 +1,10 @@
-import { departmentSchema } from '@/modules/web-api/@types/schemas'
-import { CreateEmployeeUseCase } from '@/modules/web-api/use-cases/create-employee-use-case'
+import type { EmployeeRepository } from '@/repository/EmployeeRepository'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
-import { z } from 'zod'
-import { auth } from '../middlewares/auth'
+import { auth } from '../../middlewares/auth'
+import { createBody, employeeResponse, paramsByCnpj } from './schemas'
 
-type Resources = {
-	createEmployeeUseCase: CreateEmployeeUseCase
-}
-
-export const paramsSchema = z.object({
-	cnpj: z.string(),
-})
-
-const bodySchema = z.object({
-	name: z.string(),
-	phone: z.string(),
-	departmentId: z.string().nullable(),
-})
-
-const responseSchema = {
-	201: z.object({
-		employee: z.object({
-			name: z.string(),
-			phone: z.string(),
-			department: departmentSchema.nullable(),
-		}),
-	}),
-}
+type Resources = { employeeRepository: EmployeeRepository }
 
 export async function createEmployee(
 	app: FastifyInstance,
@@ -36,34 +13,24 @@ export async function createEmployee(
 	app
 		.withTypeProvider<ZodTypeProvider>()
 		.register(auth)
-		.post(
-			'/api/company/:cnpj/employees',
-			{
-				schema: {
-					tags: ['employees'],
-					summary: 'Create a new employee',
-
-					params: paramsSchema,
-					body: bodySchema,
-					response: responseSchema,
-				},
+		.post('/api/tenant/:cnpj/employee', {
+			schema: {
+				tags: ['Employee'],
+				summary: 'Create a new employee',
+				params: paramsByCnpj,
+				body: createBody,
+				response: employeeResponse,
 			},
-			async (request, reply) => {
-				const { createEmployeeUseCase } = resources
-				const { company } = await request.getUserMembership(request.params.cnpj)
-				const { employee, department } = await createEmployeeUseCase.execute({
-					...request.body,
-					companyId: company.id,
-				})
-				const data = {
-					employee: {
-						name: employee.name,
-						phone: employee.phone,
-						department: department,
-					},
-				}
-
-				return reply.status(201).send(data)
-			}
-		)
+			handler: async (req, reply) => {
+				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { name, phone, departmentName } = req.body
+				const emp = await resources.employeeRepository.create(
+					tenant.id,
+					name,
+					phone,
+					departmentName ?? null
+				)
+				return reply.send(emp)
+			},
+		})
 }

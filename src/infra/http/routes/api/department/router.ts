@@ -1,38 +1,40 @@
 import type { FastifyInstance } from 'fastify'
 import fastifyPlugin from 'fastify-plugin'
-import { ExtractResources } from '../@types'
+import { ExtractResources } from '../../@types'
 import { createDepartment } from './create-department'
 import { deleteDepartment } from './delete-department'
-import { getAllDepartments } from './get-all-departments'
 import { getDepartment } from './get-department'
+import { listDepartments } from './list-departments'
 import { updateDepartment } from './update-department'
 
 const routes = [
+	createDepartment,
 	updateDepartment,
 	getDepartment,
-	getAllDepartments,
-	createDepartment,
+	listDepartments,
 	deleteDepartment,
 ] as const
-
 type Resources = ExtractResources<typeof routes>
 
 export const router = fastifyPlugin(
 	async (app: FastifyInstance, resources: Resources) => {
+		app.register(createDepartment, {
+			departmentRepository: resources.departmentRepository,
+			employeeRepository: resources.employeeRepository,
+		})
 		app.register(updateDepartment, {
-			updateDepartmentUseCase: resources.updateDepartmentUseCase,
+			departmentRepository: resources.departmentRepository,
+			employeeRepository: resources.employeeRepository,
 		})
 		app.register(getDepartment, {
-			getDepartmentUseCase: resources.getDepartmentUseCase,
+			departmentRepository: resources.departmentRepository,
+			employeeRepository: resources.employeeRepository,
 		})
-		app.register(getAllDepartments, {
-			getCompanyDepartmentsUseCase: resources.getCompanyDepartmentsUseCase,
-		})
-		app.register(createDepartment, {
-			createDepartmentUseCase: resources.createDepartmentUseCase,
+		app.register(listDepartments, {
+			departmentRepository: resources.departmentRepository,
 		})
 		app.register(deleteDepartment, {
-			deleteDepartmentUseCase: resources.deleteDepartmentUseCase,
+			departmentRepository: resources.departmentRepository,
 		})
 	}
 )

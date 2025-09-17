@@ -1,55 +1,43 @@
-import { GetEmployeeByPhoneUseCase } from '@/modules/web-api/use-cases/get-employee-by-phone-use-case'
+import { AppError } from '@/infra/http/errors'
+import type { EmployeeRepository } from '@/repository/EmployeeRepository'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { auth } from '../middlewares/auth'
+import { auth } from '../../middlewares/auth'
+import { employeeResponse, idParam, paramsByCnpj } from './schemas'
 
-type Resources = {
-	getEmployeeByPhoneUseCase: GetEmployeeByPhoneUseCase
-}
-
-export const paramsSchema = z.object({
-	cnpj: z.string(),
-	phone: z.string(),
-})
-
-export const responseSchema = {
-	200: z.object({
-		employee: z.object({
-			name: z.string(),
-			phone: z.string(),
-			departmentName: z.string().nullable(),
-		}),
-	}),
-}
+type Resources = { employeeRepository: EmployeeRepository }
 
 export async function getEmployee(app: FastifyInstance, resources: Resources) {
 	app
 		.withTypeProvider<ZodTypeProvider>()
 		.register(auth)
-		.get(
-			'/api/company/:cnpj/employee/:phone',
-			{
-				schema: {
-					tags: ['employees'],
-					summary: 'Get an employee of a company',
-
-					params: paramsSchema,
-					response: responseSchema,
+		.get('/api/tenant/:cnpj/employee/:id', {
+			schema: {
+				tags: ['Employee'],
+				summary: 'Get employee by id',
+				params: paramsByCnpj.merge(idParam),
+				response: {
+					200: employeeResponse[200],
+					404: z.object({
+						error: z.object({
+							code: z.string(),
+							message: z.string(),
+							hint: z.string().optional(),
+							details: z.any().optional(),
+						}),
+					}),
 				},
 			},
-			async (request, reply) => {
-				const { getEmployeeByPhoneUseCase } = resources
-				const { company } = await request.getUserMembership(request.params.cnpj)
-				const { phone } = request.params
-				const employee = await getEmployeeByPhoneUseCase.execute(
-					company.id,
-					phone
+			handler: async (req, reply) => {
+				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const emp = await resources.employeeRepository.get(
+					tenant.id,
+					req.params.id
 				)
-
-				return reply.status(200).send({
-					employee,
-				})
-			}
-		)
+				if (!emp)
+					throw AppError.notFound('NOT_FOUND', 'Funcionário não encontrado.')
+				return reply.send(emp)
+			},
+		})
 }
