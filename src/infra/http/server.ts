@@ -12,6 +12,7 @@ import { router as departmentRouter } from './routes/api/department/router'
 import { router as conversationRouter } from './routes/api/conversation/router'
 import { router as faqRouter } from './routes/api/faq/router'
 import { router as filesRouter } from './routes/api/files/router'
+import { webhook } from './routes/whatsapp/message/verify-token'
 
 const container = new DependenciesContainer()
 
@@ -23,6 +24,7 @@ app.decorateRequest('authService', {
 app.get('/health', async () => ({ status: 'ok' }))
 
 // main
+app.register(webhook)
 app.register(receiveMessage, {
 	customerServiceManager: container.customerServiceManager,
 	prisma: container.prisma,
