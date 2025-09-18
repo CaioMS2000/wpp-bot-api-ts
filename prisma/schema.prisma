@@ -199,6 +199,15 @@ model User {
   @@unique([tenantId, id])
 }
 
+/// Platform-wide settings to influence behavior above tenants
+model GlobalSetting {
+  key       String   @id
+  value     Json
+  version   Int      @default(1)
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+}
+
 /// Maps each tenant to its OpenAI Vector Store ID
 model TenantVectorStore {
   id            String   @id @default(uuid())

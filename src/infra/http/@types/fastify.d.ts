@@ -10,6 +10,7 @@ declare  module 'fastify' {
 			tenant: Tenant;
 			admin: User;
 		}>
+		getPlatformAdmin: () => Promise<User>
 		authService: AuthService
 	}
 }

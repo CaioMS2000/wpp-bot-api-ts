@@ -81,4 +81,29 @@ export class AuthService {
 
 		return { tenant, admin: tenantAdmin }
 	}
+
+	async getPlatformAdmin(userId: string): Promise<User> {
+		const user = await this.usersRepository.getAdminById(userId)
+		if (!user)
+			throw AppError.forbidden('Usuário não encontrado ou sem permissão.')
+		// Platform admin: ADMIN with no tenant (tenantId null)
+		if (user.tenantId !== null) {
+			throw AppError.forbidden(
+				'Acesso permitido apenas ao administrador da plataforma.'
+			)
+		}
+		// Hard constraints: fixed email and password must equal 'admin@admin.com'
+		if (user.email !== 'admin@admin.com') {
+			throw AppError.forbidden(
+				'Acesso restrito ao administrador da plataforma.'
+			)
+		}
+		const ok = await bcrypt.compare('admin@admin.com', user.passwordHash)
+		if (!ok) {
+			throw AppError.forbidden(
+				'Acesso restrito ao administrador da plataforma.'
+			)
+		}
+		return user
+	}
 }

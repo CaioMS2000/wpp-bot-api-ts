@@ -24,6 +24,7 @@ import {
 import { WhatsAppMessagingPort } from '@/modules/main/ports/WhatsAppMessagingPort'
 import { AuthService } from '@/modules/web-api/services/auth-service'
 import type { AIChatSessionRepository } from '@/repository/AIChatSessionRepository'
+import type { GlobalConfigRepository } from '@/repository/GlobalConfigRepository'
 import { ConversationRepository } from '@/repository/ConversationRepository'
 import { CustomerRepository } from '@/repository/CustomerRepository'
 import { DepartmentRepository } from '@/repository/DepartmentRepository'
@@ -41,11 +42,13 @@ import { PrismaCustomerRepository } from '../database/repository/PrismaCustomerR
 import { PrismaDepartmentRepository } from '../database/repository/PrismaDepartmentRepository'
 import { PrismaEmployeeRepository } from '../database/repository/PrismaEmployeeRepository'
 import { PrismaFaqRepository } from '../database/repository/PrismaFaqRepository'
+import { PrismaGlobalConfigRepository } from '../database/repository/PrismaGlobalConfigRepository'
 import { PrismaStateStore } from '../database/repository/PrismaStateStore'
 import { PrismaTenantRepository } from '../database/repository/PrismaTenantRepository'
 import { PrismaUserRepository } from '../database/repository/PrismaUserRepository'
 import { CloudFlareFileService } from '../storage/cloudflare/CloudFlareFileService'
 import type { FileService } from '../storage/file-service'
+import { GlobalConfigService } from '../config/GlobalConfigService'
 
 export class DependenciesContainer {
 	public prisma: PrismaClient
@@ -71,6 +74,8 @@ export class DependenciesContainer {
 	public functionToolRegistry: FunctionToolRegistry
 	public messageQueue: MessageQueue
 	public idempotencyStore: IdempotencyStore
+	public globalConfigRepository: GlobalConfigRepository
+	public globalConfigService: GlobalConfigService
 	constructor() {
 		// third party clients
 		const prisma = new PrismaClient()
@@ -88,6 +93,10 @@ export class DependenciesContainer {
 		this.employeeRepository = new PrismaEmployeeRepository(prisma)
 		this.faqRepository = new PrismaFaqRepository(prisma)
 		this.prismaTenantRepository = new PrismaTenantRepository(prisma)
+		this.globalConfigRepository = new PrismaGlobalConfigRepository(prisma)
+		this.globalConfigService = new GlobalConfigService(
+			this.globalConfigRepository
+		)
 		const aiChatRepository: AIChatSessionRepository =
 			new PrismaAIChatSessionRepository(prisma)
 		const tenantVectorRepository: TenantVectorStoreRepository =

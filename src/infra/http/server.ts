@@ -3,16 +3,17 @@ import { AutoCloseJob } from '@/infra/jobs/AutoCloseJob'
 import { FastifyListenOptions } from 'fastify'
 import { app } from './app'
 import { DependenciesContainer } from './dependencies-container'
-import { receiveMessage } from './routes/whatsapp/message/receive-message'
+import { router as platformConfigRouter } from './routes/admin/router'
 import { router as authRouter } from './routes/api/auth/router'
-import { router as tenantRouter } from './routes/api/tenant/router'
-import { router as employeeRouter } from './routes/api/employee/router'
-import { router as metricsRouter } from './routes/api/metrics/router'
-import { router as departmentRouter } from './routes/api/department/router'
 import { router as conversationRouter } from './routes/api/conversation/router'
+import { router as departmentRouter } from './routes/api/department/router'
+import { router as employeeRouter } from './routes/api/employee/router'
 import { router as faqRouter } from './routes/api/faq/router'
 import { router as filesRouter } from './routes/api/files/router'
-import { webhook } from './routes/whatsapp/message/verify-token'
+import { router as metricsRouter } from './routes/api/metrics/router'
+import { router as tenantRouter } from './routes/api/tenant/router'
+import { receiveMessage } from './routes/whatsapp/message/receive-message'
+import { webhook } from './routes/whatsapp/verify-token'
 
 const container = new DependenciesContainer()
 
@@ -29,6 +30,7 @@ app.register(receiveMessage, {
 	customerServiceManager: container.customerServiceManager,
 	prisma: container.prisma,
 	messageQueue: container.messageQueue,
+	globalConfig: container.globalConfigService,
 })
 
 // web API
@@ -55,6 +57,10 @@ app.register(filesRouter, {
 	fileService: container.fileService,
 	openaiRegistry: container.openaiRegistry,
 	prisma: container.prisma,
+})
+app.register(platformConfigRouter, {
+	globalConfigRepository: container.globalConfigRepository,
+	globalConfig: container.globalConfigService,
 })
 
 const config: FastifyListenOptions = {

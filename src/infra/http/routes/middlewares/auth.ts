@@ -30,5 +30,18 @@ export const auth = fastifyPlugin(async (app: FastifyInstance) => {
 				)
 			}
 		}
+
+		// Platform-level admin: role ADMIN and no tenant bound (tenantId null)
+		req.getPlatformAdmin = async () => {
+			try {
+				const userId = await req.getCurrentUserID()
+				const user = await req.authService.getPlatformAdmin(userId)
+				return user
+			} catch (e) {
+				throw AppError.forbidden(
+					'Acesso restrito ao administrador da plataforma.'
+				)
+			}
+		}
 	})
 })
