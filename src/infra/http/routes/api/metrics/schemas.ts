@@ -43,6 +43,11 @@ export const departmentResponse = {
 export const queueResponse = {
 	200: z.object({
 		totalQueued: z.number(),
-		byDepartment: z.array(z.object({ name: z.string(), count: z.number() })),
+		byDepartment: z.array(
+			z.object({
+				name: z.string(),
+				queue: z.array(z.object({ name: z.string(), phone: z.string() })),
+			})
+		),
 	}),
 }

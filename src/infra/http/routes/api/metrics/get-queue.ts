@@ -21,25 +21,53 @@ export async function getQueue(app: FastifyInstance, resources: Resources) {
 				const { prisma } = resources
 				const { tenant } = await req.getAdminMembership(req.params.cnpj)
 
-				const rows = await prisma.departmentQueueEntry.groupBy({
-					by: ['departmentId'],
+				// Fetch queue entries ordered by arrival
+				const entries = await prisma.departmentQueueEntry.findMany({
 					where: { tenantId: tenant.id },
-					_count: { _all: true },
+					select: { departmentId: true, customerPhone: true },
+					orderBy: { createdAt: 'asc' },
 				})
-				if (!rows.length)
+				if (entries.length === 0)
 					return reply.send({ totalQueued: 0, byDepartment: [] })
 
-				const deptIds = rows.map(r => r.departmentId)
-				const depts = await prisma.department.findMany({
-					where: { id: { in: deptIds } },
-					select: { id: true, name: true },
-				})
-				const nameById = new Map(depts.map(d => [d.id, d.name]))
-				const byDepartment = rows.map(r => ({
-					name: nameById.get(r.departmentId) ?? 'Sem departamento',
-					count: r._count._all,
-				}))
-				const totalQueued = byDepartment.reduce((acc, x) => acc + x.count, 0)
+				const deptIds = Array.from(new Set(entries.map(e => e.departmentId)))
+				const phones = Array.from(new Set(entries.map(e => e.customerPhone)))
+
+				const [depts, customers] = await Promise.all([
+					prisma.department.findMany({
+						where: { id: { in: deptIds } },
+						select: { id: true, name: true },
+					}),
+					prisma.customer.findMany({
+						where: { tenantId: tenant.id, phone: { in: phones } },
+						select: { phone: true, name: true },
+					}),
+				])
+
+				const deptNameById = new Map(depts.map(d => [d.id, d.name]))
+				const customerNameByPhone = new Map(
+					customers.map(c => [c.phone, c.name])
+				)
+
+				// Group entries by department
+				const queueByDept = new Map<
+					string,
+					{ name: string; queue: { name: string; phone: string }[] }
+				>()
+				for (const e of entries) {
+					const deptName =
+						deptNameById.get(e.departmentId) ?? 'Sem departamento'
+					if (!queueByDept.has(e.departmentId))
+						queueByDept.set(e.departmentId, { name: deptName, queue: [] })
+					const group = queueByDept.get(e.departmentId)!
+					group.queue.push({
+						name: customerNameByPhone.get(e.customerPhone) ?? '',
+						phone: e.customerPhone,
+					})
+				}
+
+				const byDepartment = Array.from(queueByDept.values())
+				const totalQueued = entries.length
 				return reply.send({ totalQueued, byDepartment })
 			},
 		})
