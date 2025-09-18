@@ -53,7 +53,7 @@ export async function receiveMessage(
 				'MAINTENANCE_APP',
 				'no'
 			)
-			const testNumbersStr = await globalConfig.getString('TEST_NUMBERS', '')
+			const testNumbersRaw = await globalConfig.get('TEST_NUMBERS', [])
 			const forwardUrl = await globalConfig.getString('LOCAL_FORWARD_URL', '')
 			const forwardSecret = await globalConfig.getString('FORWARD_SECRET', '')
 
@@ -69,10 +69,14 @@ export async function receiveMessage(
 
 			const isTesting = ynToBool(testingFlagRaw, false)
 			const isMaintenance = ynToBool(maintenanceFlagRaw, false)
-			const testPhones = testNumbersStr
-				.split(';')
-				.map(s => s.trim())
-				.filter(Boolean)
+			const testPhones = Array.isArray(testNumbersRaw)
+				? (testNumbersRaw as any[]).map(v => String(v).trim()).filter(Boolean)
+				: typeof testNumbersRaw === 'string'
+					? (testNumbersRaw as string)
+							.split(';')
+							.map(s => s.trim())
+							.filter(Boolean)
+					: []
 
 			// 1.a) Regra de manutenção: somente números de teste passam quando em manutenção
 			if (!testPhones.includes(rawFrom) && isMaintenance) {

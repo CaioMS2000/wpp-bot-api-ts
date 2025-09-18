@@ -27,15 +27,19 @@ export const router = fastifyPlugin(
 	) => {
 		app.register(listPlatformConfig, {
 			globalConfigRepository: resources.globalConfigRepository,
+			globalConfig: resources.globalConfig,
 		})
 		app.register(getPlatformConfig, {
 			globalConfigRepository: resources.globalConfigRepository,
+			globalConfig: resources.globalConfig,
 		})
 		app.register(upsertPlatformConfig, {
 			globalConfigRepository: resources.globalConfigRepository,
+			globalConfig: resources.globalConfig,
 		})
 		app.register(deletePlatformConfig, {
 			globalConfigRepository: resources.globalConfigRepository,
+			globalConfig: resources.globalConfig,
 		})
 		app.register(restartApp, { globalConfig: resources.globalConfig })
 	}

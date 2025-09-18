@@ -1,6 +1,5 @@
 import { env } from '@/config/env'
 import fastifyCookie from '@fastify/cookie'
-import fastifyCors from '@fastify/cors'
 import fastifyJwt from '@fastify/jwt'
 import fastifyMultipart from '@fastify/multipart'
 import swagger from '@fastify/swagger'
@@ -13,12 +12,10 @@ import {
 	validatorCompiler,
 } from 'fastify-type-provider-zod'
 import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes'
-import { parseOrigins } from '@/utils/cors'
 import { requestLogger } from './routes/middlewares/plugins/request-logger'
 import { errorHandler } from './routes/middlewares/error-handler'
 
 const app = fastify({ trustProxy: true })
-const allowedOrigins = parseOrigins(env.CORS_ORIGINS)
 
 // third-party resources
 app.setValidatorCompiler(validatorCompiler)
@@ -69,12 +66,6 @@ app.register(ScalarApiReference, {
 	routePrefix: '/docs',
 })
 
-app.register(fastifyCors, {
-	origin: allowedOrigins,
-	credentials: true,
-	methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-	allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-})
 app.register(fastifyCookie)
 app.register(fastifyJwt, {
 	secret: env.HTTP_TOKEN_SECRET,

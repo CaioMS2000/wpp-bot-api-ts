@@ -1,10 +1,14 @@
 import type { GlobalConfigRepository } from '@/repository/GlobalConfigRepository'
+import type { GlobalConfigService } from '@/infra/config/GlobalConfigService'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { auth } from '../middlewares/auth'
 import { listResponse } from './schemas'
 
-type Resources = { globalConfigRepository: GlobalConfigRepository }
+type Resources = {
+	globalConfigRepository: GlobalConfigRepository
+	globalConfig?: GlobalConfigService
+}
 
 export async function listPlatformConfig(
 	app: FastifyInstance,

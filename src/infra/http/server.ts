@@ -3,6 +3,7 @@ import { AutoCloseJob } from '@/infra/jobs/AutoCloseJob'
 import { FastifyListenOptions } from 'fastify'
 import { app } from './app'
 import { DependenciesContainer } from './dependencies-container'
+import fastifyCors from '@fastify/cors'
 import { router as platformConfigRouter } from './routes/admin/router'
 import { router as authRouter } from './routes/api/auth/router'
 import { router as conversationRouter } from './routes/api/conversation/router'
@@ -23,6 +24,47 @@ app.decorateRequest('authService', {
 	},
 })
 app.get('/health', async () => ({ status: 'ok' }))
+
+let allowedOriginsCache: string[] = []
+let lastLoggedOrigins = ''
+function normalizeOrigins(raw: unknown): string[] {
+	if (Array.isArray(raw)) return raw.map(v => String(v).trim()).filter(Boolean)
+	if (typeof raw === 'string')
+		return raw
+			.split(/[;,]/)
+			.map(s => s.trim())
+			.filter(Boolean)
+	return []
+}
+async function refreshCors() {
+	try {
+		const raw = await container.globalConfigService.get<unknown>('CORS_ORIGINS')
+		allowedOriginsCache = normalizeOrigins(raw)
+		const serialized = JSON.stringify(allowedOriginsCache)
+		if (serialized !== lastLoggedOrigins) {
+			lastLoggedOrigins = serialized
+			try {
+				console.log('[CORS] allowed origins updated:', allowedOriginsCache)
+			} catch {}
+		}
+	} catch {}
+}
+refreshCors().catch(() => {})
+setInterval(() => refreshCors().catch(() => {}), 30_000).unref()
+
+app.register(fastifyCors, {
+	origin(origin, cb) {
+		// Allow non-browser requests (no Origin)
+		if (!origin) return cb(null, true)
+		// Wildcard support
+		if (allowedOriginsCache.includes('*')) return cb(null, true)
+		const ok = allowedOriginsCache.includes(origin)
+		cb(null, ok)
+	},
+	credentials: true,
+	methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+	allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+})
 
 // main
 app.register(webhook)

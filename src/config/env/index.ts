@@ -18,7 +18,6 @@ export const envSchema = z.object({
 	PORT: z.coerce.number().catch(8000),
 	HTTP_TOKEN_SECRET: z.string(),
 	HTTP_COOKIE_NAME: z.string(),
-	CORS_ORIGINS: z.string(),
 	UPLOAD_FILES_LIMIT: z.number().default(10),
 	UPLOAD_FILE_SIZE_LIMIT: z.number().default(10), // in MB
 	AWS_ACCESS_KEY_ID: z.string(),

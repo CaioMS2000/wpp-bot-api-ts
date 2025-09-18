@@ -1,11 +1,15 @@
 import { AppError } from '@/infra/http/errors'
 import type { GlobalConfigRepository } from '@/repository/GlobalConfigRepository'
+import type { GlobalConfigService } from '@/infra/config/GlobalConfigService'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { auth } from '../middlewares/auth'
 import { getResponse, keyParam } from './schemas'
 
-type Resources = { globalConfigRepository: GlobalConfigRepository }
+type Resources = {
+	globalConfigRepository: GlobalConfigRepository
+	globalConfig?: GlobalConfigService
+}
 
 export async function getPlatformConfig(
 	app: FastifyInstance,

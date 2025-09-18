@@ -1,10 +1,14 @@
 import type { GlobalConfigRepository } from '@/repository/GlobalConfigRepository'
+import type { GlobalConfigService } from '@/infra/config/GlobalConfigService'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { auth } from '../middlewares/auth'
 import { keyParam, upsertBody, upsertResponse } from './schemas'
 
-type Resources = { globalConfigRepository: GlobalConfigRepository }
+type Resources = {
+	globalConfigRepository: GlobalConfigRepository
+	globalConfig?: GlobalConfigService
+}
 
 export async function upsertPlatformConfig(
 	app: FastifyInstance,
@@ -28,6 +32,14 @@ export async function upsertPlatformConfig(
 					(req.body as any).value,
 					user.name
 				)
+				// Atualiza cache local (propagação imediata nesta instância)
+				try {
+					await resources.globalConfig?.set(
+						req.params.key,
+						(req.body as any).value,
+						user.name
+					)
+				} catch {}
 				return reply.send({
 					...saved,
 					updatedAt: saved.updatedAt.toISOString(),
