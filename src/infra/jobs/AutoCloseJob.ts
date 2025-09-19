@@ -1,6 +1,7 @@
-import { PrismaClient } from '@prisma/client'
-import { ConversationFinalSummaryService } from '@/infra/openai/ConversationFinalSummaryService'
 import { env } from '@/config/env'
+import { logger } from '@/infra/logging/logger'
+import { ConversationFinalSummaryService } from '@/infra/openai/ConversationFinalSummaryService'
+import { PrismaClient } from '@prisma/client'
 import { withPgAdvisoryLock } from './pg-lock'
 
 export class AutoCloseJob {
@@ -77,9 +78,14 @@ export class AutoCloseJob {
 		}
 
 		if (slaClosed || idleClosed) {
-			console.log(
-				`[AutoCloseJob] Closed ${slaClosed} by SLA and ${idleClosed} by idle at ${now.toISOString()} (SLA=${sla}m, IDLE=${idle}h)`
-			)
+			logger.info('auto_close_summary', {
+				component: 'AutoCloseJob',
+				slaClosed,
+				idleClosed,
+				at: now.toISOString(),
+				slaMinutes: sla,
+				idleHours: idle,
+			})
 		}
 	}
 
@@ -91,7 +97,7 @@ export class AutoCloseJob {
 			return true as const
 		})
 		if (res === null) {
-			console.log('[AutoCloseJob] Skipping run (lock not acquired)')
+			logger.info('auto_close_skipped_lock', { component: 'AutoCloseJob' })
 		}
 	}
 }

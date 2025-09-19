@@ -30,6 +30,12 @@ type MessageEntry = {
 			snippet?: string
 		}>
 	}
+	tool?: {
+		name: string
+		args?: string
+		output?: string
+		error?: string
+	}
 }
 
 type LogFile = {
@@ -46,9 +52,18 @@ export class ConversationLogger {
 		private readonly baseDir = path.join(process.cwd(), 'logs', 'conversations')
 	) {}
 
+	private dateFolder(): string {
+		const d = new Date()
+		const yyyy = d.getUTCFullYear()
+		const mm = String(d.getUTCMonth() + 1).padStart(2, '0')
+		const dd = String(d.getUTCDate()).padStart(2, '0')
+		return `${yyyy}-${mm}-${dd}`
+	}
+
 	private async ensureDir(): Promise<void> {
 		if (!this.enabled) return
-		await fs.mkdir(this.baseDir, { recursive: true })
+		const dir = path.join(this.baseDir, this.dateFolder())
+		await fs.mkdir(dir, { recursive: true })
 	}
 
 	private sanitize(s: string): string {
@@ -57,7 +72,8 @@ export class ConversationLogger {
 
 	private filePath(tenantId: string, conversationId: string): string {
 		const name = `${this.sanitize(tenantId)}__${this.sanitize(conversationId)}.json`
-		return path.join(this.baseDir, name)
+		const dir = path.join(this.baseDir, this.dateFolder())
+		return path.join(dir, name)
 	}
 
 	private coerceLogFile(v: unknown): LogFile | null {
@@ -149,6 +165,19 @@ export class ConversationLogger {
 						})
 					}
 					entry.fileSearch = { results: hits }
+				}
+			}
+			const tool = m['tool']
+			if (isRecord(tool)) {
+				const name = tool['name']
+				const args = tool['args']
+				const output = tool['output']
+				const error = tool['error']
+				entry.tool = {
+					name: typeof name === 'string' ? name : 'unknown',
+					args: typeof args === 'string' ? args : undefined,
+					output: typeof output === 'string' ? output : undefined,
+					error: typeof error === 'string' ? error : undefined,
 				}
 			}
 			messages.push(entry)

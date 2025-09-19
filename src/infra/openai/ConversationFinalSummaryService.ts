@@ -1,3 +1,4 @@
+import { logger } from '@/infra/logging/logger'
 import type { PrismaClient } from '@prisma/client'
 import type OpenAI from 'openai'
 import { OpenAIClientRegistry } from './OpenAIClientRegistry'
@@ -61,10 +62,12 @@ export class ConversationFinalSummaryService {
 			summary = (r.output_text ?? '').trim()
 		} catch (err) {
 			try {
-				console.error(
-					'[ConversationFinalSummary] failed to create summary',
-					err
-				)
+				logger.error('conversation_final_summary_create_failed', {
+					component: 'ConversationFinalSummary',
+					tenantId,
+					conversationId,
+					err,
+				})
 			} catch {}
 			summary = ''
 		}
@@ -77,10 +80,12 @@ export class ConversationFinalSummaryService {
 			})
 		} catch (err) {
 			try {
-				console.error(
-					'[ConversationFinalSummary] failed to persist summary',
-					err
-				)
+				logger.error('conversation_final_summary_persist_failed', {
+					component: 'ConversationFinalSummary',
+					tenantId,
+					conversationId,
+					err,
+				})
 			} catch {}
 		}
 		return concise

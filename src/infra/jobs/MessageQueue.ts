@@ -26,7 +26,9 @@ export type IncomingMessageJob = {
 	receivedAt: string
 }
 
-export type ToolIntent = { type: 'ENTER_QUEUE'; department: string }
+export type ToolIntent =
+	| { type: 'ENTER_QUEUE'; department: string }
+	| { type: 'END_AI_CHAT'; reason?: string }
 
 export type ToolIntentJob = {
 	kind: 'intent'

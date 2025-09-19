@@ -1,3 +1,4 @@
+import { logger } from '@/infra/logging/logger'
 import type { CustomerRepository } from '@/repository/CustomerRepository'
 import type { DepartmentRepository } from '@/repository/DepartmentRepository'
 import type { TenantRepository } from '@/repository/TenantRepository'
@@ -82,6 +83,25 @@ export function registerBuiltinTools(
 
 	registry.add(handoffToDepartment).add(updateCustomerData)
 
+	// Tool: finalizar conversa com a IA
+	const finalizeAIChat = defineFunctionTool({
+		name: 'finalizar_conversa',
+		description:
+			'Finaliza a conversa atual com a IA quando o usuário indicar que deseja encerrar (mesmo sem usar os comandos explícitos). Use quando o cliente sinalizar claramente que quer terminar.',
+		// Em tools strict, todos os campos precisam estar em `required`. Use null para ausentes.
+		schema: z.object({
+			motivo: z
+				.string()
+				.min(1)
+				.nullable()
+				.describe('Motivo opcional de encerramento'),
+		}),
+		async handler(args, _ctx) {
+			const reason = typeof args.motivo === 'string' ? args.motivo : undefined
+			return { intent: 'END_AI_CHAT', reason }
+		},
+	})
+
 	// Tool: simular usina com base no CONSUMO mensal (kWh)
 	const simulateByConsumption = defineFunctionTool({
 		name: 'simular_usina_por_consumo',
@@ -100,7 +120,8 @@ export function registerBuiltinTools(
 			const grupo = args.grupo
 			const tipo = args.tipo
 
-			console.log('[SimulationTool] simular_usina_por_consumo called', {
+			logger.info('simulation_by_consumption', {
+				component: 'SimulationTool',
 				tenantId: context.tenantId,
 				userPhone: context.userPhone,
 				consumo_kwh_mes: consumo,
@@ -161,7 +182,8 @@ export function registerBuiltinTools(
 			const grupo = args.grupo
 			const tipo = args.tipo
 
-			console.log('[SimulationTool] simular_usina_por_area called', {
+			logger.info('simulation_by_area', {
+				component: 'SimulationTool',
 				tenantId: context.tenantId,
 				userPhone: context.userPhone,
 				area_m2: area,
@@ -199,5 +221,6 @@ export function registerBuiltinTools(
 		},
 	})
 
+	registry.add(finalizeAIChat)
 	registry.add(simulateByConsumption).add(simulateByArea)
 }

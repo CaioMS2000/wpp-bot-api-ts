@@ -1,5 +1,6 @@
-import pdfParse from 'pdf-parse'
+import { logger as _logger } from '@/infra/logging/logger'
 import { downloadMediaById } from '@/infra/whatsapp/client'
+import pdfParse from 'pdf-parse'
 import { OpenAIClientRegistry } from './OpenAIClientRegistry'
 
 export class EnergyBillIngestionService {
@@ -10,21 +11,18 @@ export class EnergyBillIngestionService {
 		mediaId: string,
 		filename?: string | null
 	): Promise<{ summary: string; complete: boolean; missingFields: string[] }> {
-		console.log('[EnergyBillIngestion] start', { tenantId, mediaId, filename })
+		const logger = _logger.child({
+			component: 'EnergyBillIngestion',
+			tenantId,
+			mediaId,
+		})
+		logger.info('start', { filename })
 		const { data } = await downloadMediaById(mediaId)
 		const buffer = Buffer.from(new Uint8Array(data))
-		console.log('[EnergyBillIngestion] media downloaded', {
-			tenantId,
-			mediaId,
-			bytes: buffer.byteLength,
-		})
+		logger.info('media_downloaded', { bytes: buffer.byteLength })
 		const parsed: any = await pdfParse(buffer)
 		const raw = String(parsed?.text || '').trim()
-		console.log('[EnergyBillIngestion] pdf parsed', {
-			tenantId,
-			mediaId,
-			textLen: raw.length,
-		})
+		logger.info('pdf_parsed', { textLen: raw.length })
 		if (!raw) {
 			return {
 				summary: 'PDF recebido, mas não consegui extrair texto legível.',
@@ -102,9 +100,7 @@ export class EnergyBillIngestionService {
 			return s
 		}
 
-		console.log('[EnergyBillIngestion] starting OpenAI analysis', {
-			tenantId,
-			mediaId,
+		logger.info('openai_analysis_start', {
 			pdfTextLength: raw.length,
 			systemPromptLength: system.length,
 			userPromptLength: user.length,
@@ -119,9 +115,7 @@ export class EnergyBillIngestionService {
 				],
 				max_output_tokens: 1800,
 			})
-			console.log('[EnergyBillIngestion] openai.responses.create ok', {
-				tenantId,
-				mediaId,
+			logger.info('openai_create_ok', {
 				responseId: res.id,
 				inputTokens: res.usage?.input_tokens,
 				outputTokens: res.usage?.output_tokens,
@@ -143,7 +137,7 @@ export class EnergyBillIngestionService {
 					const n = Number(v)
 					consumoKwhMes = Number.isFinite(n) ? n : null
 				}
-				console.log('[EnergyBillIngestion] extraction parsed', {
+				logger.info('extraction_parsed', {
 					complete,
 					missingCount: missing.length,
 					summaryLen: outSummary.length,
@@ -155,17 +149,14 @@ export class EnergyBillIngestionService {
 				outSummary = cleanSummary(rawOut || raw.slice(0, 4000))
 				complete = false
 				missing = ['resultado_em_formato_invalido']
-				console.warn(
-					'[EnergyBillIngestion] extraction not JSON, using fallback text',
-					{
-						rawOutputLength: rawOut?.length || 0,
-						summaryLen: outSummary.length,
-						parseError: String(parseError),
-					}
-				)
+				logger.warn('extraction_not_json', {
+					rawOutputLength: rawOut?.length || 0,
+					summaryLen: outSummary.length,
+					parseError: String(parseError),
+				})
 			}
 		} catch (err) {
-			console.error('[EnergyBillIngestion] openai extraction failed', err)
+			logger.error('openai_extraction_failed', { err })
 			outSummary = raw.slice(0, 4000)
 			complete = false
 			missing = ['falha_processamento']
@@ -173,9 +164,7 @@ export class EnergyBillIngestionService {
 		if (outSummary.length > 4000) outSummary = outSummary.slice(0, 4000)
 		const marker = `[[ENERGY_BILL]] ${JSON.stringify({ complete, consumo_kwh_mes: consumoKwhMes })}`
 		const composed = `${marker}\n${cleanSummary(outSummary)}`
-		console.log('[EnergyBillIngestion] done', {
-			tenantId,
-			mediaId,
+		logger.info('done', {
 			complete,
 			missingCount: missing.length,
 			composedLen: composed.length,

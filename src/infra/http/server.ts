@@ -15,8 +15,15 @@ import { router as metricsRouter } from './routes/api/metrics/router'
 import { router as tenantRouter } from './routes/api/tenant/router'
 import { receiveMessage } from './routes/whatsapp/message/receive-message'
 import { webhook } from './routes/whatsapp/verify-token'
+import { logger, configureLogger } from '@/infra/logging/logger'
+import { startMetricsReporter } from '../logging/metrics'
 
 const container = new DependenciesContainer()
+// Configure logger to use GlobalSettings for max file size (MB)
+configureLogger({
+	getMaxSizeMB: () =>
+		container.globalConfigService.getNumber('LOG_MAX_SIZE_MB', 5),
+})
 
 app.decorateRequest('authService', {
 	getter() {
@@ -44,7 +51,10 @@ async function refreshCors() {
 		if (serialized !== lastLoggedOrigins) {
 			lastLoggedOrigins = serialized
 			try {
-				console.log('[CORS] allowed origins updated:', allowedOriginsCache)
+				logger.info('cors_origins_updated', {
+					component: 'http',
+					allowedOrigins: allowedOriginsCache,
+				})
 			} catch {}
 		}
 	} catch {}
@@ -113,7 +123,9 @@ if (env.NODE_ENV === 'production') {
 	config.host = '0.0.0.0'
 }
 
-app.listen({ ...config }).then(x => console.log(`Server running on -> ${x}`))
+app
+	.listen({ ...config })
+	.then(x => logger.info('server_listening', { component: 'http', address: x }))
 
 // Start auto-close job (simple interval). In production, consider a dedicated worker.
 const autoCloser = new AutoCloseJob(
@@ -126,3 +138,6 @@ setInterval(
 	},
 	5 * 60 * 1000
 ).unref()
+
+// Start metrics reporter (flush counters periodically)
+startMetricsReporter()

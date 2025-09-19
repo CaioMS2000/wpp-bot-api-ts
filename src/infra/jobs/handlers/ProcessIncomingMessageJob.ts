@@ -1,7 +1,8 @@
+import type { IdempotencyStore } from '@/infra/jobs/IdempotencyStore'
 import type { IncomingMessageJob } from '@/infra/jobs/MessageQueue'
+import { logger as _logger } from '@/infra/logging/logger'
 import type { CustomerServiceContextManager } from '@/modules/main/CustomerServiceContextManager'
 import type { PrismaClient } from '@prisma/client'
-import type { IdempotencyStore } from '@/infra/jobs/IdempotencyStore'
 
 export class ProcessIncomingMessageJob {
 	constructor(
@@ -13,9 +14,20 @@ export class ProcessIncomingMessageJob {
 
 	async handle(job: IncomingMessageJob): Promise<void> {
 		const key = `${job.tenantId}:${job.messageId}`
+		const logger = _logger.child({
+			component: 'job.ProcessIncomingMessage',
+			tenantId: job.tenantId,
+			messageId: job.messageId,
+			from: job.from,
+			to: job.to,
+		})
+		logger.info('incoming_job_received', {
+			kind: job.kind,
+			contentKind: job.content.kind,
+		})
 		if (await this.idempotency.seen(key)) {
 			try {
-				console.log('[Job] duplicate ignored by idempotency', { key })
+				logger.info('idempotent_duplicate_ignored', { key })
 			} catch {}
 			return
 		}
@@ -43,6 +55,7 @@ export class ProcessIncomingMessageJob {
 			}
 			if (ctxResult.isNew) await context.sendMessage('👋 *Bem-vindo*')
 			await context.receive(message)
+			logger.info('incoming_job_processed', { result: 'textual_processed' })
 			return
 		}
 
@@ -57,9 +70,11 @@ export class ProcessIncomingMessageJob {
 				content.media.id,
 				content.media.filename ?? null
 			)
+			logger.info('incoming_job_processed', { result: 'pdf_ingested' })
 			return
 		}
 
 		await context.sendMessage('🖼️ *Não temos suporte para envio de mídias.*')
+		logger.info('incoming_job_processed', { result: 'unsupported_media' })
 	}
 }

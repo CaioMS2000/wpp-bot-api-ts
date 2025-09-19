@@ -1,3 +1,7 @@
+import { logger } from '@/infra/logging/logger'
+import { AIChatFinalSummaryService } from '@/infra/openai/AIChatFinalSummaryService'
+import { ConversationFinalSummaryService } from '@/infra/openai/ConversationFinalSummaryService'
+import { EnergyBillIngestionService } from '@/infra/openai/EnergyBillIngestionService'
 import type { AIResponsePort } from '@/modules/main/ports/AIResponsePort'
 import type { MsgListSection } from '@/modules/main/ports/MessagingPort'
 import type {
@@ -21,12 +25,6 @@ import { FaqCategoryState } from './states/FaqCategoryState'
 import { FaqMenuState } from './states/FaqMenuState'
 import { InConversationState } from './states/InConversationState'
 import { InitialState } from './states/InitialState'
-import { WaitingInQueueState } from './states/WaitingInQueueState'
-import { EnergyBillIngestionService } from '@/infra/openai/EnergyBillIngestionService'
-import { AIChatFinalSummaryService } from '@/infra/openai/AIChatFinalSummaryService'
-import { ConversationFinalSummaryService } from '@/infra/openai/ConversationFinalSummaryService'
-// duplicate import removed (already imported above)
-import { dayjs } from '@/config/date-and-time/dayjs'
 
 /**
  * Contexto principal do atendimento.
@@ -42,6 +40,7 @@ export class CustomerServiceContext {
 	private actorEmployeeDept: string | null = null
 	private lastPersistedStateName: string | null = null
 	public aiSessionId: string | null = null
+	private log = logger.child({ component: 'CustomerService' })
 
 	constructor(
 		private readonly tenantId: string,
@@ -60,6 +59,7 @@ export class CustomerServiceContext {
 		private readonly conversationFinalSummaryService: ConversationFinalSummaryService
 	) {
 		this.state = new InitialState(this)
+		this.log = this.log.child({ tenantId })
 	}
 
 	async ensureAIConfiguredOrNotify(): Promise<boolean> {
@@ -85,31 +85,23 @@ export class CustomerServiceContext {
 	async startAIChatSession(): Promise<void> {
 		if (!this.actorPhone) return
 		try {
-			console.log('[CustomerService] starting AI chat session', {
-				tenantId: this.tenantId,
-				phone: this.actorPhone,
-			})
+			this.log.info('ai_chat_starting', { phone: this.actorPhone })
 			const aiSessionId = await this.aiChatRepository.start(
 				this.tenantId,
 				this.actorPhone
 			)
 			this.aiSessionId = aiSessionId
-			console.log('[CustomerService] AI chat session started', {
-				aiSessionId,
-			})
+			this.log.info('ai_chat_started', { aiSessionId })
+			this.log.info('ai_chat_started', { aiSessionId })
 		} catch (err) {
-			console.error('[CustomerService] failed to start AI chat session', err)
+			this.log.error('ai_chat_start_error', { phone: this.actorPhone, err })
 		}
 	}
 
 	async endAIChatSession(reason: AIChatEndReason = 'COMPLETED'): Promise<void> {
 		if (!this.actorPhone) return
 		try {
-			console.log('[CustomerService] ending AI chat session', {
-				tenantId: this.tenantId,
-				phone: this.actorPhone,
-				reason,
-			})
+			this.log.info('ai_chat_ending', { phone: this.actorPhone, reason })
 			await this.aiChatRepository.end(this.tenantId, this.actorPhone, reason)
 
 			// Gera e persiste resumo final da sessão de IA recém-encerrada (best-effort)
@@ -140,14 +132,12 @@ export class CustomerServiceContext {
 					)
 				}
 			} catch (err) {
-				console.error(
-					'[CustomerService] failed to purge lastResponseId for closed session',
-					err
-				)
+				this.log.error('ai_chat_purge_last_response_failed', { err })
 			}
 			this.aiSessionId = null
+			this.log.info('ai_chat_ended', { phone: this.actorPhone, reason })
 		} catch (err) {
-			console.error('[CustomerService] failed to end AI chat session', err)
+			this.log.error('ai_chat_end_error', { phone: this.actorPhone, err })
 		}
 	}
 
@@ -157,8 +147,7 @@ export class CustomerServiceContext {
 	): Promise<void> {
 		if (!this.actorPhone) return
 		try {
-			console.log('[CustomerService] appending AI chat message', {
-				tenantId: this.tenantId,
+			this.log.info('ai_chat_append_message', {
 				phone: this.actorPhone,
 				sender,
 			})
@@ -169,19 +158,23 @@ export class CustomerServiceContext {
 				text
 			)
 		} catch (err) {
-			console.error('[CustomerService] failed to append AI chat message', err)
+			this.log.error('ai_chat_append_message_failed', { err })
 		}
 	}
 
 	async receive(message: string): Promise<void> {
-		console.log('[CustomerService] incoming message', {
+		this.log.info('incoming_message', {
+			from: this.actorPhone,
+			state: this.getCurrentStateName(),
+		})
+		this.log.info('incoming_message_console', {
 			from: this.actorPhone,
 			state: this.getCurrentStateName(),
 		})
 		try {
 			await this.state.handle(message)
 		} catch (err) {
-			console.error('[CustomerService] erro ao processar mensagem', err)
+			this.log.error('process_message_error', { err })
 			await this.sendMessage(
 				'Estamos com problemas no nosso atendimento, tente novamente mais tarde.'
 			)
@@ -199,18 +192,14 @@ export class CustomerServiceContext {
 		filename?: string | null
 	): Promise<void> {
 		try {
-			console.log('[CustomerService] ingestEnergyBillPdf start', {
-				tenantId: this.tenantId,
-				mediaId,
-				filename,
-			})
+			this.log.info('ingest_energy_pdf_start', { mediaId, filename })
 			const { summary, complete, missingFields } =
 				await this.energyBillIngestionService.processEnergyBillPdf(
 					this.tenantId,
 					mediaId,
 					filename ?? null
 				)
-			console.log('[CustomerService] ingestEnergyBillPdf result', {
+			this.log.info('ingest_energy_pdf_result', {
 				complete,
 				missingCount: missingFields?.length ?? 0,
 				summaryLen: summary?.length ?? 0,
@@ -225,7 +214,7 @@ export class CustomerServiceContext {
 				)
 			}
 		} catch (err) {
-			console.error('[CustomerService] ingestEnergyBillPdf failed', err)
+			this.log.error('ingest_energy_pdf_failed', { err })
 			await this.sendMessage(
 				'Tive um problema ao processar seu PDF. Tente novamente.'
 			)
@@ -234,7 +223,11 @@ export class CustomerServiceContext {
 
 	transitionTo(state: State): void {
 		const newStateName = state.getName()
-		console.log('[CustomerService] transitioning state', {
+		this.log.info('state_transition', {
+			from: this.getCurrentStateName(),
+			to: newStateName,
+		})
+		this.log.info('state_transition_console', {
 			from: this.getCurrentStateName(),
 			to: newStateName,
 		})
@@ -250,7 +243,8 @@ export class CustomerServiceContext {
 	/** Define/atualiza o ator atual (nome/telefone) e avalia se é funcionário */
 	async setActor(name: string, phone: string): Promise<void> {
 		this.actorPhone = phone
-		console.log('[CustomerService] setting actor', { name, phone })
+		this.log = this.log.child({ phone })
+		this.log.info('setting_actor', { name, phone })
 		const emp = await this.employeeRepository.findByPhone(this.tenantId, phone)
 		this.actorIsEmployee = !!emp
 		this.actorEmployeeDept = emp?.departmentName ?? null
@@ -259,10 +253,14 @@ export class CustomerServiceContext {
 			try {
 				await this.customerRepository.upsert(this.tenantId, phone, name)
 			} catch (err) {
-				console.error('[CustomerService] failed to upsert customer', err)
+				this.log.error('upsert_customer_failed', { err })
 			}
 		}
-		console.log('[CustomerService] actor set', {
+		this.log.info('actor_set_console', {
+			isEmployee: this.actorIsEmployee,
+			department: this.actorEmployeeDept,
+		})
+		this.log.info('actor_set', {
 			isEmployee: this.actorIsEmployee,
 			department: this.actorEmployeeDept,
 		})
@@ -318,8 +316,7 @@ export class CustomerServiceContext {
 		lastResponseId?: string | null
 	) {
 		const role = this.isEmployee() ? 'EMPLOYEE' : 'CLIENT'
-		console.log('[CustomerService] making AI response', {
-			tenantId: this.tenantId,
+		this.log.info('making_ai_response', {
 			userPhone: this.actorPhone,
 			conversationId,
 			role,
@@ -332,9 +329,7 @@ export class CustomerServiceContext {
 			conversationId,
 			lastResponseId: lastResponseId ?? undefined,
 		})
-		console.log('[CustomerService] AI response generated', {
-			responseId: res.responseId,
-		})
+		this.log.info('ai_response_generated', { responseId: res.responseId })
 		return res
 	}
 

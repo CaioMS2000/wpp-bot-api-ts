@@ -1,5 +1,6 @@
-import OpenAI from 'openai'
+import { logger } from '@/infra/logging/logger'
 import type { TenantVectorStoreRepository } from '@/repository/TenantVectorStoreRepository'
+import OpenAI from 'openai'
 
 export class VectorStoreManager {
 	constructor(
@@ -46,7 +47,11 @@ export class VectorStoreManager {
 			return true
 		} catch (err: any) {
 			// treat 404 as invalid; other errors let caller decide
-			console.error(`Failed to validate vector store for id ${id}\n`, err)
+			logger.error('vector_store_validate_failed', {
+				component: 'VectorStoreManager',
+				id,
+				err,
+			})
 			if (err?.status === 404) return false
 			return true
 		}

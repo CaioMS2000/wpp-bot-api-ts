@@ -1,5 +1,6 @@
+import { logger } from '@/infra/logging/logger'
 import OpenAI from 'openai'
-import { z, ZodTypeAny } from 'zod'
+import { ZodTypeAny, z } from 'zod'
 
 export type ToolContext = {
 	tenantId: string
@@ -132,7 +133,8 @@ export class FunctionToolRegistry {
 		resolved: Map<string, FunctionToolSpec<any, any, any>>
 	}> {
 		try {
-			console.log('[Tools][buildForContext] start', {
+			logger.info('tools_build_start', {
+				component: 'FunctionToolRegistry',
 				role: ctx.role,
 				staticCount: this.tools.length,
 				factoryCount: this.factories.length,
@@ -155,7 +157,10 @@ export class FunctionToolRegistry {
 				}
 			} catch (err) {
 				try {
-					console.warn('[FunctionToolRegistry] factory resolution failed', err)
+					logger.warn('tools_factory_resolution_failed', {
+						component: 'FunctionToolRegistry',
+						err,
+					})
 				} catch {}
 			}
 		}
@@ -167,7 +172,8 @@ export class FunctionToolRegistry {
 			strict: true,
 		}))
 		try {
-			console.log('[Tools][buildForContext] done', {
+			logger.info('tools_build_done', {
+				component: 'FunctionToolRegistry',
 				resolvedCount: allSpecs.length,
 			})
 		} catch {}
@@ -222,7 +228,10 @@ export class FunctionToolRegistry {
 		resolved?: Map<string, FunctionToolSpec<any, any, any>>
 	): Promise<Array<{ id?: string; output: unknown }>> {
 		try {
-			console.log('[Tools][dispatchAll] start', { count: calls.length })
+			logger.info('tools_dispatch_start', {
+				component: 'FunctionToolRegistry',
+				count: calls.length,
+			})
 		} catch {}
 		const outputs: Array<{ id?: string; output: unknown }> = []
 		for (const call of calls) {
@@ -242,7 +251,8 @@ export class FunctionToolRegistry {
 			}
 			if (!tool) {
 				try {
-					console.warn('[Tools][dispatchAll] tool not found', {
+					logger.warn('tools_dispatch_tool_not_found', {
+						component: 'FunctionToolRegistry',
 						name: call.name,
 					})
 				} catch {}
@@ -255,7 +265,10 @@ export class FunctionToolRegistry {
 					output: { error: 'invalid_args', details: parsed.error.flatten() },
 				})
 				try {
-					console.warn('[Tools][dispatchAll] invalid_args', { name: tool.name })
+					logger.warn('tools_dispatch_invalid_args', {
+						component: 'FunctionToolRegistry',
+						name: tool.name,
+					})
 				} catch {}
 				continue
 			}
@@ -268,7 +281,10 @@ export class FunctionToolRegistry {
 				)(parsed.data, ctx)
 				outputs.push({ id: call.id, output: res })
 				try {
-					console.log('[Tools][dispatchAll] ok', { name: tool.name })
+					logger.info('tools_dispatch_ok', {
+						component: 'FunctionToolRegistry',
+						name: tool.name,
+					})
 				} catch {}
 			} catch (err) {
 				outputs.push({
@@ -279,7 +295,8 @@ export class FunctionToolRegistry {
 					},
 				})
 				try {
-					console.error('[Tools][dispatchAll] tool_failed', {
+					logger.error('tools_dispatch_failed', {
+						component: 'FunctionToolRegistry',
 						name: tool.name,
 						err,
 					})
@@ -287,7 +304,10 @@ export class FunctionToolRegistry {
 			}
 		}
 		try {
-			console.log('[Tools][dispatchAll] done', { outputsCount: outputs.length })
+			logger.info('tools_dispatch_done', {
+				component: 'FunctionToolRegistry',
+				outputsCount: outputs.length,
+			})
 		} catch {}
 		return outputs
 	}

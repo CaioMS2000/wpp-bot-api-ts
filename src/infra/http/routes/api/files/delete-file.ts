@@ -1,10 +1,11 @@
-import type { FastifyInstance } from 'fastify'
+import { logger } from '@/infra/logging/logger'
+import { OpenAIClientRegistry } from '@/infra/openai/OpenAIClientRegistry'
+import { FileService } from '@/infra/storage/file-service'
 import type { PrismaClient } from '@prisma/client'
+import type { FastifyInstance } from 'fastify'
 import { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
 import { auth } from '../../middlewares/auth'
-import { FileService } from '@/infra/storage/file-service'
-import { OpenAIClientRegistry } from '@/infra/openai/OpenAIClientRegistry'
 
 const paramsSchema = z.object({
 	cnpj: z.string().min(1),
@@ -79,7 +80,10 @@ export async function deleteFile(app: FastifyInstance, resources: Resources) {
 							vector_store_id: storeId,
 						})
 					} catch (err) {
-						console.warn('[Files] vectorStores.files.delete failed', { err })
+						logger.warn('files_vectorstore_delete_failed', {
+							component: 'files',
+							err,
+						})
 					}
 					try {
 						const openai = await resources.openaiRegistry.getClientForTenant(
@@ -87,7 +91,10 @@ export async function deleteFile(app: FastifyInstance, resources: Resources) {
 						)
 						await openai.files.delete(openaiFileId)
 					} catch (err) {
-						console.warn('[Files] openai.files.delete failed', { err })
+						logger.warn('files_openai_files_delete_failed', {
+							component: 'files',
+							err,
+						})
 					}
 				}
 
@@ -96,7 +103,10 @@ export async function deleteFile(app: FastifyInstance, resources: Resources) {
 					if (row.key)
 						await resources.fileService.removeByKey(row.key, tenant.id)
 				} catch (err) {
-					console.warn('[Files] fileService.removeByKey failed', { err })
+					logger.warn('files_storage_remove_failed', {
+						component: 'files',
+						err,
+					})
 				}
 
 				// Remove DB row

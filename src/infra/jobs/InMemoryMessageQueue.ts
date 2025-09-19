@@ -1,3 +1,4 @@
+import { logger } from '@/infra/logging/logger'
 import type { MessageQueue, QueueJob } from './MessageQueue'
 
 export class InMemoryMessageQueue implements MessageQueue {
@@ -32,7 +33,6 @@ export class InMemoryMessageQueue implements MessageQueue {
 	}
 
 	private async spawnWorker(handler: (job: QueueJob) => Promise<void>) {
-		// eslint-disable-next-line no-constant-condition
 		while (true) {
 			const job = await this.next()
 			try {
@@ -40,7 +40,10 @@ export class InMemoryMessageQueue implements MessageQueue {
 			} catch (err) {
 				try {
 					// best-effort: log error; no retry strategy here (simple in-memory)
-					console.error('[MessageQueue] job failed', err)
+					logger.error('queue_job_failed', {
+						component: 'InMemoryMessageQueue',
+						err,
+					})
 				} catch {}
 			}
 		}

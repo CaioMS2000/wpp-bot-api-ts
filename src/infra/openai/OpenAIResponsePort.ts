@@ -1,3 +1,6 @@
+import type { MessageQueue, ToolIntent } from '@/infra/jobs/MessageQueue'
+import { logger as _logger } from '@/infra/logging/logger'
+import { inc } from '@/infra/logging/metrics'
 import {
 	AIMakeResponseInput,
 	AIMakeResponseResult,
@@ -11,7 +14,6 @@ import type { StateStore } from '@/repository/StateStore'
 import { TenantRepository } from '@/repository/TenantRepository'
 import OpenAI from 'openai'
 import { ConversationLogger } from './ConversationLogger'
-import type { MessageQueue, ToolIntent } from '@/infra/jobs/MessageQueue'
 import { OpenAIClientRegistry } from './OpenAIClientRegistry'
 import { tokenBudgetManager } from './token-budget'
 import { FunctionToolRegistry } from './tools/FunctionTools'
@@ -39,6 +41,14 @@ export class OpenAIResponsePort implements AIResponsePort {
 	): Promise<AIMakeResponseResult> {
 		const { tenantId, userPhone, text, lastResponseId, role, conversationId } =
 			input
+
+		const logger = _logger.child({
+			component: 'OpenAIResponsePort',
+			tenantId,
+			userPhone,
+			conversationId,
+			role,
+		})
 
 		// Resolve OpenAI client and tenant settings
 		const [openai, settings, snapshot] = await Promise.all([
@@ -132,10 +142,10 @@ export class OpenAIResponsePort implements AIResponsePort {
 		const coerceSnapshotData = (v: unknown): SnapshotData => {
 			if (!isRecord(v)) return {}
 			const out: SnapshotData = {}
-			const l = v['lastResponseByConversation']
-			if (isRecord(l)) {
+			const logger = v['lastResponseByConversation']
+			if (isRecord(logger)) {
 				const acc: Record<string, string> = {}
-				for (const [k, val] of Object.entries(l)) {
+				for (const [k, val] of Object.entries(logger)) {
 					if (typeof k === 'string' && typeof val === 'string') acc[k] = val
 				}
 				out.lastResponseByConversation = acc
@@ -235,9 +245,7 @@ export class OpenAIResponsePort implements AIResponsePort {
 				conversationId,
 				role,
 			})
-		console.log('[AI][Tools] buildForContext', {
-			fnToolCount: fnTools.length,
-		})
+		logger.info('tools_build_for_context', { fnToolCount: fnTools.length })
 		const tools: OpenAI.Responses.Tool[] = [...fnTools]
 
 		if (lastResponseId) metadata.lastResponseId = lastResponseId
@@ -246,7 +254,7 @@ export class OpenAIResponsePort implements AIResponsePort {
 				type: 'file_search',
 				vector_store_ids: [vectorStoreId],
 			})
-			console.log('[AI][Tools] file_search attached', { vectorStoreId })
+			logger.info('file_search_attached', { vectorStoreId })
 		}
 
 		// Persist log: user message for this conversation
@@ -261,7 +269,7 @@ export class OpenAIResponsePort implements AIResponsePort {
 			{ at: new Date().toISOString(), kind: 'user', text: user }
 		)
 
-		console.log('[AI][Request] responses.create', {
+		logger.info('openai_responses_create', {
 			model: 'gpt-4o-mini',
 			inputLen: user.length,
 			toolsCount: tools.length,
@@ -269,18 +277,29 @@ export class OpenAIResponsePort implements AIResponsePort {
 			include: 'file_search_call.results',
 			outputLimit,
 		})
-		const res = await openai.responses.create({
-			model: 'gpt-4o-mini',
-			instructions: system,
-			input: [{ role: 'user', content: user }],
-			tools,
-			tool_choice: 'auto',
-			// tool_choice: 'required',
-			max_output_tokens: outputLimit,
-			metadata,
-			previous_response_id: lastResponseId,
-			include: ['file_search_call.results'],
-		})
+		inc('openai_request_total')
+		let res: any
+		try {
+			res = await openai.responses.create({
+				model: 'gpt-4o-mini',
+				instructions: system,
+				input: [{ role: 'user', content: user }],
+				tools,
+				tool_choice: 'auto',
+				// tool_choice: 'required',
+				max_output_tokens: outputLimit,
+				metadata,
+				previous_response_id: lastResponseId,
+				include: ['file_search_call.results'],
+			})
+			inc('openai_success_total')
+		} catch (err: any) {
+			inc('openai_error_total')
+			if (err?.status === 429 || err?.code === 'insufficient_quota')
+				inc('openai_429_total')
+			logger.error('openai_create_error', { err })
+			throw err
+		}
 		// (limpo) não imprimir resposta completa no console
 		const reply = String(res.output_text ?? '').trim()
 
@@ -401,7 +420,7 @@ export class OpenAIResponsePort implements AIResponsePort {
 			return calls
 		}
 		const funcCalls = extractFunctionCalls(res)
-		console.log('[AI][Tools] function calls', { count: funcCalls.length })
+		logger.info('function_calls_detected', { count: funcCalls.length })
 		let finalReply = reply
 		let responseIdForThread: string | undefined = res.id
 		let usedFunctionTools: string[] = []
@@ -434,6 +453,42 @@ export class OpenAIResponsePort implements AIResponsePort {
 				resolvedSpecs
 			)
 			// (limpo) fim do dispatch sem log detalhado
+			// Registrar eventos de tools no ConversationLogger (sanitizados)
+			const trunc = (s: string, n: number) => (s.length > n ? s.slice(0, n) : s)
+			for (const pc of parsedCalls) {
+				const out = outputs.find(o => o.id && pc.id && o.id === pc.id)?.output
+				let argStr = ''
+				try {
+					argStr =
+						typeof pc.args === 'string' ? pc.args : JSON.stringify(pc.args)
+				} catch {
+					argStr = String(pc.args)
+				}
+				let outStr = ''
+				let errStr: string | undefined
+				try {
+					outStr = typeof out === 'string' ? out : JSON.stringify(out)
+				} catch {
+					outStr = String(out)
+				}
+				if (out && typeof out === 'object' && (out as any).error) {
+					errStr = String((out as any).error)
+				}
+				await this.conversationLogger.append(
+					{ tenantId, conversationId, userPhone, role },
+					{
+						at: new Date().toISOString(),
+						kind: 'event',
+						text: 'tool',
+						tool: {
+							name: pc.name,
+							args: trunc(argStr, 2000),
+							output: outStr ? trunc(outStr, 1000) : undefined,
+							error: errStr,
+						},
+					}
+				)
+			}
 			usedFunctionTools = parsedCalls.map(pc => pc.name)
 			const toolOutputs = outputs
 				.map(o => {
@@ -459,24 +514,34 @@ export class OpenAIResponsePort implements AIResponsePort {
 			}>
 
 			if (toolOutputs.length > 0) {
-				console.log('[AI][FollowUp] submit function_call_output', {
+				logger.info('openai_followup_submit', {
 					count: toolOutputs.length,
 					items: toolOutputs.map(o => ({
 						call_id: o.call_id,
 						size: o.output.length,
 					})),
 				})
-				const res2 = await openai.responses.create({
-					model: 'gpt-4o-mini',
-					instructions: system,
-					input: toolOutputs,
-					tools,
-					max_output_tokens: outputLimit,
-					metadata,
-					previous_response_id: res.id,
-					include: ['file_search_call.results'],
-				})
-				console.log('[AI][FollowUp] responses.create ok', { id: res2.id })
+				let res2: any
+				try {
+					res2 = await openai.responses.create({
+						model: 'gpt-4o-mini',
+						instructions: system,
+						input: toolOutputs,
+						tools,
+						max_output_tokens: outputLimit,
+						metadata,
+						previous_response_id: res.id,
+						include: ['file_search_call.results'],
+					})
+					inc('openai_success_total')
+				} catch (err: any) {
+					inc('openai_error_total')
+					if (err?.status === 429 || err?.code === 'insufficient_quota')
+						inc('openai_429_total')
+					logger.error('openai_followup_error', { err })
+					throw err
+				}
+				logger.info('openai_followup_ok', { id: res2.id })
 				finalReply = String(res2.output_text ?? '').trim()
 				responseIdForThread = res2.id
 				const usage2 = extractUsage(res2)
@@ -499,6 +564,9 @@ export class OpenAIResponsePort implements AIResponsePort {
 									department: out.department,
 								})
 							}
+							if (out.intent === 'END_AI_CHAT') {
+								intents.push({ type: 'END_AI_CHAT', reason: out.reason })
+							}
 						}
 					}
 					if (intents.length) {
@@ -509,10 +577,10 @@ export class OpenAIResponsePort implements AIResponsePort {
 							conversationId,
 							intents,
 						})
-						console.log('[AI][Intent] queued', { intentsCount: intents.length })
+						logger.info('intent_queued', { intentsCount: intents.length })
 					}
 				} catch (err) {
-					console.error('[AI][Intent] enqueue failed', err)
+					logger.error('intent_enqueue_failed', { err })
 				}
 			}
 		}

@@ -1,6 +1,7 @@
 import { env } from '@/config/env'
-import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify'
 import { AppError, toErrorEnvelope } from '@/infra/http/errors'
+import { logger } from '@/infra/logging/logger'
+import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify'
 import { ZodError } from 'zod'
 
 export function errorHandler(
@@ -8,7 +9,12 @@ export function errorHandler(
 	request: FastifyRequest,
 	reply: FastifyReply
 ): void {
-	console.error(`Error in request ${request.method} ${request.url}:\n`, error)
+	logger.error('http_error', {
+		component: 'http',
+		method: request.method,
+		url: request.url,
+		err: error,
+	})
 
 	// AppError: envelope padronizado
 	if (error instanceof AppError) {

@@ -1,3 +1,4 @@
+import { logger } from '@/infra/logging/logger'
 import { StateSnapshot, StateStore } from '@/repository/StateStore'
 import { PrismaClient } from '@prisma/client'
 
@@ -52,7 +53,8 @@ export class PrismaStateStore implements StateStore {
 			select: { state: true, data: true, version: true, aiSessionId: true },
 		})
 		try {
-			console.log('[StateStore] saved', {
+			logger.debug('state_saved', {
+				component: 'StateStore',
 				phone,
 				state: updated.state,
 				version: updated.version,

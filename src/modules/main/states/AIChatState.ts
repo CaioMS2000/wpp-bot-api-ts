@@ -1,3 +1,4 @@
+import { logger as _logger } from '@/infra/logging/logger'
 import { CustomerServiceContext } from '../CustomerServiceContext'
 import { State } from '../State'
 import { InitialState } from './InitialState'
@@ -9,7 +10,13 @@ export class AIChatState implements State {
 	) {}
 
 	async handle(message: string): Promise<void> {
-		console.log('[AIChatState] handling message', { message })
+		const logger = _logger.child({
+			component: 'AIChatState',
+			tenantId: this.context.getSessionId(),
+			phone: this.context.getActorPhone() ?? undefined,
+			aiSessionId: this.context.aiSessionId ?? undefined,
+		})
+		logger.info('ai_state_handle', { size: message.length })
 		const trimmed = message.trim().toLowerCase()
 		if (
 			trimmed === 'voltar' ||
@@ -23,9 +30,8 @@ export class AIChatState implements State {
 		}
 
 		if (!this.context.aiSessionId) {
-			console.error(
-				"AIChatState should have a valid 'this.context.aiSessionId'"
-			)
+			// missing session id already logged via logger.error below
+			logger.error('ai_state_missing_session', {})
 			return
 		}
 
@@ -39,7 +45,7 @@ export class AIChatState implements State {
 			summarized?: boolean
 		}
 		try {
-			console.log('[AIChatState] requesting AI response', {
+			logger.info('ai_state_requesting_response', {
 				lastResponseId: this.lastResponseId,
 			})
 			res = await this.context.makeAIResponse(
@@ -48,7 +54,7 @@ export class AIChatState implements State {
 				this.lastResponseId
 			)
 		} catch (err: any) {
-			console.error('[AIChatState] makeAIResponse failed', err)
+			logger.error('ai_state_make_response_error', { err })
 			const friendly =
 				err?.code === 'insufficient_quota' || err?.status === 429
 					? '🚫 *IA indisponível no momento* (limite de uso atingido). Tente novamente em alguns minutos.'
@@ -67,7 +73,7 @@ export class AIChatState implements State {
 		const replyText = res.text || '...'
 		// Persist AI reply in AI session
 		await this.context.appendAIChatMessage('AI', replyText)
-		console.log('[AIChatState] sending AI reply', { replyText })
+		logger.info('ai_state_sending_reply', { size: replyText.length })
 		await this.context.sendMessage(replyText)
 	}
 

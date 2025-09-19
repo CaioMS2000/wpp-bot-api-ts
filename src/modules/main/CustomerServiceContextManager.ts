@@ -1,3 +1,7 @@
+import { logger as _logger } from '@/infra/logging/logger'
+import { AIChatFinalSummaryService } from '@/infra/openai/AIChatFinalSummaryService'
+import { ConversationFinalSummaryService } from '@/infra/openai/ConversationFinalSummaryService'
+import { EnergyBillIngestionService } from '@/infra/openai/EnergyBillIngestionService'
 import type { AIResponsePort } from '@/modules/main/ports/AIResponsePort'
 import type { MessagingPort } from '@/modules/main/ports/MessagingPort'
 import type { AIChatSessionRepository } from '@/repository/AIChatSessionRepository'
@@ -7,16 +11,14 @@ import type { DepartmentRepository } from '@/repository/DepartmentRepository'
 import type { EmployeeRepository } from '@/repository/EmployeeRepository'
 import type { FaqRepository } from '@/repository/FaqRepository'
 import type { StateStore } from '@/repository/StateStore'
-import { CustomerServiceContext } from './CustomerServiceContext'
-import { EnergyBillIngestionService } from '@/infra/openai/EnergyBillIngestionService'
 import { TenantRepository } from '@/repository/TenantRepository'
-import { AIChatFinalSummaryService } from '@/infra/openai/AIChatFinalSummaryService'
-import { ConversationFinalSummaryService } from '@/infra/openai/ConversationFinalSummaryService'
+import { CustomerServiceContext } from './CustomerServiceContext'
 
 type Entry = { context: CustomerServiceContext; lastUsed: number }
 
 export class CustomerServiceContextManager {
 	private readonly contexts = new Map<string, Entry>()
+	private readonly log = _logger.child({ component: 'ContextManager' })
 
 	constructor(
 		private readonly faqRepository: FaqRepository,
@@ -46,10 +48,7 @@ export class CustomerServiceContextManager {
 		const existing = this.contexts.get(key)
 		if (existing) {
 			existing.lastUsed = now
-			console.log('[ContextManager] reusing existing context', {
-				tenantId,
-				phone,
-			})
+			this.log.info('context_reuse', { tenantId, phone })
 			return { context: existing.context, isNew: false }
 		}
 
@@ -87,13 +86,14 @@ export class CustomerServiceContextManager {
 							| undefined
 					)
 				} catch (err: any) {
-					console.error(
-						"Error ocurred on 'CustomerServiceContextManager.getContext':"
-					)
-					console.dir(err, { depth: null, colors: true })
+					this.log.error('context_restore_state_error', {
+						tenantId,
+						phone,
+						err,
+					})
 					throw err
 				}
-				console.log('[ContextManager] restored context from snapshot', {
+				this.log.info('context_restored', {
 					tenantId,
 					phone,
 					state: snapshot.state,
@@ -102,11 +102,11 @@ export class CustomerServiceContextManager {
 			}
 		} catch (err: any) {
 			// ignore load errors; treat as new
-			console.error('[ContextManager] failed to load context snapshot', err)
+			this.log.warn('context_snapshot_load_failed', { tenantId, phone, err })
 		}
 		this.contexts.set(key, { context: ctx, lastUsed: now })
 		if (isNew) {
-			console.log('[ContextManager] created new context', { tenantId, phone })
+			this.log.info('context_created', { tenantId, phone })
 		}
 		return { context: ctx, isNew }
 	}
@@ -119,7 +119,7 @@ export class CustomerServiceContextManager {
 		try {
 			await this.messaging.sendText(to, from, message)
 		} catch (err) {
-			console.error('[ContextManager] failed to send direct message', err)
+			this.log.error('send_direct_message_failed', { to, from, err })
 		}
 	}
 

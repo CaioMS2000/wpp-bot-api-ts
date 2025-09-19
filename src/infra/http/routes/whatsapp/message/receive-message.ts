@@ -1,14 +1,14 @@
-import type { CustomerServiceContext } from '@/modules/main/CustomerServiceContext'
 import { CustomerServiceContextManager } from '@/modules/main/CustomerServiceContextManager'
 import { parseWhatsAppMessage } from '@/utils/parse-whatsapp-message'
+import type { PrismaClient } from '@prisma/client'
 import type { FastifyInstance } from 'fastify'
 import type { ZodTypeProvider } from 'fastify-type-provider-zod'
-// processamento de PDF é feito na camada de IA
-import type { PrismaClient } from '@prisma/client'
 
-import type { MessageQueue } from '@/infra/jobs/MessageQueue'
 import { env } from '@/config/env'
 import type { GlobalConfigService } from '@/infra/config/GlobalConfigService'
+import type { MessageQueue } from '@/infra/jobs/MessageQueue'
+import { logger as _logger } from '@/infra/logging/logger'
+import { inc } from '@/infra/logging/metrics'
 
 type Resources = {
 	customerServiceManager: CustomerServiceContextManager
@@ -96,7 +96,10 @@ export async function receiveMessage(
 						)
 					}
 				} catch (e) {
-					console.warn('[Webhook] manutenção: falha ao enviar aviso', e)
+					_logger.warn('webhook_maintenance_notify_failed', {
+						component: 'whatsapp.webhook',
+						err: e,
+					})
 				}
 				return reply.status(200).send({ status: 'maintenance' })
 			}
@@ -133,14 +136,18 @@ export async function receiveMessage(
 						return reply.status(200).send({ status: 'ok', forwarded: true })
 					} else {
 						const text = await res.text().catch(() => '')
-						console.warn('[Webhook] Forward para local falhou', {
+						_logger.warn('webhook_forward_failed', {
+							component: 'whatsapp.webhook',
 							status: res.status,
 							text,
 						})
 						// fallback continua abaixo
 					}
 				} catch (e) {
-					console.error('[Webhook] Erro no forward para local', e)
+					_logger.error('webhook_forward_error', {
+						component: 'whatsapp.webhook',
+						err: e,
+					})
 					// fallback continua abaixo
 				}
 			}
@@ -149,12 +156,15 @@ export async function receiveMessage(
 			const parsed = parseWhatsAppMessage(req.body)
 
 			if (!parsed) {
-				console.log('Evento não é uma mensagem de usuário. Ignorado.')
+				_logger.info('webhook_ignored_non_user_message', {
+					component: 'whatsapp.webhook',
+				})
 				return reply.status(200).send({ status: 'ignored' })
 			}
 
 			const { from, to, name, content } = parsed
-			console.log('[Webhook] incoming content', {
+			_logger.info('webhook_incoming_content', {
+				component: 'whatsapp.webhook',
 				kind: content.kind,
 				from,
 				to,
@@ -165,7 +175,10 @@ export async function receiveMessage(
 				select: { id: true },
 			})
 			if (!found?.id) {
-				console.warn('[Webhook] Tenant não encontrado para phone', { to })
+				_logger.warn('webhook_unknown_tenant', {
+					component: 'whatsapp.webhook',
+					to,
+				})
 				return reply
 					.status(200)
 					.send({ status: 'ignored', reason: 'unknown-tenant' })
@@ -175,8 +188,22 @@ export async function receiveMessage(
 			// Extrai messageId bruto do payload do WhatsApp (idempotência)
 			const msgId = String(entry0?.changes?.[0]?.value?.messages?.[0]?.id ?? '')
 			if (!msgId) {
-				console.warn('[Webhook] message.id ausente no payload')
+				_logger.warn('webhook_missing_message_id', {
+					component: 'whatsapp.webhook',
+				})
 			}
+
+			// Structured log for webhook receipt
+			try {
+				const logger = _logger.child({
+					component: 'whatsapp.webhook',
+					tenantId,
+					messageId: msgId || undefined,
+					from,
+					to,
+				})
+				logger.info('webhook_received', { kind: content.kind })
+			} catch {}
 
 			// Enfileira job e responde 200 imediatamente (ACK rápido)
 			await messageQueue.enqueue({
@@ -201,6 +228,7 @@ export async function receiveMessage(
 				},
 				receivedAt: new Date().toISOString(),
 			})
+			inc('webhook_inbound_total', { kind: content.kind })
 			return reply.status(200).send({ status: 'accepted' })
 		},
 	})

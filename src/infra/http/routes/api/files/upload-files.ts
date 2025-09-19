@@ -1,11 +1,12 @@
+import { OpenAIClientRegistry } from '@/infra/openai/OpenAIClientRegistry'
 import type { Allowed } from '@/infra/storage/cloudflare/CloudFlareFileService'
 import type { FileService } from '@/infra/storage/file-service'
 import type { PrismaClient } from '@prisma/client'
 import type { FastifyInstance } from 'fastify'
-import { auth } from '../../middlewares/auth'
-import { z } from 'zod'
-import { OpenAIClientRegistry } from '@/infra/openai/OpenAIClientRegistry'
 import { toFile } from 'openai/uploads'
+import { z } from 'zod'
+import { auth } from '../../middlewares/auth'
+import { logger } from '@/infra/logging/logger'
 
 type Resources = {
 	fileService: FileService<Allowed>
@@ -15,8 +16,7 @@ type Resources = {
 
 const log = (...args: unknown[]) => {
 	try {
-		// eslint-disable-next-line no-console
-		console.log('[FilesUpload]', ...args)
+		logger.info('files_upload', { component: 'files', args })
 	} catch {}
 }
 
@@ -338,8 +338,7 @@ export async function uploadFiles(app: FastifyInstance, resources: Resources) {
 					}
 				} catch {}
 
-				// eslint-disable-next-line no-console
-				console.error('[FilesUpload] handler:error', err)
+				logger.error('files_upload_handler_error', { component: 'files', err })
 				return reply.code(400).send({
 					error: {
 						code: 'UPLOAD_FAILED',

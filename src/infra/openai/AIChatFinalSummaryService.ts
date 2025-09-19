@@ -1,3 +1,4 @@
+import { logger } from '@/infra/logging/logger'
 import type { PrismaClient } from '@prisma/client'
 import type OpenAI from 'openai'
 import { OpenAIClientRegistry } from './OpenAIClientRegistry'
@@ -65,7 +66,12 @@ export class AIChatFinalSummaryService {
 		} catch (err) {
 			// Log best-effort, não propague erro para não quebrar encerramento
 			try {
-				console.error('[AIChatFinalSummary] failed to create summary', err)
+				logger.error('ai_chat_final_summary_create_failed', {
+					component: 'AIChatFinalSummary',
+					tenantId,
+					phone,
+					err,
+				})
 			} catch {}
 			summary = ''
 		}
@@ -78,7 +84,12 @@ export class AIChatFinalSummaryService {
 			})
 		} catch (err) {
 			try {
-				console.error('[AIChatFinalSummary] failed to persist summary', err)
+				logger.error('ai_chat_final_summary_persist_failed', {
+					component: 'AIChatFinalSummary',
+					tenantId,
+					phone,
+					err,
+				})
 			} catch {}
 		}
 		return concise

@@ -1,4 +1,5 @@
 import { env } from '@/config/env'
+import { logger } from '@/infra/logging/logger'
 
 const BASE_URL = 'https://graph.facebook.com/v22.0'
 const phoneNumberId = env.PHONE_NUMBER_ID
@@ -22,7 +23,11 @@ export async function sendWhatsAppMessageBody<T = any>(
 		const errorMessage = `Erro ao enviar mensagem. Body= ${JSON.stringify(
 			body
 		)} erro= ${JSON.stringify(error)}`
-		console.error(errorMessage)
+		logger.error('whatsapp_send_error', {
+			component: 'whatsapp.client',
+			bodySize: JSON.stringify(body).length,
+			error,
+		})
 		throw new Error(errorMessage)
 	}
 

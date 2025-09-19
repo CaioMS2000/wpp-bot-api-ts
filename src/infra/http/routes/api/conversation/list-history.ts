@@ -138,7 +138,9 @@ export async function listHistory(app: FastifyInstance, resources: Resources) {
 					)
 					.slice(0, limit)
 				try {
-					console.log('[Conversation][history] counts', {
+					const { logger } = await import('@/infra/logging/logger')
+					logger.info('conversation_history_counts', {
+						component: 'conversation',
 						tenantId: tenant.id,
 						convs: convs.length,
 						ai: ai.length,
