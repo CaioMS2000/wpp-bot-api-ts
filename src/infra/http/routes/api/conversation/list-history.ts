@@ -20,7 +20,7 @@ export async function listHistory(app: FastifyInstance, resources: Resources) {
 			},
 			handler: async (req, reply) => {
 				const { prisma } = resources
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				const limit = req.query.limit ?? 50
 
 				const [convs, ai] = await Promise.all([

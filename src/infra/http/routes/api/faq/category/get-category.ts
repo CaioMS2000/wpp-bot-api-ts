@@ -30,7 +30,7 @@ export async function getCategory(app: FastifyInstance, resources: Resources) {
 				},
 			},
 			handler: async (req, reply) => {
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				const cat = await resources.faqRepository.getCategory(
 					tenant.id,
 					req.params.id

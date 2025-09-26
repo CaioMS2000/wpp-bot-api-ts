@@ -727,6 +727,21 @@ export class CustomerServiceContext {
 					)
 		if (!ended) return 'ℹ️ *Você não tem conversa ativa.*'
 
+		// Marcar ConversationLog como encerrado (best-effort)
+		try {
+			await (this as any)['conversationRepository']?.[
+				'prisma'
+			]?.conversationLog.update({
+				where: {
+					tenantId_conversationId: {
+						tenantId: this.tenantId,
+						conversationId: ended.id,
+					},
+				},
+				data: { closedAt: new Date() },
+			})
+		} catch {}
+
 		// Best-effort: gerar resumo final desta conversa recém-encerrada
 		try {
 			await this.conversationFinalSummaryService.summarizeConversation(

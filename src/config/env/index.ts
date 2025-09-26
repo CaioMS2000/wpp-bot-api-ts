@@ -27,6 +27,14 @@ export const envSchema = z.object({
 	CLOUDFLARE_ENDPOINT: z.string(),
 	AUTO_CLOSE_SLA_MINUTES: z.coerce.number().default(10),
 	AUTO_CLOSE_IDLE_HOURS: z.coerce.number().default(24),
+	// Optional OpenTelemetry configuration (for Grafana Cloud OTLP)
+	OTEL_SERVICE_NAME: z.string().optional(),
+	OTEL_TRACES_EXPORTER: z.string().optional(),
+	OTEL_METRICS_EXPORTER: z.string().optional(),
+	OTEL_EXPORTER_OTLP_ENDPOINT: z.string().optional(),
+	OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: z.string().optional(),
+	OTEL_EXPORTER_OTLP_HEADERS: z.string().optional(),
+	OTEL_RESOURCE_ATTRIBUTES: z.string().optional(),
 })
 
 const env = envSchema.parse(process.env)

@@ -14,7 +14,7 @@ export class TokenBudgetManager {
 		private readonly defaults = { input: 2800, output: 500 },
 		private readonly caps = {
 			input: { min: 1200, max: 6000 },
-			output: { min: 300, max: 1200 },
+			output: { min: 1000, max: 5000 },
 		}
 	) {}
 
@@ -43,11 +43,13 @@ export class TokenBudgetManager {
 			this.caps.input.min,
 			this.caps.input.max
 		)
+		const rawOut = Math.round(baseOut * 2.0)
 		const outputLimit = clamp(
-			Math.round(baseOut * 1.6),
+			rawOut,
 			this.caps.output.min,
 			this.caps.output.max
 		)
+
 		return { inputLimit, outputLimit }
 	}
 }

@@ -43,7 +43,7 @@ export async function updateDepartment(
 				},
 			},
 			handler: async (req, reply) => {
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				const { name, description, leadEmployeeId, employees } = req.body
 				let dept
 				if (

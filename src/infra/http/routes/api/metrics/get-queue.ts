@@ -19,7 +19,7 @@ export async function getQueue(app: FastifyInstance, resources: Resources) {
 			},
 			handler: async (req, reply) => {
 				const { prisma } = resources
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 
 				// Fetch queue entries ordered by arrival
 				const entries = await prisma.departmentQueueEntry.findMany({

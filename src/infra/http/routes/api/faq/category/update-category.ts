@@ -39,7 +39,7 @@ export async function updateCategory(
 				},
 			},
 			handler: async (req, reply) => {
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				const { name } = req.body
 				let cat: FaqCategoryFull
 				if (name) {

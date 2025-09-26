@@ -45,6 +45,18 @@ export class AutoCloseJob {
 					where: { id: c.id },
 					data: { active: false, endedAt: now, resolution: 'UNRESOLVED' },
 				})
+				// Mark audit log as closed (best-effort)
+				try {
+					await this.prisma.conversationLog.update({
+						where: {
+							tenantId_conversationId: {
+								tenantId: c.tenantId,
+								conversationId: c.id,
+							},
+						},
+						data: { closedAt: now },
+					})
+				} catch {}
 				try {
 					await this.conversationFinalSummaryService?.summarizeConversation(
 						c.tenantId,
@@ -67,6 +79,18 @@ export class AutoCloseJob {
 					where: { id: c.id },
 					data: { active: false, endedAt: now, resolution: 'UNRESOLVED' },
 				})
+				// Mark audit log as closed (best-effort)
+				try {
+					await this.prisma.conversationLog.update({
+						where: {
+							tenantId_conversationId: {
+								tenantId: c.tenantId,
+								conversationId: c.id,
+							},
+						},
+						data: { closedAt: now },
+					})
+				} catch {}
 				try {
 					await this.conversationFinalSummaryService?.summarizeConversation(
 						c.tenantId,

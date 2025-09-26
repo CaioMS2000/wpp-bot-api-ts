@@ -17,7 +17,8 @@ function stringify(x: any) {
 }
 
 // Simple rotating file appender: monthly dir, rotate by size
-const LOG_BASE_DIR = process.env.LOG_DIR || 'logs'
+// Default to write under 'logs/app' (can be overridden via LOG_DIR)
+const LOG_BASE_DIR = process.env.LOG_DIR || path.join('logs', 'app')
 // Config provider injected by the app (e.g., GlobalSettings via GlobalConfigService)
 type LoggerConfigProvider = { getMaxSizeMB?: () => number | Promise<number> }
 let configProvider: LoggerConfigProvider | undefined
@@ -236,9 +237,24 @@ function write(
 	const timestamp = new Date().toISOString()
 	const caller = getCallerLocation()
 	const where = caller?.pretty ? `${caller.pretty}` : ''
+	// Try to enrich with OpenTelemetry trace context (best-effort)
+	let traceId: string | undefined
+	let spanId: string | undefined
+	try {
+		// Dynamically import to avoid hard dependency
+		// eslint-disable-next-line @typescript-eslint/no-var-requires
+		const api = require('@opentelemetry/api')
+		const span = api.trace.getActiveSpan?.()
+		const sc = span?.spanContext?.()
+		traceId = sc?.traceId
+		spanId = sc?.spanId
+	} catch {}
+
 	const rec: Record<string, unknown> = {
 		...base,
 		...(extra || {}),
+		...(traceId ? { trace_id: traceId } : {}),
+		...(spanId ? { span_id: spanId } : {}),
 	}
 	let content: string
 

@@ -64,3 +64,5 @@ whats-app-api-payloads
 openai-responses.json
 CLAUDE.md
 docs/
+*.md
+!README.md

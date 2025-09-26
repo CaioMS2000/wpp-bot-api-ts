@@ -53,7 +53,7 @@ export async function deleteFile(app: FastifyInstance, resources: Resources) {
 						},
 					})
 				}
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				const identifier = req.params.id
 				// Accept either DB id or storage key in the path param
 				const row = await resources.prisma.file.findFirst({

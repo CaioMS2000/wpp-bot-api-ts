@@ -34,7 +34,7 @@ export async function listFiles(app: FastifyInstance, resources: Resources) {
 				response: responseSchema,
 			},
 			handler: async (req, reply) => {
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				const rows = await resources.prisma.file.findMany({
 					where: { tenantId: tenant.id },
 					select: { key: true, name: true, contentType: true },

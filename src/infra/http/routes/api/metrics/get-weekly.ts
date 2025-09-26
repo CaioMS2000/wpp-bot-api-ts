@@ -20,7 +20,7 @@ export async function getWeekly(app: FastifyInstance, resources: Resources) {
 			},
 			handler: async (req, reply) => {
 				const { prisma } = resources
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				const now = dayjs()
 				const start = now.startOf('week')
 				const end = now.endOf('day')

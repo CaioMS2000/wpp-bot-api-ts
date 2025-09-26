@@ -4,16 +4,40 @@ import { logger } from '@/infra/logging/logger'
 import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify'
 import { ZodError } from 'zod'
 
+function serializeError(err: any): Record<string, unknown> {
+	if (!err || typeof err !== 'object') return { message: String(err) }
+	const base: Record<string, unknown> = {
+		name: (err as any).name,
+		message: (err as any).message,
+		stack: (err as any).stack,
+	}
+	const code = (err as any).code
+	const statusCode = (err as any).statusCode
+	if (code) base.code = code
+	if (statusCode) base.statusCode = statusCode
+	const cause = (err as any).cause
+	if (cause) base.cause = serializeError(cause)
+	return base
+}
+
 export function errorHandler(
 	error: FastifyError,
 	request: FastifyRequest,
 	reply: FastifyReply
 ): void {
+	const rid = (request as any)._reqId as string | undefined
+	const hdrs = { ...request.headers }
+	if ((hdrs as any).authorization) (hdrs as any).authorization = '***'
+	if ((hdrs as any).cookie) (hdrs as any).cookie = '***'
 	logger.error('http_error', {
 		component: 'http',
+		requestId: rid,
 		method: request.method,
 		url: request.url,
-		err: error,
+		headers: hdrs,
+		params: request.params as any,
+		query: request.query as any,
+		err: serializeError(error),
 	})
 
 	// AppError: envelope padronizado

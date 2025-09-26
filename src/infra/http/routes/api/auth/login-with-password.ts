@@ -19,7 +19,7 @@ export const responseSchema = {
 			email: z.string().email(),
 			name: z.string(),
 			tenantId: z.string().optional().nullable(),
-			role: z.enum(['ADMIN', 'EMPLOYEE']),
+			role: z.enum(['SYSTEM_ADMIN', 'MANAGER', 'EMPLOYEE']),
 		}),
 		token: z.string(),
 	}),
@@ -33,6 +33,8 @@ export async function loginWithPassword(
 		schema: {
 			tags: ['Auth'],
 			summary: 'Login with email and password',
+			description:
+				'Authenticates any user role (SYSTEM_ADMIN, MANAGER, EMPLOYEE). Returns the user and a JWT token. Also sets an HTTP-only cookie for session.',
 			body: bodySchema,
 			response: responseSchema,
 		},

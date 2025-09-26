@@ -18,6 +18,7 @@ const responseSchema = {
 			name: z.string(),
 			phone: z.string(),
 			tenantCnpj: z.string().nullable(),
+			role: z.enum(['SYSTEM_ADMIN', 'MANAGER', 'EMPLOYEE']),
 		}),
 	}),
 	204: z.null(),
@@ -29,12 +30,14 @@ export async function me(app: FastifyInstance, resources: Resources) {
 		.get('/api/me', {
 			schema: {
 				tags: ['Auth'],
-				summary: 'Me',
+				summary: 'Me (current user)',
+				description:
+					'Returns the current authenticated user of any role (SYSTEM_ADMIN, MANAGER, EMPLOYEE).',
 				response: responseSchema,
 			},
 			handler: async (req, reply) => {
 				const userId = await req.getCurrentUserID()
-				const user = await resources.userRepository.getAdminById(userId)
+				const user = await resources.userRepository.getById(userId)
 
 				if (!user) {
 					return reply.status(204).send()
@@ -53,6 +56,7 @@ export async function me(app: FastifyInstance, resources: Resources) {
 						name: user.name,
 						phone: user.phone,
 						tenantCnpj,
+						role: user.role,
 					},
 				})
 			},

@@ -24,7 +24,7 @@ export async function getByDepartment(
 			},
 			handler: async (req, reply) => {
 				const { prisma } = resources
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 
 				const to = req.query.to ? dayjs(req.query.to) : dayjs().endOf('day')
 				const from = req.query.from

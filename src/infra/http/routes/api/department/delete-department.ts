@@ -20,7 +20,7 @@ export async function deleteDepartment(
 				params: paramsByCnpj.merge(idParam),
 			},
 			handler: async (req, reply) => {
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				await resources.departmentRepository.remove(tenant.id, req.params.id)
 				return reply.status(204).send()
 			},

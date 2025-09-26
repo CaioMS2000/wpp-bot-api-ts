@@ -121,6 +121,16 @@ export class PrismaConversationRepository implements ConversationRepository {
 			},
 		})
 
+		// Best-effort: mark audit log as closed
+		try {
+			await this.prisma.conversationLog.update({
+				where: {
+					tenantId_conversationId: { tenantId, conversationId: ended.id },
+				},
+				data: { closedAt: new Date() },
+			})
+		} catch {}
+
 		return this.toActive(ended)
 	}
 
@@ -149,6 +159,16 @@ export class PrismaConversationRepository implements ConversationRepository {
 				employee: { select: { name: true, phone: true } },
 			},
 		})
+
+		// Best-effort: mark audit log as closed
+		try {
+			await this.prisma.conversationLog.update({
+				where: {
+					tenantId_conversationId: { tenantId, conversationId: ended.id },
+				},
+				data: { closedAt: new Date() },
+			})
+		} catch {}
 
 		return this.toActive(ended)
 	}

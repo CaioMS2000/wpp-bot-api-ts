@@ -17,7 +17,7 @@ export async function deleteEntry(app: FastifyInstance, resources: Resources) {
 				params: paramsByCnpj.merge(idParam),
 			},
 			handler: async (req, reply) => {
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				await resources.faqRepository.removeEntry(tenant.id, req.params.id)
 				return reply.status(204).send()
 			},

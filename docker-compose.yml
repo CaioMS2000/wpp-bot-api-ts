@@ -1,0 +1,43 @@
+services:
+  init-logs-perms:
+    image: alpine:3.19
+    command: ["sh", "-c", "mkdir -p /work/logs && chown -R 1001:1001 /work/logs"]
+    volumes:
+      - app-logs:/work/logs
+    restart: "no"
+
+  app:
+    build: .
+    image: wpp-bot-api:local
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    ports:
+      - "8000:8000"
+    volumes:
+      - app-logs:/app/logs
+    restart: unless-stopped
+    depends_on:
+      init-logs-perms:
+        condition: service_completed_successfully
+
+  promtail:
+    image: grafana/promtail:2.9.4
+    env_file:
+      - .env
+    command: ["-config.file=/etc/promtail/config.yml", "-config.expand-env=true"]
+    volumes:
+      - ./promtail-config.yaml:/etc/promtail/config.yml:ro
+      - app-logs:/work/logs:ro
+    ports:
+      - "9080:9080" # UI/métricas do promtail
+    depends_on:
+      init-logs-perms:
+        condition: service_completed_successfully
+      app:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  app-logs:

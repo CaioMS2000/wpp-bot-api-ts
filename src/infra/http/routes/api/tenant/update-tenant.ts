@@ -72,9 +72,11 @@ export async function updateTenant(app: FastifyInstance, resources: Resources) {
 				const userId = await req.getCurrentUserID()
 				const { name, phone, cnpj, site, email, description, businessHours } =
 					req.body as z.infer<typeof bodySchema>
-				const { admin, tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { manager, tenant } = await req.getManagerMembership(
+					req.params.cnpj
+				)
 
-				if (admin.id !== userId)
+				if (manager.id !== userId)
 					throw AppError.forbidden(
 						'Você não tem permissão para atualizar este tenant.'
 					)

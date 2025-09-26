@@ -6,7 +6,11 @@ import { ConversationFinalSummaryService } from '@/infra/openai/ConversationFina
 import { EnergyBillIngestionService } from '@/infra/openai/EnergyBillIngestionService'
 import { VectorStoreManager } from '@/infra/openai/VectorStoreManager'
 import { OpenAIClientRegistry } from '@/infra/openai/OpenAIClientRegistry'
-import { ConversationLogger } from '@/infra/openai/ConversationLogger'
+import {
+	ConversationLogger as ConversationLoggerBase,
+	FileConversationLogger,
+} from '@/infra/openai/ConversationLogger'
+import { ConversationAuditLogger } from '@/infra/openai/ConversationAuditLogger'
 import { FunctionToolRegistry } from '@/infra/openai/tools/FunctionTools'
 import { registerBuiltinTools } from '@/infra/openai/tools'
 import { InMemoryMessageQueue } from '@/infra/jobs/InMemoryMessageQueue'
@@ -70,7 +74,7 @@ export class DependenciesContainer {
 	public openaiRegistry: OpenAIClientRegistry
 	public aiChatFinalSummaryService: AIChatFinalSummaryService
 	public conversationFinalSummaryService: ConversationFinalSummaryService
-	public conversationLogger: ConversationLogger
+	public conversationLogger: ConversationLoggerBase
 	public functionToolRegistry: FunctionToolRegistry
 	public messageQueue: MessageQueue
 	public idempotencyStore: IdempotencyStore
@@ -123,10 +127,15 @@ export class DependenciesContainer {
 			this.prisma,
 			this.openaiRegistry
 		)
-		// Desabilita logs de conversa em produção (evita IO de arquivos em prod)
-		this.conversationLogger = new ConversationLogger(
+		// Auditoria de conversas: DB-first + opcional arquivo (dev)
+		const fileConvLogger = new FileConversationLogger(
 			env.NODE_ENV !== 'production'
 		)
+		this.conversationLogger = new ConversationAuditLogger({
+			prisma,
+			file: fileConvLogger,
+			enableDb: true,
+		})
 		this.functionToolRegistry = new FunctionToolRegistry()
 		registerBuiltinTools(this.functionToolRegistry, {
 			tenantRepo: this.prismaTenantRepository,

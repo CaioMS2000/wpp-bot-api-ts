@@ -30,7 +30,7 @@ export async function getEmployee(app: FastifyInstance, resources: Resources) {
 				},
 			},
 			handler: async (req, reply) => {
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				const emp = await resources.employeeRepository.get(
 					tenant.id,
 					req.params.id

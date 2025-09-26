@@ -1,0 +1,22 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+clients:
+  - url: ${LOKI_URL}
+    basic_auth:
+      username: ${LOKI_USERNAME}
+      password: ${LOKI_PASSWORD}
+
+positions:
+  filename: /tmp/promtail-positions.yaml
+
+scrape_configs:
+  - job_name: wpp-bot-api
+    static_configs:
+      - targets: [localhost]
+        labels:
+          job: wpp-bot-api
+          service: wpp-bot-api
+          env: dev
+          __path__: /work/logs/app/*/app-*.log

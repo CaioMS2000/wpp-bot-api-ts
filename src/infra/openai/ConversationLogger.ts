@@ -26,6 +26,7 @@ type MessageEntry = {
 		results: Array<{
 			fileId?: string
 			fileName?: string
+			fileKey?: string
 			score?: number
 			snippet?: string
 		}>
@@ -46,11 +47,54 @@ type LogFile = {
 const isRecord = (v: unknown): v is Record<string, unknown> =>
 	typeof v === 'object' && v !== null
 
-export class ConversationLogger {
+// Base abstrata para sinks de auditoria de conversa
+export abstract class ConversationLogger {
+	abstract init(meta: {
+		tenantId: string
+		conversationId: string
+		userPhone: string
+		role: 'CLIENT' | 'EMPLOYEE'
+	}): Promise<void>
+
+	abstract append(
+		meta: {
+			tenantId: string
+			conversationId: string
+			userPhone: string
+			role: 'CLIENT' | 'EMPLOYEE'
+		},
+		entry: {
+			at: string
+			kind: 'user' | 'ai' | 'event'
+			text: string
+			model?: string
+			responseId?: string
+			usage?: { input_tokens?: number; output_tokens?: number }
+			system?: string
+			tools?: string[]
+			vectorStoreId?: string | null
+			fileSearch?: {
+				results: Array<{
+					fileId?: string
+					fileName?: string
+					fileKey?: string
+					score?: number
+					snippet?: string
+				}>
+			}
+			tool?: { name: string; args?: string; output?: string; error?: string }
+		}
+	): Promise<void>
+}
+
+// Implementação baseada em arquivo (dev)
+export class FileConversationLogger extends ConversationLogger {
 	constructor(
 		private readonly enabled: boolean,
 		private readonly baseDir = path.join(process.cwd(), 'logs', 'conversations')
-	) {}
+	) {
+		super()
+	}
 
 	private dateFolder(): string {
 		const d = new Date()
@@ -148,6 +192,7 @@ export class ConversationLogger {
 					const hits: Array<{
 						fileId?: string
 						fileName?: string
+						fileKey?: string
 						score?: number
 						snippet?: string
 					}> = []
@@ -155,11 +200,13 @@ export class ConversationLogger {
 						if (!isRecord(r)) continue
 						const fileId = r['fileId']
 						const fileName = r['fileName']
+						const fileKey = (r as any)['fileKey'] ?? (r as any)['key']
 						const score = r['score']
 						const snippet = r['snippet']
 						hits.push({
 							fileId: typeof fileId === 'string' ? fileId : undefined,
 							fileName: typeof fileName === 'string' ? fileName : undefined,
+							fileKey: typeof fileKey === 'string' ? fileKey : undefined,
 							score: typeof score === 'number' ? score : undefined,
 							snippet: typeof snippet === 'string' ? snippet : undefined,
 						})

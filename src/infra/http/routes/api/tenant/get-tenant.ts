@@ -43,9 +43,11 @@ export async function getTenant(app: FastifyInstance) {
 			},
 			handler: async (req, reply) => {
 				const userId = await req.getCurrentUserID()
-				const { admin, tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { manager, tenant } = await req.getManagerMembership(
+					req.params.cnpj
+				)
 
-				if (admin.id !== userId)
+				if (manager.id !== userId)
 					throw AppError.forbidden(
 						'Você não tem permissão para acessar este tenant.'
 					)

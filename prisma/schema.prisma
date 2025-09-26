@@ -179,7 +179,8 @@ model Message {
 }
 
 enum UserRole {
-  ADMIN
+  SYSTEM_ADMIN
+  MANAGER
   EMPLOYEE
 }
 
@@ -190,7 +191,7 @@ model User {
   phone        String
   name         String
   passwordHash String
-  role         UserRole @default(ADMIN)
+  role         UserRole @default(MANAGER)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -227,4 +228,64 @@ model File {
   indexInStorage String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+/// Audit log of AI conversations (source for export to object storage)
+model ConversationLog {
+  id             String                    @id @default(uuid())
+  tenantId       String
+  /// External/business conversation identifier (can match Conversation.id or be external)
+  conversationId String
+  userPhone      String
+  role           ConversationAuditRole
+  startedAt      DateTime                  @default(now())
+  closedAt       DateTime?
+  /// Marked when successfully exported to object storage
+  archivedAt     DateTime?
+  /// When DB data can be purged after archive
+  purgeAt        DateTime?
+  /// Pointer to the object location (e.g., r2://bucket/prefix/...)
+  s3Uri          String?
+  /// Optional extra metadata
+  meta           Json?
+
+  messages       ConversationMessage[]
+
+  @@unique([tenantId, conversationId])
+  @@index([tenantId, startedAt])
+  @@index([archivedAt])
+  @@index([purgeAt])
+}
+
+model ConversationMessage {
+  id            String                   @id @default(uuid())
+  logId         String
+  log           ConversationLog          @relation(fields: [logId], references: [id], onDelete: Cascade)
+  at            DateTime
+  kind          ConversationMessageKind
+  text          String
+  model         String?
+  responseId    String?
+  usageJson     Json?
+  system        String?
+  toolsJson     Json?
+  vectorStoreId String?
+  fileSearchJson Json?
+  toolJson      Json?
+  createdAt     DateTime                 @default(now())
+
+  @@index([logId, at])
+  @@index([kind])
+  @@index([model])
+}
+
+enum ConversationAuditRole {
+  CLIENT
+  EMPLOYEE
+}
+
+enum ConversationMessageKind {
+  USER
+  AI
+  EVENT
 }

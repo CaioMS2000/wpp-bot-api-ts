@@ -19,7 +19,7 @@ export async function createEntry(app: FastifyInstance, resources: Resources) {
 				response: entryResponse,
 			},
 			handler: async (req, reply) => {
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				const { categoryId, question, answer } = req.body
 				const entry = await resources.faqRepository.createEntry(
 					tenant.id,

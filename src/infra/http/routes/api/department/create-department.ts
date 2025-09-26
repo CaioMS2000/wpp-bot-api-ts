@@ -26,7 +26,7 @@ export async function createDepartment(
 				response: departmentResponse,
 			},
 			handler: async (req, reply) => {
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				const { name, description, leadEmployeeId, employees } = req.body
 				const dept = await resources.departmentRepository.create(
 					tenant.id,

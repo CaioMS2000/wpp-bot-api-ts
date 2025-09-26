@@ -21,7 +21,7 @@ export async function listEntries(app: FastifyInstance, resources: Resources) {
 				response: entryListResponse,
 			},
 			handler: async (req, reply) => {
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				const items = await resources.faqRepository.listEntries(
 					tenant.id,
 					req.query.categoryId

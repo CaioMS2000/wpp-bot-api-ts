@@ -37,7 +37,7 @@ export async function getDepartment(
 				},
 			},
 			handler: async (req, reply) => {
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				const dept = await resources.departmentRepository.get(
 					tenant.id,
 					req.params.id

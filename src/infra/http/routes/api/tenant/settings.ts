@@ -41,7 +41,7 @@ export async function tenantSettings(
 				response: getResponseSchema,
 			},
 			handler: async (req, reply) => {
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				const s = await resources.tenantRepository.getSettings(tenant.id)
 				return reply.send({
 					aiTokenApi: mask(s.aiTokenApi),
@@ -59,7 +59,7 @@ export async function tenantSettings(
 				response: updateResponseSchema,
 			},
 			handler: async (req, reply) => {
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				// Partial update: only provided keys are changed; omitted keys are preserved by repository
 				const s = await resources.tenantRepository.updateSettings(
 					tenant.id,

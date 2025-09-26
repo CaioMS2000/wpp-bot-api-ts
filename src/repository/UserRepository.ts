@@ -2,11 +2,13 @@ import type { User } from '@/modules/web-api/@types/user'
 
 export interface UserRepository {
 	create(user: Omit<User, 'id'>): Promise<User>
-	findRegistredAdmin(phone: string, email: string): Promise<User | null>
-	getAdmin(tenantId: string, managerId: string): Promise<User | null>
-	getAdminByEmail(email: string): Promise<User | null>
-	getAdminById(id: string): Promise<User | null>
-	updateAdminById(
+	findRegistredManager(phone: string, email: string): Promise<User | null>
+	getManager(tenantId: string, managerId: string): Promise<User | null>
+	getManagerByEmail(email: string): Promise<User | null>
+	getManagerById(id: string): Promise<User | null>
+	getByEmail(email: string): Promise<User | null>
+	getById(id: string): Promise<User | null>
+	updateManagerById(
 		id: string,
 		data: { name?: string; phone?: string; email?: string }
 	): Promise<User>

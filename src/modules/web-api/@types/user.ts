@@ -5,5 +5,5 @@ export type User = {
 	phone: string
 	tenantId: string | null
 	passwordHash: string
-	role: 'ADMIN' | 'EMPLOYEE'
+	role: 'SYSTEM_ADMIN' | 'MANAGER' | 'EMPLOYEE'
 }

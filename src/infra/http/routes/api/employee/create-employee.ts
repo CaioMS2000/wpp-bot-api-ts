@@ -22,7 +22,7 @@ export async function createEmployee(
 				response: employeeResponse,
 			},
 			handler: async (req, reply) => {
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				const { name, phone, departmentName } = req.body
 				const emp = await resources.employeeRepository.create(
 					tenant.id,

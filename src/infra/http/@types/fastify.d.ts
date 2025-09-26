@@ -6,9 +6,9 @@ import { type User } from '@/modules/web-api/@types/user';
 declare  module 'fastify' {
 	interface FastifyRequest {
 		getCurrentUserID: () => Promise<string>
-		getAdminMembership: (cnpj: string) => Promise<{
+		getManagerMembership: (cnpj: string) => Promise<{
 			tenant: Tenant;
-			admin: User;
+			manager: User;
 		}>
 		getPlatformAdmin: () => Promise<User>
 		authService: AuthService

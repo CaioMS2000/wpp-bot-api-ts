@@ -154,7 +154,7 @@ export async function uploadFiles(app: FastifyInstance, resources: Resources) {
 			void req.validationError
 			const { cnpj } = req.params as { cnpj: string }
 			log('handler:start', { cnpj })
-			const { tenant } = await req.getAdminMembership(cnpj)
+			const { tenant } = await req.getManagerMembership(cnpj)
 			const { files } = req.body as { files: UploadedFile[] }
 			log(
 				'handler:received files',

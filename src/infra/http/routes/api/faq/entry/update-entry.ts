@@ -36,7 +36,7 @@ export async function updateEntry(app: FastifyInstance, resources: Resources) {
 				},
 			},
 			handler: async (req, reply) => {
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				const data = req.body
 				// If empty, return current or 404
 				if (!data.categoryId && !data.question && !data.answer) {

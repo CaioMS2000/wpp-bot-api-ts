@@ -19,7 +19,7 @@ export async function listRecent(app: FastifyInstance, resources: Resources) {
 			},
 			handler: async (req, reply) => {
 				const { prisma } = resources
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				const limit = 5
 
 				const [convs, ai] = await Promise.all([

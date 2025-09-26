@@ -24,6 +24,7 @@ const responseSchema = {
 			name: z.string(),
 			phone: z.string(),
 			tenantId: z.string().nullable(),
+			role: z.enum(['SYSTEM_ADMIN', 'MANAGER', 'EMPLOYEE']),
 		}),
 	}),
 }
@@ -36,12 +37,14 @@ export async function updateMe(app: FastifyInstance, resources: Resources) {
 			schema: {
 				tags: ['Auth'],
 				summary: 'Update my profile',
+				description:
+					'Updates the current authenticated user profile for any role (SYSTEM_ADMIN, MANAGER, EMPLOYEE). Fields are optional; provide at least one.',
 				body: bodySchema,
 				response: responseSchema,
 			},
 			handler: async (req, reply) => {
 				const userId = await req.getCurrentUserID()
-				const updated = await resources.authService.updateAdminProfile(
+				const updated = await resources.authService.updateManagerProfile(
 					userId,
 					req.body
 				)
@@ -52,6 +55,7 @@ export async function updateMe(app: FastifyInstance, resources: Resources) {
 						name: updated.name,
 						phone: updated.phone,
 						tenantId: updated.tenantId,
+						role: updated.role,
 					},
 				})
 			},

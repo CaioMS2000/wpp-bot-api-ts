@@ -22,7 +22,7 @@ export async function getOverview(app: FastifyInstance, resources: Resources) {
 			},
 			handler: async (req, reply) => {
 				const { prisma } = resources
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 
 				const scope = req.query.scope ?? 'month'
 				const now = dayjs()

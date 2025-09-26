@@ -16,7 +16,10 @@ export class AuthService {
 		name: string,
 		phone: string
 	): Promise<User> {
-		const existing = await this.usersRepository.findRegistredAdmin(phone, email)
+		const existing = await this.usersRepository.findRegistredManager(
+			phone,
+			email
+		)
 		if (existing)
 			throw AppError.conflict(
 				'EMAIL_ALREADY_REGISTERED',
@@ -29,7 +32,7 @@ export class AuthService {
 			phone,
 			passwordHash,
 			tenantId: null,
-			role: 'ADMIN',
+			role: 'MANAGER',
 		})
 		const user: User = {
 			email: newUser.email,
@@ -38,14 +41,14 @@ export class AuthService {
 			phone: newUser.phone,
 			passwordHash: newUser.passwordHash,
 			tenantId: newUser.tenantId,
-			role: 'ADMIN',
+			role: 'MANAGER',
 		}
 
 		return user
 	}
 
 	async loginWithPassword(email: string, password: string): Promise<User> {
-		const existingUser = await this.usersRepository.getAdminByEmail(email)
+		const existingUser = await this.usersRepository.getByEmail(email)
 
 		if (!existingUser)
 			throw AppError.authInvalidCredentials('Email ou senha inválidos.')
@@ -57,7 +60,7 @@ export class AuthService {
 		return existingUser
 	}
 
-	async updateAdminProfile(
+	async updateManagerProfile(
 		userId: string,
 		data: { name?: string; phone?: string; email?: string }
 	): Promise<User> {
@@ -65,45 +68,34 @@ export class AuthService {
 		if (data.name !== undefined) patch.name = data.name
 		if (data.phone !== undefined) patch.phone = data.phone
 		if (data.email !== undefined) patch.email = data.email
-		const updated = await this.usersRepository.updateAdminById(userId, patch)
+		const updated = await this.usersRepository.updateManagerById(userId, patch)
 		return updated
 	}
 
-	async getAdminMembership(cnpj: string, userId: string) {
+	async getManagerMembership(cnpj: string, userId: string) {
 		const tenant = await this.prismaTenantRepository.getByCNPJ(cnpj)
 
 		if (!tenant) throw AppError.notFound('NOT_FOUND', 'Tenant não encontrado.')
 
-		const tenantAdmin = await this.usersRepository.getAdmin(tenant.id, userId)
+		const tenantManager = await this.usersRepository.getManager(
+			tenant.id,
+			userId
+		)
 
-		if (!tenantAdmin)
+		if (!tenantManager)
 			throw AppError.forbidden('Você não é administrador desse tenant.')
 
-		return { tenant, admin: tenantAdmin }
+		return { tenant, manager: tenantManager }
 	}
 
 	async getPlatformAdmin(userId: string): Promise<User> {
-		const user = await this.usersRepository.getAdminById(userId)
+		const user = await this.usersRepository.getById(userId)
 		if (!user)
 			throw AppError.forbidden('Usuário não encontrado ou sem permissão.')
-		// Platform admin: ADMIN with no tenant (tenantId null)
-		if (user.tenantId !== null) {
-			throw AppError.forbidden(
-				'Acesso permitido apenas ao administrador da plataforma.'
-			)
-		}
-		// Hard constraints: fixed email and password must equal 'admin@admin.com'
-		if (user.email !== 'admin@admin.com') {
+		if (user.role !== 'SYSTEM_ADMIN')
 			throw AppError.forbidden(
 				'Acesso restrito ao administrador da plataforma.'
 			)
-		}
-		const ok = await bcrypt.compare('admin@admin.com', user.passwordHash)
-		if (!ok) {
-			throw AppError.forbidden(
-				'Acesso restrito ao administrador da plataforma.'
-			)
-		}
 		return user
 	}
 }

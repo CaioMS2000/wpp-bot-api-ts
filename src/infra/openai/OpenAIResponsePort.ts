@@ -13,7 +13,8 @@ import type { EmployeeRepository } from '@/repository/EmployeeRepository'
 import type { StateStore } from '@/repository/StateStore'
 import { TenantRepository } from '@/repository/TenantRepository'
 import OpenAI from 'openai'
-import { ConversationLogger } from './ConversationLogger'
+import { trace, SpanStatusCode } from '@opentelemetry/api'
+import type { ConversationLogger as ConversationLoggerBase } from './ConversationLogger'
 import { OpenAIClientRegistry } from './OpenAIClientRegistry'
 import { tokenBudgetManager } from './token-budget'
 import { FunctionToolRegistry } from './tools/FunctionTools'
@@ -30,7 +31,7 @@ export class OpenAIResponsePort implements AIResponsePort {
 		private readonly clientRegistry: OpenAIClientRegistry,
 		private readonly tenantRepository: TenantRepository,
 		private readonly stateStore: StateStore,
-		private readonly conversationLogger: ConversationLogger,
+		private readonly conversationLogger: ConversationLoggerBase,
 		private readonly functionToolRegistry: FunctionToolRegistry,
 		private readonly messageQueue: MessageQueue,
 		private readonly aiChatRepository: AIChatSessionRepository
@@ -41,6 +42,7 @@ export class OpenAIResponsePort implements AIResponsePort {
 	): Promise<AIMakeResponseResult> {
 		const { tenantId, userPhone, text, lastResponseId, role, conversationId } =
 			input
+		const tracer = trace.getTracer('wpp-api')
 
 		const logger = _logger.child({
 			component: 'OpenAIResponsePort',
@@ -224,13 +226,23 @@ export class OpenAIResponsePort implements AIResponsePort {
 
 		// Enable file_search with tenant's vector store (best-effort)
 		let vectorStoreId: string | null = null
-		try {
-			const vsm =
-				await this.clientRegistry.getVectorStoreManagerForTenant(tenantId)
-			vectorStoreId = await vsm.ensureVectorStoreForTenant(tenantId)
-		} catch {
-			vectorStoreId = null
-		}
+		await tracer.startActiveSpan('vectorstore.ensure', async s => {
+			try {
+				const vsm =
+					await this.clientRegistry.getVectorStoreManagerForTenant(tenantId)
+				vectorStoreId = await vsm.ensureVectorStoreForTenant(tenantId)
+				s.setAttribute('vector.store_id', String(vectorStoreId))
+			} catch (e: any) {
+				vectorStoreId = null
+				s.recordException(e)
+				s.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: 'vectorstore.ensure.failed',
+				})
+			} finally {
+				s.end()
+			}
+		})
 
 		// Compose response request (inline to help TS pick non-stream overload)
 		const metadata: Record<string, string> = {
@@ -279,27 +291,36 @@ export class OpenAIResponsePort implements AIResponsePort {
 		})
 		inc('openai_request_total')
 		let res: any
-		try {
-			res = await openai.responses.create({
-				model: 'gpt-4o-mini',
-				instructions: system,
-				input: [{ role: 'user', content: user }],
-				tools,
-				tool_choice: 'auto',
-				// tool_choice: 'required',
-				max_output_tokens: outputLimit,
-				metadata,
-				previous_response_id: lastResponseId,
-				include: ['file_search_call.results'],
-			})
-			inc('openai_success_total')
-		} catch (err: any) {
-			inc('openai_error_total')
-			if (err?.status === 429 || err?.code === 'insufficient_quota')
-				inc('openai_429_total')
-			logger.error('openai_create_error', { err })
-			throw err
-		}
+		await tracer.startActiveSpan('openai.responses.create', async s => {
+			s.setAttribute('model', 'gpt-4o-mini')
+			try {
+				res = await openai.responses.create({
+					model: 'gpt-4o-mini',
+					instructions: system,
+					input: [{ role: 'user', content: user }],
+					tools,
+					tool_choice: 'auto',
+					max_output_tokens: outputLimit,
+					metadata,
+					previous_response_id: lastResponseId,
+					include: ['file_search_call.results'],
+				})
+				inc('openai_success_total')
+			} catch (err: any) {
+				inc('openai_error_total')
+				if (err?.status === 429 || err?.code === 'insufficient_quota')
+					inc('openai_429_total')
+				logger.error('openai_create_error', { err })
+				s.recordException(err)
+				s.setStatus({
+					code: SpanStatusCode.ERROR,
+					message: String(err?.message || err),
+				})
+				throw err
+			} finally {
+				s.end()
+			}
+		})
 		// (limpo) não imprimir resposta completa no console
 		const reply = String(res.output_text ?? '').trim()
 
@@ -318,6 +339,37 @@ export class OpenAIResponsePort implements AIResponsePort {
 			}
 		}
 		const usage = extractUsage(res)
+		// Coleta e loga finish reasons (p.ex.: 'stop', 'length') para depuração
+		const findFinishReasons = (root: unknown): string[] => {
+			const reasons = new Set<string>()
+			const seen = new Set<unknown>()
+			const stack: unknown[] = [root]
+			const keyRegex = /finish_?reason/i
+			while (stack.length) {
+				const cur = stack.pop()
+				if (!cur || seen.has(cur)) continue
+				seen.add(cur)
+				if (Array.isArray(cur)) {
+					for (const it of cur) stack.push(it)
+					continue
+				}
+				if (typeof cur !== 'object' || cur === null) continue
+				for (const [k, v] of Object.entries(cur)) {
+					if (keyRegex.test(k) && typeof v === 'string') reasons.add(v)
+					if (typeof v === 'object' && v !== null) stack.push(v)
+				}
+			}
+			return Array.from(reasons)
+		}
+		try {
+			const reasons = findFinishReasons(res)
+			logger.info('openai_finish', {
+				id: res?.id,
+				max_output_tokens: outputLimit,
+				reasons,
+				usage,
+			})
+		} catch {}
 		try {
 			tokenBudgetManager.update(budgetKey, usage)
 		} catch {}
@@ -447,10 +499,28 @@ export class OpenAIResponsePort implements AIResponsePort {
 				args: pc.args,
 			}))
 			// (limpo) início do dispatch sem log detalhado
-			const outputs = await this.functionToolRegistry.dispatchAll(
-				dispatchInputs,
-				ctx,
-				resolvedSpecs
+			const outputs = await tracer.startActiveSpan(
+				'tools.dispatch',
+				async s => {
+					try {
+						const out = await this.functionToolRegistry.dispatchAll(
+							dispatchInputs,
+							ctx,
+							resolvedSpecs
+						)
+						s.setAttribute('tools.count', out.length)
+						return out
+					} catch (e: any) {
+						s.recordException(e)
+						s.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: 'tools.dispatch.failed',
+						})
+						throw e
+					} finally {
+						s.end()
+					}
+				}
 			)
 			// (limpo) fim do dispatch sem log detalhado
 			// Registrar eventos de tools no ConversationLogger (sanitizados)
@@ -522,29 +592,49 @@ export class OpenAIResponsePort implements AIResponsePort {
 					})),
 				})
 				let res2: any
-				try {
-					res2 = await openai.responses.create({
-						model: 'gpt-4o-mini',
-						instructions: system,
-						input: toolOutputs,
-						tools,
-						max_output_tokens: outputLimit,
-						metadata,
-						previous_response_id: res.id,
-						include: ['file_search_call.results'],
-					})
-					inc('openai_success_total')
-				} catch (err: any) {
-					inc('openai_error_total')
-					if (err?.status === 429 || err?.code === 'insufficient_quota')
-						inc('openai_429_total')
-					logger.error('openai_followup_error', { err })
-					throw err
-				}
+				await tracer.startActiveSpan('openai.responses.followup', async s => {
+					s.setAttribute('model', 'gpt-4o-mini')
+					try {
+						res2 = await openai.responses.create({
+							model: 'gpt-4o-mini',
+							instructions: system,
+							input: toolOutputs,
+							tools,
+							max_output_tokens: outputLimit,
+							metadata,
+							previous_response_id: res.id,
+							include: ['file_search_call.results'],
+						})
+						inc('openai_success_total')
+					} catch (err: any) {
+						inc('openai_error_total')
+						if (err?.status === 429 || err?.code === 'insufficient_quota')
+							inc('openai_429_total')
+						logger.error('openai_followup_error', { err })
+						s.recordException(err)
+						s.setStatus({
+							code: SpanStatusCode.ERROR,
+							message: String(err?.message || err),
+						})
+						throw err
+					} finally {
+						s.end()
+					}
+				})
 				logger.info('openai_followup_ok', { id: res2.id })
 				finalReply = String(res2.output_text ?? '').trim()
 				responseIdForThread = res2.id
 				const usage2 = extractUsage(res2)
+				try {
+					const reasons2 = findFinishReasons(res2)
+					logger.info('openai_finish', {
+						id: res2?.id,
+						stage: 'followup',
+						max_output_tokens: outputLimit,
+						reasons: reasons2,
+						usage: usage2,
+					})
+				} catch {}
 				try {
 					tokenBudgetManager.update(budgetKey, usage2)
 				} catch {}

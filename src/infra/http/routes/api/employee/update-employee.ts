@@ -22,7 +22,7 @@ export async function updateEmployee(
 				response: employeeResponse,
 			},
 			handler: async (req, reply) => {
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				const emp = await resources.employeeRepository.update(
 					tenant.id,
 					req.params.id,

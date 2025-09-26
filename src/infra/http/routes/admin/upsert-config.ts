@@ -29,14 +29,14 @@ export async function upsertPlatformConfig(
 				const user = await req.getPlatformAdmin()
 				const saved = await resources.globalConfigRepository.upsert(
 					req.params.key,
-					(req.body as any).value,
+					req.body.value,
 					user.name
 				)
 				// Atualiza cache local (propagação imediata nesta instância)
 				try {
 					await resources.globalConfig?.set(
 						req.params.key,
-						(req.body as any).value,
+						req.body.value,
 						user.name
 					)
 				} catch {}

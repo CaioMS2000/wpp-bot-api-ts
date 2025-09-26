@@ -13,6 +13,7 @@ import type { FaqRepository } from '@/repository/FaqRepository'
 import type { StateStore } from '@/repository/StateStore'
 import { TenantRepository } from '@/repository/TenantRepository'
 import { CustomerServiceContext } from './CustomerServiceContext'
+import { trace, SpanStatusCode } from '@opentelemetry/api'
 
 type Entry = { context: CustomerServiceContext; lastUsed: number }
 
@@ -43,6 +44,7 @@ export class CustomerServiceContextManager {
 		tenantId: string,
 		phone: string
 	): Promise<{ context: CustomerServiceContext; isNew: boolean }> {
+		const tracer = trace.getTracer('wpp-api')
 		const now = Date.now()
 		const key = `${tenantId}:${phone}`
 		const existing = this.contexts.get(key)
@@ -51,6 +53,10 @@ export class CustomerServiceContextManager {
 			this.log.info('context_reuse', { tenantId, phone })
 			return { context: existing.context, isNew: false }
 		}
+
+		const span = tracer.startSpan('context.get')
+		span.setAttribute('tenant.id', tenantId)
+		span.setAttribute('user.phone', phone)
 
 		const ctx = new CustomerServiceContext(
 			tenantId,
@@ -91,6 +97,11 @@ export class CustomerServiceContextManager {
 						phone,
 						err,
 					})
+					span.recordException(err)
+					span.setStatus({
+						code: SpanStatusCode.ERROR,
+						message: 'restore_state_error',
+					})
 					throw err
 				}
 				this.log.info('context_restored', {
@@ -103,11 +114,13 @@ export class CustomerServiceContextManager {
 		} catch (err: any) {
 			// ignore load errors; treat as new
 			this.log.warn('context_snapshot_load_failed', { tenantId, phone, err })
+			span.addEvent('snapshot_load_failed')
 		}
 		this.contexts.set(key, { context: ctx, lastUsed: now })
 		if (isNew) {
 			this.log.info('context_created', { tenantId, phone })
 		}
+		span.end()
 		return { context: ctx, isNew }
 	}
 

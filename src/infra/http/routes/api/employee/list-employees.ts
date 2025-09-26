@@ -21,7 +21,7 @@ export async function listEmployees(
 				response: employeeListResponse,
 			},
 			handler: async (req, reply) => {
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				const items = await resources.employeeRepository.list(tenant.id)
 				return reply.send({ items })
 			},

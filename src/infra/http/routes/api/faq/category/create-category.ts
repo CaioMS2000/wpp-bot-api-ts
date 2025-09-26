@@ -22,7 +22,7 @@ export async function createCategory(
 				response: categoryResponse,
 			},
 			handler: async (req, reply) => {
-				const { tenant } = await req.getAdminMembership(req.params.cnpj)
+				const { tenant } = await req.getManagerMembership(req.params.cnpj)
 				const { name } = req.body
 				const cat = await resources.faqRepository.createCategory(
 					tenant.id,

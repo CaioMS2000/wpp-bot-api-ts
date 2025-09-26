@@ -1,0 +1,59 @@
+name: Build and Push App Image
+
+permissions:
+  id-token: write
+  contents: read
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - '**/*.ts'
+      - '**/Dockerfile'
+      - '.github/workflows/build-and-push.yaml'
+  workflow_dispatch: {}
+
+env:
+  AWS_REGION: us-east-2
+  ECR_REPOSITORY: evolight/wpp-bot-api
+  INFRA_REPO: CaioMS2000-org/evolight-project-host
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_ARN }}
+          role-session-name: gha-app-build
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push (linux/amd64)
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:latest
+
+      - name: Trigger infra deploy (repository_dispatch)
+        env:
+          TOKEN: ${{ secrets.INFRA_REPO_TOKEN }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+          REPO: ${{ env.INFRA_REPO }}
+        run: |
+          echo "Digest: ${DIGEST}"
+          curl -L -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${TOKEN}" \
+            https://api.github.com/repos/${REPO}/dispatches \
+            -d "{\"event_type\":\"deploy-app-prod\",\"client_payload\":{\"app_image_digest\":\"${DIGEST}\"}}"
+

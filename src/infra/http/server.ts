@@ -1,3 +1,5 @@
+import { __otel_loaded as _otel } from '@/infra/observability/otel'
+void _otel
 import { env } from '@/config/env'
 import { AutoCloseJob } from '@/infra/jobs/AutoCloseJob'
 import { FastifyListenOptions } from 'fastify'
@@ -13,10 +15,13 @@ import { router as faqRouter } from './routes/api/faq/router'
 import { router as filesRouter } from './routes/api/files/router'
 import { router as metricsRouter } from './routes/api/metrics/router'
 import { router as tenantRouter } from './routes/api/tenant/router'
+import { router as auditRouter } from './routes/admin/audit/router'
 import { receiveMessage } from './routes/whatsapp/message/receive-message'
 import { webhook } from './routes/whatsapp/verify-token'
 import { logger, configureLogger } from '@/infra/logging/logger'
 import { startMetricsReporter } from '../logging/metrics'
+import { ConversationArchiveJob } from '@/infra/jobs/ConversationArchiveJob'
+import { ConversationPurgeJob } from '@/infra/jobs/ConversationPurgeJob'
 
 const container = new DependenciesContainer()
 // Configure logger to use GlobalSettings for max file size (MB)
@@ -50,6 +55,9 @@ async function refreshCors() {
 		const serialized = JSON.stringify(allowedOriginsCache)
 		if (serialized !== lastLoggedOrigins) {
 			lastLoggedOrigins = serialized
+			// Debug: print allowed origins directly to console for CORS troubleshooting
+			// This complements the structured logger entry below
+			console.log('[CORS] Allowed origins updated:', allowedOriginsCache)
 			try {
 				logger.info('cors_origins_updated', {
 					component: 'http',
@@ -96,6 +104,7 @@ app.register(tenantRouter, {
 	userRepository: container.usersRepository,
 })
 app.register(metricsRouter, { prisma: container.prisma })
+app.register(auditRouter, { prisma: container.prisma })
 app.register(employeeRouter, {
 	employeeRepository: container.employeeRepository,
 })
@@ -141,3 +150,14 @@ setInterval(
 
 // Start metrics reporter (flush counters periodically)
 startMetricsReporter()
+
+// Periodic archive job (DB -> S3) for closed conversations
+const archiver = new ConversationArchiveJob(
+	container.prisma,
+	container.globalConfigService
+)
+setInterval(() => archiver.runOnce().catch(() => {}), 10 * 60 * 1000).unref()
+
+// Daily purge job (remove messages after grace period; keep headers with s3Uri)
+const purger = new ConversationPurgeJob(container.prisma)
+setInterval(() => purger.runOnce().catch(() => {}), 24 * 60 * 60 * 1000).unref()
