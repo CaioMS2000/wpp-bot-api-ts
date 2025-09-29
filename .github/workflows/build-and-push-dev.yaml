@@ -16,7 +16,7 @@ on:
 env:
   AWS_REGION: us-east-2
   ECR_REPOSITORY: evolight/wpp-bot-api
-  INFRA_REPO: CaioMS2000-org/evolight-project-host
+  INFRA_REPO: evolight-tech/evolight-infra
 
 jobs:
   build-and-push:
