@@ -4,7 +4,6 @@ import { OpenAIResponsePort } from '@/infra/openai/OpenAIResponsePort'
 import { AIChatFinalSummaryService } from '@/infra/openai/AIChatFinalSummaryService'
 import { ConversationFinalSummaryService } from '@/infra/openai/ConversationFinalSummaryService'
 import { EnergyBillIngestionService } from '@/infra/openai/EnergyBillIngestionService'
-import { VectorStoreManager } from '@/infra/openai/VectorStoreManager'
 import { OpenAIClientRegistry } from '@/infra/openai/OpenAIClientRegistry'
 import {
 	ConversationLogger as ConversationLoggerBase,
@@ -69,8 +68,6 @@ export class DependenciesContainer {
 	public aiResponsePort: AIResponsePort
 	public authService: AuthService
 	public fileService: FileService<any>
-	public vectorStoreManager: VectorStoreManager
-	public openai: OpenAI
 	public openaiRegistry: OpenAIClientRegistry
 	public aiChatFinalSummaryService: AIChatFinalSummaryService
 	public conversationFinalSummaryService: ConversationFinalSummaryService
@@ -84,8 +81,6 @@ export class DependenciesContainer {
 		// third party clients
 		const prisma = new PrismaClient()
 		this.prisma = prisma
-		const openaiClient = new OpenAI({ apiKey: env.OPENAI_API_KEY })
-		this.openai = openaiClient
 
 		// main
 		// this.messagingPort = new ConsoleMessagingPort()
@@ -111,11 +106,6 @@ export class DependenciesContainer {
 			this.prismaTenantRepository,
 			tenantVectorRepository
 		)
-		const vectorStoreManager = new VectorStoreManager(
-			openaiClient,
-			tenantVectorRepository
-		)
-		this.vectorStoreManager = vectorStoreManager
 		const energyBillService = new EnergyBillIngestionService(
 			this.openaiRegistry
 		)
