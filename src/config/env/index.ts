@@ -14,7 +14,7 @@ export const envSchema = z.object({
 	VERIFICATION_TOKEN: z.string(),
 	WPP_TOKEN: z.string(),
 	PHONE_NUMBER_ID: z.string(),
-	OPENAI_API_KEY: z.string(),
+	//OPENAI_API_KEY: z.string(),
 	PORT: z.coerce.number().catch(8000),
 	HTTP_TOKEN_SECRET: z.string(),
 	HTTP_COOKIE_NAME: z.string(),
