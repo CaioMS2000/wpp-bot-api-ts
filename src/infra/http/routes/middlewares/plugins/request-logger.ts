@@ -4,6 +4,9 @@ import fastifyPlugin from 'fastify-plugin'
 
 export const requestLogger = fastifyPlugin(async (app: FastifyInstance) => {
 	app.addHook('onRequest', async request => {
+		if (request.url.includes('health')) {
+			return
+		}
 		;(request as any)._reqStart = process.hrtime.bigint()
 		const rid =
 			(request.headers['x-request-id'] as string) ||

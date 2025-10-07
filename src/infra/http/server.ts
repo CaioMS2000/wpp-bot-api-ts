@@ -76,6 +76,9 @@ app.register(fastifyCors, {
 		if (!origin) return cb(null, true)
 		// Wildcard support
 		if (allowedOriginsCache.includes('*')) return cb(null, true)
+		if (allowedOriginsCache.length === 0) {
+			allowedOriginsCache = ['http://localhost:5173']
+		}
 		const ok = allowedOriginsCache.includes(origin)
 		cb(null, ok)
 	},

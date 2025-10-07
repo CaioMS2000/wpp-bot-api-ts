@@ -60,11 +60,21 @@ async function init() {
 		})
 
 		await sdk.start()
-		// Ensure flush on exit
-		const shutdown = () => sdk.shutdown().catch(() => {})
-		process.on('beforeExit', shutdown)
-		process.on('SIGTERM', shutdown)
-		process.on('SIGINT', shutdown)
+		// Ensure flush on exit. Use one-shot handlers and guard against multiple calls.
+		let _shuttingDown = false
+		const shutdownOnce = (exitAfter = false) => {
+			if (_shuttingDown) return
+			_shuttingDown = true
+			sdk
+				.shutdown()
+				.catch(() => {})
+				.finally(() => {
+					if (exitAfter) process.exit(0)
+				})
+		}
+		process.once('beforeExit', () => shutdownOnce(false))
+		process.once('SIGTERM', () => shutdownOnce(true))
+		process.once('SIGINT', () => shutdownOnce(true))
 	} catch (e) {
 		// Missing packages or misconfig — ignore silently in runtime, print a hint in dev
 		if (process.env.NODE_ENV !== 'production') {
