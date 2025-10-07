@@ -25,6 +25,9 @@ export const requestLogger = fastifyPlugin(async (app: FastifyInstance) => {
 	})
 
 	app.addHook('onResponse', async (request, reply) => {
+		if (request.url.includes('health')) {
+			return
+		}
 		const rid = (request as any)._reqId
 		const start = (request as any)._reqStart as bigint | undefined
 		let ms: number | undefined
